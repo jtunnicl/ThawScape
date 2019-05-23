@@ -100,7 +100,7 @@ void StreamPower::Tridag(std::vector<float>& a, std::vector<float>& b, std::vect
 	}
 	for (j = (n - 1); j >= 1; j--)
 	{
-		u[j] -= gam[j + 1] * u[j + 1];
+		u[j - 1] -= gam[j] * u[j];
 	}
 }
 
