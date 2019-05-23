@@ -64,7 +64,7 @@ void StreamPower::Indexx(int n, float* arr, int* indx)
 
 std::vector<int> StreamPower::Indexx(std::vector<float>& arr)
 {
-	return SortFortranIndices(arr);
+	return SortIndices(arr);
 }
 
 void StreamPower::Tridag(float a[], float b[], float c[], float r[], float u[], unsigned long n)
@@ -90,9 +90,9 @@ void StreamPower::Tridag(std::vector<float>& a, std::vector<float>& b, std::vect
 	float bet;
 	std::vector<float> gam;
 
-	gam = Vector(1, n);
-	u[1] = r[1] / (bet = b[1]);
-	for (j = 2; j <= n; j++)
+	gam = std::vector<float>(n);
+	u[0] = r[0] / (bet = b[0]);
+	for (j = 1; j <= n-1; j++)
 	{
 		gam[j] = c[j - 1] / bet;
 		bet = b[j] - a[j] * gam[j];
@@ -108,65 +108,65 @@ void StreamPower::SetupGridNeighbors()
 {
 	int i, j;
 
-	idown = IVector(1, lattice_size_x);
-	iup = IVector(1, lattice_size_x);
-	jup = IVector(1, lattice_size_y);
-	jdown = IVector(1, lattice_size_y);
+	idown = std::vector<int>(lattice_size_x);
+	iup = std::vector<int>(lattice_size_x);
+	jup = std::vector<int>(lattice_size_y);
+	jdown = std::vector<int>(lattice_size_y);
 
-	for (i = 1; i <= lattice_size_x; i++)
+	for (i = 0; i <= lattice_size_x - 1; i++)
 	{
 		idown[i] = i - 1;
 		iup[i] = i + 1;
 	}
-	idown[1] = 1;
-	iup[lattice_size_x] = lattice_size_x;
-	for (j = 1; j <= lattice_size_y; j++)
+	idown[0] = 0;
+	iup[lattice_size_x - 1] = lattice_size_x - 1;
+	for (j = 0; j <= lattice_size_y - 1; j++)
 	{
 		jdown[j] = j - 1;
 		jup[j] = j + 1;
 	}
-	jdown[1] = 1;
-	jup[lattice_size_y] = lattice_size_y;
+	jdown[0] = 0;
+	jup[lattice_size_y - 1] = lattice_size_y - 1;
 }
 
 void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 {
-	topo = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	topo2 = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	topoold = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	slope = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	aspect = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	solar_raster = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	shade_raster = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	I_D = Matrix(1, lattice_size_x, 1, lattice_size_y);
+	topo = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	topo2 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	topoold = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	slope = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	aspect = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	solar_raster = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	shade_raster = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	I_D = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 
-	veg = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	veg_old = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	Sed_Track = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	ExposureAge = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	ExposureAge_old = Matrix(1, lattice_size_x, 1, lattice_size_y);
+	veg = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	veg_old = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	Sed_Track = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	ExposureAge = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	ExposureAge_old = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 
-	flow = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	flow1 = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	flow2 = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	flow3 = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	flow4 = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	flow5 = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	flow6 = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	flow7 = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	flow8 = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	topovec = Vector(1, lattice_size_x*lattice_size_y);
-	topovecind = IVector(1, lattice_size_x*lattice_size_y);
-	sed_vec = Vector(1, lattice_size_x*lattice_size_y);
-	sed_vecind = IVector(1, lattice_size_x*lattice_size_y);
+	flow = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow1 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow2 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow3 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow4 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow5 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow6 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow7 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow8 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	topovec = std::vector<float>(lattice_size_x * lattice_size_y);
+	topovecind = std::vector<int>(lattice_size_x * lattice_size_y);
+	sed_vec = std::vector<float>(lattice_size_x * lattice_size_y);
+	sed_vecind = std::vector<int>(lattice_size_x * lattice_size_y);
 
 	elevation = Array2D<float>(lattice_size_x, lattice_size_y, -9999.0f);
 
 	SetupGridNeighbors();
 
-	for (int i = 1; i <= lattice_size_x; i++)     // Populate model grids
+	for (int i = 0; i <= lattice_size_x-1; i++)     // Populate model grids
 	{
-		for (int j = 1; j <= lattice_size_y; j++)
+		for (int j = 0; j <= lattice_size_y-1; j++)
 		{
 			topo[i][j] = t[i][j];
 			topoold[i][j] = topo[i][j];
@@ -184,10 +184,10 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 
 void StreamPower::SetFA(std::vector<std::vector<float>> f)
 {
-	FA = Matrix(1, lattice_size_x, 1, lattice_size_y);
-	for (int i = 1; i <= lattice_size_x; i++)     // Populate flow accumulation grid
+	FA = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	for (int i = 0; i <= lattice_size_x-1; i++)     // Populate flow accumulation grid
 	{
-		for (int j = 1; j <= lattice_size_y; j++)
+		for (int j = 0; j <= lattice_size_y-1; j++)
 		{
 			FA[i][j] = f[i][j];
 		}
@@ -196,26 +196,8 @@ void StreamPower::SetFA(std::vector<std::vector<float>> f)
 
 void StreamPower::Flood()
 {
-	// update elev
-	for (int i = 1; i <= lattice_size_x; i++)
-	{
-		for (int j = 1; j <= lattice_size_y; j++)
-		{
-			elevation(i - 1, j - 1) = topo[i][j];     //  Change indexing to suit flood subroutine.
-		}
-	}
 
 	// perform flooding
-	improved_priority_flood(elevation);
-
-	// update topo
-	for (int i = 0; i < lattice_size_x; i++)
-	{
-		for (int j = 0; j < lattice_size_y; j++)
-		{
-			topo[i + 1][j + 1] = elevation(i, j);     //  Back to original indexing
-		}
-	}
 
 }
 
@@ -283,9 +265,9 @@ void StreamPower::InitDiffusion()
 	for (int step = 1; step <= 10; step++)
 	{
 		HillSlopeDiffusion();
-		for (int i = 2; i <= lattice_size_x - 1; i++)
+		for (int i = 1; i <= lattice_size_x - 2; i++)
 		{
-			for (int j = 2; j <= lattice_size_y - 1; j++)
+			for (int j = 1; j <= lattice_size_y - 2; j++)
 			{
 				topo[i][j] += 0.1;
 				topoold[i][j] += 0.1;
@@ -299,28 +281,28 @@ void StreamPower::HillSlopeDiffusion()
 	int i, j, count;
 	float term1;
 
-	ax = Vector(1, lattice_size_x);
-	ay = Vector(1, lattice_size_y);
-	bx = Vector(1, lattice_size_x);
-	by = Vector(1, lattice_size_y);
-	cx = Vector(1, lattice_size_x);
-	cy = Vector(1, lattice_size_y);
-	ux = Vector(1, lattice_size_x);
-	uy = Vector(1, lattice_size_y);
-	rx = Vector(1, lattice_size_x);
-	ry = Vector(1, lattice_size_y);
+	ax = std::vector<float>(lattice_size_x);
+	ay = std::vector<float>(lattice_size_y);
+	bx = std::vector<float>(lattice_size_x);
+	by = std::vector<float>(lattice_size_y);
+	cx = std::vector<float>(lattice_size_x);
+	cy = std::vector<float>(lattice_size_y);
+	ux = std::vector<float>(lattice_size_x);
+	uy = std::vector<float>(lattice_size_y);
+	rx = std::vector<float>(lattice_size_x);
+	ry = std::vector<float>(lattice_size_y);
 	//  D = 10.0;    Previous version used initiliazed value of 10M.
 	count = 0;
 
 	while (count < 5)
 	{
 		count++;
-		for (i = 1; i <= lattice_size_x; i++)
-			for (j = 1; j <= lattice_size_y; j++)
+		for (i = 0; i <= lattice_size_x-1; i++)
+			for (j = 0; j <= lattice_size_y-1; j++)
 				topoold[i][j] = topo[i][j];
-		for (i = 1; i <= lattice_size_x; i++)
+		for (i = 0; i <= lattice_size_x-1; i++)
 		{
-			for (j = 1; j <= lattice_size_y; j++)
+			for (j = 0; j <= lattice_size_y-1; j++)
 			{
 				term1 = D * ann_timestep / (deltax2);
 				if (flow[i][j] < thresholdarea)
@@ -351,15 +333,15 @@ void StreamPower::HillSlopeDiffusion()
 				}
 			}
 			Tridag(ay, by, cy, ry, uy, lattice_size_y);
-			for (j = 1; j <= lattice_size_y; j++)
+			for (j = 0; j <= lattice_size_y-1; j++)
 				topo[i][j] = uy[j];
 		}
-		for (i = 1; i <= lattice_size_x; i++)
-			for (j = 1; j <= lattice_size_y; j++)
+		for (i = 0; i <= lattice_size_x-1; i++)
+			for (j = 0; j <= lattice_size_y-1; j++)
 				topoold[i][j] = topo[i][j];
-		for (j = 1; j <= lattice_size_y; j++)
+		for (j = 0; j <= lattice_size_y-1; j++)
 		{
-			for (i = 1; i <= lattice_size_x; i++)
+			for (i = 0; i <= lattice_size_x-1; i++)
 			{
 				term1 = D * timestep / ( deltax2 );
 				if (flow[i][j] < thresholdarea)
@@ -390,7 +372,7 @@ void StreamPower::HillSlopeDiffusion()
 				}
 			}
 			Tridag(ax, bx, cx, rx, ux, lattice_size_x);
-			for (i = 1; i <= lattice_size_x; i++)
+			for (i = 0; i <= lattice_size_x-1; i++)
 				topo[i][j] = ux[i];
 		}
 	}
@@ -550,12 +532,12 @@ void StreamPower::Start()
 	while ( ct.year < ct.end_year )
 	{
 		// Setup grid index with ranked topo values
-		for ( j = 1; j <= lattice_size_y; j++ )
+		for ( j = 0; j <= lattice_size_y-1; j++ )
 		{
-			for ( i = 1; i <= lattice_size_x; i++ )
+			for ( i = 0; i <= lattice_size_x-1; i++ )
 			{
-				topovec[(j - 1) * lattice_size_x + i] = topo[i][j];
-				sed_vec[(j - 1) * lattice_size_x + i] = Sed_Track[i][j];
+				topovec[(j) * lattice_size_x + i] = topo[i][j];
+				sed_vec[(j) * lattice_size_x + i] = Sed_Track[i][j];
 			}
 		}
 		topovecind = Indexx(topovec);    // Ranked list of elevation values
@@ -565,28 +547,29 @@ void StreamPower::Start()
 		// Landsliding, proceeding from high elev to low
 		while ( t < lattice_size_x * lattice_size_y )
 		{
-			t++;
-			i = ( topovecind[t] ) % lattice_size_x;
+			i = (topovecind[t]+1) % lattice_size_x;      // remainder
 			if (i == 0) { i = lattice_size_x; }
-			j = ( topovecind[t] ) / lattice_size_x + 1;
+			j = (topovecind[t]+1) / lattice_size_x;
 			if ( i == lattice_size_x ) { j--; }
-			Avalanche( i, j );
+
+			Avalanche( i , j );
+			t++;
 		}
-		for (j = 1; j <= lattice_size_y; j++)
+		for (j = 0; j <= lattice_size_y-1; j++)
 		{
-			for (i = 1; i <= lattice_size_x; i++)
+			for (i = 0; i <= lattice_size_x-1; i++)
 			{
 				topoold[i][j] = topo[i][j];
 			}
 		}
 
 		// Pit filling
-		Flood();
+		improved_priority_flood(elevation);
 
 		// Setup grid index again with topo values
-		for (j = 1; j <= lattice_size_y; j++)
+		for (j = 0; j <= lattice_size_y-1; j++)
 		{
-			for (i = 1; i <= lattice_size_x; i++)
+			for (i = 0; i <= lattice_size_x-1; i++)
 			{
 				// Boundary elements from FA raster
 				if (i == 1 || i == lattice_size_x || j == 1 || j == lattice_size_y)
@@ -614,9 +597,9 @@ void StreamPower::Start()
 
 
 		// Uplift and Slope/Aspect Calcs
-		for (i = 2; i <= lattice_size_x - 1; i++)
+		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
-			for (j = 2; j <= lattice_size_y - 1; j++)
+			for (j = 1; j <= lattice_size_y - 2; j++)
 			{
 				topo[i][j] += U * ann_timestep;
 				topoold[i][j] += U * ann_timestep;
@@ -633,9 +616,9 @@ void StreamPower::Start()
 
 		//Channel erosion
 		max = 0;
-		for (i = 2; i <= lattice_size_x - 1; i++)
+		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
-			for (j = 2; j <= lattice_size_y - 1; j++)
+			for (j = 1; j <= lattice_size_y - 2; j++)
 			{
 				deltah = ann_timestep * K * sqrt( flow[i][j] ) * deltax * slope[i][j];                  // Fluvial erosion law
 				topo[i][j] -= deltah;
@@ -712,9 +695,9 @@ void StreamPower::PrintState(char* fname)
 	file << "yllcorner " << yllcorner << std::endl;
 	file << "cellsize " << deltax << std::endl;
 	file << "NODATA_value " << nodata << std::endl;
-	for (int i = 1; i <= lattice_size_x; i++)
+	for (int i = 0; i <= lattice_size_x-1; i++)
 	{
-		for (int j = 1; j <= lattice_size_y; j++)
+		for (int j = 0; j <= lattice_size_y-1; j++)
 		{
 			file << topo[i][j] << " ";
 		}
@@ -733,12 +716,12 @@ void StreamPower::PrintState(char* fname)
 
 std::vector<std::vector<float>> StreamPower::CreateRandomField()
 {
-	std::vector<std::vector<float>> mat = Matrix(1, lattice_size_x, 1, lattice_size_y);
+	std::vector<std::vector<float>> mat = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	std::default_random_engine generator;
 	std::normal_distribution<float> distribution(0.0f, 1.0f);
-	for (int i = 1; i <= lattice_size_x; i++)
+	for (int i = 0; i <= lattice_size_x-1; i++)
 	{
-		for (int j = 1; j <= lattice_size_y; j++)
+		for (int j = 0; j <= lattice_size_y-1; j++)
 		{
 			mat[i][j] = 0.5 * Gasdev(generator, distribution);
 		}
@@ -766,12 +749,12 @@ std::vector<std::vector<float>> StreamPower::ReadArcInfoASCIIGrid(char* fname)
 	in >> key; in >> deltax;
 	in >> key; in >> nodata;
 
-	raster = Matrix(1, lattice_size_x, 1, lattice_size_y);
+	raster = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 
 	// read data
-	for (int x = 0; x <= lattice_size_x-2; x++)
+	for (int x = 0; x <= lattice_size_x-1; x++)
 	{
-		for (int y = 0; y <= lattice_size_y-2; y++)
+		for (int y = 0; y <= lattice_size_y-1; y++)
 		{
 			in >> raster[x][y];
 		}
