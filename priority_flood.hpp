@@ -393,7 +393,7 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> 
 {
 	grid_cellzk_pq<elev_t> open;
 	unsigned long processed_cells = 0;
-	ProgressBar progress;
+//	ProgressBar progress;
 
 	std::cerr << "\n###Priority-Flood+Flow Directions" << std::endl;
 	std::cerr << "Setting up boolean flood array matrix..." << std::flush;
@@ -438,7 +438,7 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> 
 
 	const int d8_order[9] = { 0,1,3,5,7,2,4,6,8 };
 	std::cerr << "%%Performing Priority-Flood+Flow Directions..." << std::endl;
-	progress.start(elevations.viewWidth()*elevations.viewHeight());
+//	progress.start(elevations.viewWidth()*elevations.viewHeight());
 	while (open.size() > 0)
 	{
 		grid_cellz<elev_t> c = open.top();
@@ -463,9 +463,9 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> 
 
 			open.push_cell(nx, ny, elevations(nx, ny));
 		}
-		progress.update(processed_cells);
+//		progress.update(processed_cells);
 	}
-	std::cerr << "\t\033[96msucceeded in " << progress.stop() << "s.\033[39m" << std::endl;
+//	std::cerr << "\t\033[96msucceeded in " << progress.stop() << "s.\033[39m" << std::endl;
 	std::cerr << processed_cells << " cells processed." << std::endl;
 }
 
@@ -509,7 +509,7 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<int32_t> &pit_mask)
 	std::queue<grid_cellz<elev_t> > pit;
 	unsigned long processed_cells = 0;
 	unsigned long pitc = 0;
-	ProgressBar progress;
+//	ProgressBar progress;
 
 	std::cerr << "\n###Pit Mask" << std::endl;
 	std::cerr << "Setting up boolean flood array matrix..." << std::flush;
@@ -543,7 +543,7 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<int32_t> &pit_mask)
 	std::cerr << "succeeded." << std::endl;
 
 	std::cerr << "%%Performing the pit mask..." << std::endl;
-	progress.start(elevations.viewWidth()*elevations.viewHeight());
+//	progress.start(elevations.viewWidth()*elevations.viewHeight());
 	while (open.size() > 0 || pit.size()>0)
 	{
 		grid_cellz<elev_t> c;
@@ -584,9 +584,9 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<int32_t> &pit_mask)
 		if (elevations(c.x, c.y) == elevations.noData())
 			pit_mask(c.x, c.y) = pit_mask.noData();
 
-		progress.update(processed_cells);
+//		progress.update(processed_cells);
 	}
-	std::cerr << "\t\033[96msucceeded in " << progress.stop() << "s.\033[39m" << std::endl;
+//	std::cerr << "\t\033[96msucceeded in " << progress.stop() << "s.\033[39m" << std::endl;
 	std::cerr << processed_cells << " cells processed. " << pitc << " in pits." << std::endl;
 }
 
@@ -633,7 +633,7 @@ void priority_flood_watersheds(
 	unsigned long processed_cells = 0;
 	unsigned long pitc = 0, openc = 0;
 	int clabel = 1;  //TODO: Thought this was more clear than zero in the results.
-	ProgressBar progress;
+//	ProgressBar progress;
 
 	std::cerr << "\n###Priority-Flood+Watershed Labels" << std::endl;
 	std::cerr << "Setting up boolean flood array matrix..." << std::flush;
@@ -667,7 +667,7 @@ void priority_flood_watersheds(
 	std::cerr << "succeeded." << std::endl;
 
 	std::cerr << "%%Performing Priority-Flood+Watershed Labels..." << std::endl;
-	progress.start(elevations.viewWidth()*elevations.viewHeight());
+//	progress.start(elevations.viewWidth()*elevations.viewHeight());
 	while (open.size() > 0 || pit.size()>0)
 	{
 		grid_cellz<elev_t> c;
@@ -714,10 +714,10 @@ void priority_flood_watersheds(
 			else
 				open.push(grid_cellz<elev_t>(nx, ny, elevations(nx, ny)));
 		}
-		progress.update(processed_cells);
+//		progress.update(processed_cells);
 	}
 
-	std::cerr << "\t\033[96msucceeded in " << progress.stop() << "s.\033[39m" << std::endl;
+//	std::cerr << "\t\033[96msucceeded in " << progress.stop() << "s.\033[39m" << std::endl;
 
 	std::cerr << processed_cells << " cells processed. "
 		<< pitc << " in pits, "
