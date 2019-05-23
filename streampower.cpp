@@ -9,6 +9,7 @@
 #include "streampower.h"
 #include "utility.h"
 #include "priority_flood.hpp"
+#include "indexx.hpp"
 
 
 /* allocate a float vector with subscript range v[nl..nh] */
@@ -55,17 +56,17 @@ float StreamPower::Gasdev(std::default_random_engine& generator, std::normal_dis
 
 }
 
-void StreamPower::Indexx(int n, float* arr, int* indx)
-{
-	std::vector<float> arrv = ArrayToVector(arr, n);
-	std::vector<int> indxv = Indexx(arrv);
-	VectorToArray(indxv, indx);
-}
-
-std::vector<int> StreamPower::Indexx(std::vector<float>& arr)
-{
-	return SortIndices(arr);
-}
+//void StreamPower::Indexx(int n, float* arr, int* indx)
+//{
+//	std::vector<float> arrv = ArrayToVector(arr, n);
+//	std::vector<int> indxv = Indexx(arrv);
+//	VectorToArray(indxv, indx);
+//}
+//
+//std::vector<int> StreamPower::Indexx(std::vector<float>& arr)
+//{
+//	return SortIndices(arr);
+//}
 
 void StreamPower::Tridag(float a[], float b[], float c[], float r[], float u[], unsigned long n)
 {
@@ -163,6 +164,8 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 	elevation = Array2D<float>(lattice_size_x, lattice_size_y, -9999.0f);
 
 	SetupGridNeighbors();
+
+    std::cout << "DEBUG: size_z, size_y = " << lattice_size_x << ", " << lattice_size_y << std::endl;
 
 	for (int i = 0; i <= lattice_size_x-1; i++)     // Populate model grids
 	{
@@ -532,25 +535,29 @@ void StreamPower::Start()
 	while ( ct.year < ct.end_year )
 	{
 		// Setup grid index with ranked topo values
-		for ( j = 0; j <= lattice_size_y-1; j++ )
-		{
-			for ( i = 0; i <= lattice_size_x-1; i++ )
-			{
-				topovec[(j) * lattice_size_x + i] = topo[i][j];
-				sed_vec[(j) * lattice_size_x + i] = Sed_Track[i][j];
-			}
-		}
-		topovecind = Indexx(topovec);    // Ranked list of elevation values
-		sed_vecind = Indexx(sed_vec);    // Ranked list of sediment thickness
+        
+//		for ( j = 0; j <= lattice_size_y-1; j++ )
+//		{
+//			for ( i = 0; i <= lattice_size_x-1; i++ )
+//			{
+//				topovec[(j) * lattice_size_x + i] = topo[i][j];
+//				sed_vec[(j) * lattice_size_x + i] = Sed_Track[i][j];
+//			}
+//		}
+//		topovecind = Indexx(topovec);    // Ranked list of elevation values
+//		sed_vecind = Indexx(sed_vec);    // Ranked list of sediment thickness
+        Indexx<float> topo_indexx(lattice_size_x, lattice_size_y, topo);
+        Indexx<float> sed_indexx(lattice_size_x, lattice_size_y, Sed_Track);
 
 		t = 0;	
 		// Landsliding, proceeding from high elev to low
 		while ( t < lattice_size_x * lattice_size_y )
 		{
-			i = (topovecind[t]+1) % lattice_size_x;      // remainder
-			if (i == 0) { i = lattice_size_x; }
-			j = (topovecind[t]+1) / lattice_size_x;
-			if ( i == lattice_size_x ) { j--; }
+//			i = (topovecind[t]+1) % lattice_size_x;      // remainder
+//			if (i == 0) { i = lattice_size_x; }
+//			j = (topovecind[t]+1) / lattice_size_x;
+//			if ( i == lattice_size_x ) { j--; }
+            topo_indexx.get_ij(t, i, j);
 
 			Avalanche( i , j );
 			t++;
@@ -576,19 +583,21 @@ void StreamPower::Start()
 					flow[i][j] = FA[i][j] / deltax2;
 				else flow[i][j] = 1;   // default value
 
-				topovec[(j - 1)*lattice_size_x + i] = topo[i][j];
+//				topovec[(j - 1)*lattice_size_x + i] = topo[i][j];
 			}
 		}
-		topovecind = Indexx(topovec);
+//		topovecind = Indexx(topovec);
+        topo_indexx.update(topo);
 
 		t = lattice_size_x*lattice_size_y + 1;
 		while (t > 1)
 		{
 			t--;
-			i = (topovecind[t]) % lattice_size_x;
-			if (i == 0) { i = lattice_size_x; }
-			j = (topovecind[t]) / lattice_size_x + 1;
-			if (i == lattice_size_x) { j--; }
+//			i = (topovecind[t]) % lattice_size_x;
+//			if (i == 0) { i = lattice_size_x; }
+//			j = (topovecind[t]) / lattice_size_x + 1;
+//			if (i == lattice_size_x) { j--; }
+            topo_indexx.get_ij(t, i, j);
 			MFDFlowRoute(i, j);
 		}
 

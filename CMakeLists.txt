@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # enable testing (disable with -DBUILD_TESTING=OFF)
-#include(CTest)
+include(CTest)
 
 # default to RELEASE build if not specified
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
@@ -24,12 +24,9 @@ if (ENABLE_PROFILING)
     endif()
 endif()
 
-# Find includes in corresponding build directories
-#set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-# add the executable
-add_executable(ThawScape
-    main.cpp
+# add the library
+add_library(ThawScapeLib
+    indexx.hpp
     data_structures.h
     streampower.h
     streampower.cpp
@@ -39,6 +36,13 @@ add_executable(ThawScape
     Array2D.hpp
 )
 
+# add executable
+add_executable(ThawScape main.cpp)
+target_link_libraries(ThawScape ThawScapeLib)
+
 # copy input files to build dir for testing
 configure_file(FA.asc ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 configure_file(topo.asc ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+
+# add tests directory
+add_subdirectory(tests)

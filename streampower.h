@@ -81,8 +81,8 @@ public:
 	static float Ran3(std::default_random_engine& generator, std::uniform_real_distribution<float>& distribution);
 	static float Gasdev(std::default_random_engine& generator, std::normal_distribution<float>& distribution);
 
-	static void Indexx(int n, float* arr, int* indx);	// interface from old to new implementation
-	static std::vector<int> Indexx(std::vector<float>& arr);	// new implementation
+//	static void Indexx(int n, float* arr, int* indx);	// interface from old to new implementation
+//	static std::vector<int> Indexx(std::vector<float>& arr);	// new implementation
 
 	static void Tridag(float a[], float b[], float c[], float r[], float u[], unsigned long n); // interface from old to new implementation
 	static void Tridag(std::vector<float>& a, std::vector<float>& b, std::vector<float>& c, std::vector<float>& r, std::vector<float>& u, int n); // new implementation
