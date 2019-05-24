@@ -45,4 +45,6 @@ configure_file(FA.asc ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 configure_file(topo.asc ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 # add tests directory
-add_subdirectory(tests)
+if (BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
