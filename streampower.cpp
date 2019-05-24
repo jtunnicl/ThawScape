@@ -589,8 +589,8 @@ void StreamPower::Start()
 //		topovecind = Indexx(topovec);
         topo_indexx.update(topo);
 
-		t = lattice_size_x*lattice_size_y + 1;
-		while (t > 1)
+		t = lattice_size_x*lattice_size_y;
+		while (t > 0)
 		{
 			t--;
 //			i = (topovecind[t]) % lattice_size_x;
