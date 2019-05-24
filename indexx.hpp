@@ -35,7 +35,7 @@ class Indexx {
             // initialise index array
             std::iota(idx.begin(), idx.end(), 0);
 
-            // sort indexes based on comparing values in flat_array
+            // sort indexes based on comparing values (lowest to highest) in flat_array
             std::sort(idx.begin(), idx.end(), [this](int i1, int i2) {return flat_array[i1] < flat_array[i2]; });
         }
 
@@ -44,7 +44,7 @@ class Indexx {
                 std::cerr << "Warning: out of bounds in Indexx::get_ij()" << std::endl;
             }
 
-            // return i, j indices in original array corresponding to t'th highest value
+            // return i, j indices in original array corresponding to t'th value in ordered array
             int index = idx[t];
             i = index / ny;
             j = index % ny;
