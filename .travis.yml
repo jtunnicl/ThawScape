@@ -26,5 +26,4 @@ install:
     - make
 
 script:
-    - echo "not running any tests"
-#    - ctest --output-on-failure
+    - ctest --output-on-failure
