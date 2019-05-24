@@ -5,6 +5,7 @@
 #include <numeric>
 #include <algorithm>
 #include "Array2D.hpp"
+#include "indexx.hpp"
 
 #define NR_END 1
 #define FREE_ARG char*
@@ -62,8 +63,9 @@ public:
 
 	// new vars
 	float xllcorner, yllcorner, nodata;
-	std::vector<int> iup, idown, jup, jdown, topovecind, sed_vecind;
-	std::vector<float> ax, ay, bx, by, cx, cy, ux, uy, rx, ry, topovec, sed_vec;
+	std::vector<int> iup, idown, jup, jdown;
+	std::vector<float> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;
+    Indexx<float> topo_indexx, sed_indexx;
 	std::vector<std::vector<float>> topo, topoold, topo2, slope, aspect, flow, flow1, flow2, flow3, 
 		flow4, flow5, flow6, flow7, flow8, FA, veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
 	std::vector<std::vector<float>> solar_raster, shade_raster, I_D;

@@ -6,8 +6,8 @@
 
 
 int main() {
-    int nx = 4;
-    int ny = 2;
+    int nx = 5;
+    int ny = 3;
     std::vector< std::vector<float> > array = std::vector<std::vector<float>>(nx, std::vector<float>(ny));
     std::cout << "SIZE = " << array.size() << " x " << array[0].size() << std::endl;
     std::default_random_engine generator;
@@ -20,7 +20,8 @@ int main() {
         }
     }
 
-    Indexx<float> array_indexx(nx, ny, array);
+    Indexx<float> array_indexx(nx, ny);
+    array_indexx.update_array(array);
 
     std::cout << "Output:" << std::endl;
     int ii;
