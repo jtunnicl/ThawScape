@@ -16,13 +16,13 @@ class Indexx {
      * Note: there is no bounds checking
      */
     private:
+        int nx, ny, nxy;
         std::vector<int> idx;
         std::vector<T> flat_array;  // instead of allocating a new vector every time update is called
-        int nx, ny, nxy;
 
     public:
         Indexx() : nx(0), ny(0), nxy(0) {}
-        Indexx(int nx_, int ny_) : nx(nx_), ny(ny_), nxy(nx_ * ny_), flat_array(nx_ * ny_), idx(nx_ * ny_) {}
+        Indexx(int nx_, int ny_) : nx(nx_), ny(ny_), nxy(nx * ny), idx(nxy), flat_array(nxy) {}
         
         void update_array(std::vector< std::vector<T> > &array) {
             // put 2d input array into flat array
