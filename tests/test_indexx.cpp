@@ -2,10 +2,11 @@
 #include <iostream>
 #include <random>
 #include <vector>
-#include "../indexx.hpp"
+#include "catch2/catch.hpp"
+#include "indexx.hpp"
 
 
-int main() {
+TEST_CASE("Indexx class", "[Indexx]") {
     int nx = 5;
     int ny = 3;
     std::vector< std::vector<float> > array = std::vector<std::vector<float>>(nx, std::vector<float>(ny));
@@ -29,14 +30,8 @@ int main() {
     // indices of first value
     array_indexx.get_ij(0, ii, jj);
     // checking indices are good
-    if (ii < 0 || ii >= nx) {
-        std::cerr << "Index error for i" << std::endl;
-        return 1;
-    }
-    if (jj < 0 || jj > ny) {
-        std::cerr << "Index error for j" << std::endl;
-        return 1;
-    }
+    REQUIRE((ii >= 0 && ii < nx));
+    REQUIRE((jj >= 0 && jj < ny));
     // first value
     float value1 = array[ii][jj];
     std::cout << ii << ", " << jj << " = " << value1 << std::endl;
@@ -45,27 +40,14 @@ int main() {
         // indices of next value
         array_indexx.get_ij(t, ii, jj);
         // checking indices are good
-        if (ii < 0 || ii >= nx) {
-            std::cerr << "Index error for i" << std::endl;
-            return 1;
-        }
-        if (jj < 0 || jj > ny) {
-            std::cerr << "Index error for j" << std::endl;
-            return 1;
-        }
+        REQUIRE((ii >= 0 && ii < nx));
+        REQUIRE((jj >= 0 && jj < ny));
         // next value
         float value2 = array[ii][jj];
         std::cout << ii << ", " << jj << " = " << value2 << std::endl;
         // checking ordering
-        if (value1 > value2) {
-            std::cerr << "Values not ordered correctly (" << value1 << ", " << value2 << ")" << std::endl;
-            return 1;
-        }
+        REQUIRE(value1 <= value2);
         // moving on
         value1 = value2;
     }
-
-    std::cout << "All good" << std::endl;
-
-    return 0;
 }
