@@ -6,7 +6,7 @@
 #include "indexx.hpp"
 
 
-TEST_CASE("Indexx class", "[Indexx]") {
+TEST_CASE("Indexx class", "[indexx]") {
     int nx = 5;
     int ny = 3;
     std::vector< std::vector<float> > array = std::vector<std::vector<float>>(nx, std::vector<float>(ny));

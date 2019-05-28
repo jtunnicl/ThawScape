@@ -10,6 +10,7 @@
 #include "utility.h"
 #include "priority_flood.hpp"
 #include "indexx.hpp"
+#include "inih/INIReader.h"
 
 
 /* allocate a float vector with subscript range v[nl..nh] */
@@ -469,46 +470,67 @@ void StreamPower::MeltExposedIce() {
 
 }
 
-void StreamPower::Init()
+void StreamPower::Init(std::string parameter_file)
 {
+    // load parameter file if it exists
+    std::cout << "Loading parameter file: " << parameter_file << std::endl;
+    INIReader reader(parameter_file);
+    if (reader.ParseError() != 0) {
+        Util::Error(std::string("Cannot load parameter file: ") + parameter_file, 1);
+    }
+
 	// Setup Key Model Variables
 
-	U = 0.010;                  // 'Uplift', m yr^-1
-	K = 0.050;                  // Stream Power
-	D = 1.500;                  // Diffusion, yr^-1
-	melt = 250;                 // Reciprocal melt rate, for a given radiation input
+	U = reader.GetReal("model", "U", 0.010);        // 'Uplift', m yr^-1
+	K = reader.GetReal("model", "K", 0.050);        // Stream Power
+	D = reader.GetReal("model", "D", 1.500);        // Diffusion, yr^-1
+	melt = reader.GetReal("model", "melt", 250);    // Reciprocal melt rate, for a given radiation input
 
-	deltax = 10.0;              // m; This gets reset after reading ASCII file
-	deltax2 = deltax * deltax;  // m2; Area of a pixel
-	nodata = -9999.0;
-	xllcorner = 0;
-	yllcorner = 0;
+	deltax = reader.GetReal("model", "deltax", 10.0);   // m; This gets reset after reading ASCII file
+	deltax2 = deltax * deltax;                      // m2; Area of a pixel
+	nodata = reader.GetReal("model", "nodata", -9999.0);
+	xllcorner = reader.GetReal("model", "xllcorner", 0);
+	yllcorner = reader.GetReal("model", "yllcorner", 0);
 
-	timestep = 1;              // Time step in hours 
-	printinterval = 96;         // Output timestep, in hours
+	timestep = reader.GetReal("time", "timestep", 1);   // Time step in hours 
+	printinterval = reader.GetInteger("time", "printinterval", 96); // Output timestep, in hours
 	ann_timestep = timestep / 8760;    //  Used in formula based on annual rates (e.g. 2 hrs, over 8760 hrs in 365 days)
 
 	thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
 	thresh_diag = thresh * sqrt2;
-	thresholdarea = 0.1;       // Threshold for diffusion domain - to prevent diffusion in channels, etc.
+	thresholdarea = reader.GetReal("model", "thresholdarea", 0.1);  // Threshold for diffusion domain - to prevent diffusion in channels, etc.
 
-	init_exposure_age = 0;     // Variables used to initiate exposure time, sed depth and veg age rasters
-	init_sed_track = 2;
-	init_veg = 8;
+	init_exposure_age = reader.GetReal("model", "init_exposure_age", 0);    // Variables used to initiate exposure time, sed depth and veg age rasters
+	init_sed_track = reader.GetReal("model", "init_sed_track", 2);
+	init_veg = reader.GetReal("model", "init_veg", 8);
 
-	ct.year = 2010;
-	ct.day = 78;   // 144;              // May 25th is the start of melt/rain season
-	ct.hour = 12;              // 24-hr clock
-	ct.end_year = 2015;        // Model execution ends on the first day of this year
+	ct.year = reader.GetInteger("time", "year", 2010);
+	ct.day = reader.GetInteger("time", "day", 78);  // 144;              // May 25th is the start of melt/rain season
+	ct.hour = reader.GetInteger("time", "hour", 12);    // 24-hr clock
+	ct.end_year = reader.GetInteger("time", "end_year", 2015);  // Model execution ends on the first day of this year
 	duration = ct.end_year - ct.year;   // Model execution time, in years, keeping in mind melt season is 138 days
 
-	r.lattitude = 0; // 67.3;
-	r.longitude = 0; // 134.9;         // Dempster Coordinates
-	r.stdmed = 0;    //9 * 15;         // Standard meridian of nearest time zone. LSTM = (UTC - 9H * 15 deg) n.b. Alaska Time Meridian = 135 deg W
-	r.declination = 0.0;
-	r.altitude = 0.0;
-	r.azimuth = 0.0;
+	r.lattitude = reader.GetReal("solar_geom", "lattitude", 0); // 67.3;
+	r.longitude = reader.GetReal("solar_geom", "longitude", 0); // 134.9;         // Dempster Coordinates
+	r.stdmed = reader.GetReal("solar_geom", "stdmed", 0); //9 * 15;         // Standard meridian of nearest time zone. LSTM = (UTC - 9H * 15 deg) n.b. Alaska Time Meridian = 135 deg W
+	r.declination = reader.GetReal("solar_geom", "declination", 0.0);
+	r.altitude = reader.GetReal("solar_geom", "altitude", 0.0);
+	r.azimuth = reader.GetReal("solar_geom", "azimuth", 0.0);
+
+    // input file names
+    topo_file = reader.Get("input", "topo", "topo.asc");
+    fa_file = reader.Get("input", "FA", "FA.asc");
+    sed_file = reader.Get("input", "sed", "SedThickness.asc");
 }
+
+
+void StreamPower::LoadInputs()
+{
+	SetTopo(ReadArcInfoASCIIGrid(topo_file.c_str()));
+	SetFA(ReadArcInfoASCIIGrid(fa_file.c_str()));
+	//sp.SetFA(sp.ReadArcInfoASCIIGrid(sed_file.c_str()));   // Option to set sediment thickness
+}
+
 
 void StreamPower::Start()
 {
@@ -703,7 +725,7 @@ std::vector<std::vector<float>> StreamPower::CreateRandomField()
 	return mat;
 }
 
-std::vector<std::vector<float>> StreamPower::ReadArcInfoASCIIGrid(char* fname)
+std::vector<std::vector<float>> StreamPower::ReadArcInfoASCIIGrid(const char* fname)
 {
 	std::ifstream in(fname);
 	std::vector<std::vector<float>> raster;
