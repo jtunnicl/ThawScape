@@ -43,6 +43,7 @@ target_link_libraries(ThawScape ThawScapeLib)
 # copy input files to build dir for testing
 configure_file(FA.asc ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 configure_file(topo.asc ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+configure_file(ThawScape.ini ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 # add tests directory
 if (BUILD_TESTING)
