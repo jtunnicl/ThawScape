@@ -56,23 +56,6 @@ float StreamPower::Gasdev(std::default_random_engine& generator, std::normal_dis
 
 }
 
-void StreamPower::Tridag(float a[], float b[], float c[], float r[], float u[], unsigned long n)
-{
-	std::vector<float> av = ArrayToVector(a, n, true);
-	std::vector<float> bv = ArrayToVector(b, n, true);
-	std::vector<float> cv = ArrayToVector(c, n, true);
-	std::vector<float> rv = ArrayToVector(r, n, true);
-	std::vector<float> uv = ArrayToVector(u, n, true);
-
-	Tridag(av, bv, cv, rv, uv, n);
-
-	VectorToArray(av, a);
-	VectorToArray(bv, b);
-	VectorToArray(cv, c);
-	VectorToArray(rv, r);
-	VectorToArray(uv, u);
-}
-
 void StreamPower::Tridag(std::vector<float>& a, std::vector<float>& b, std::vector<float>& c, std::vector<float>& r, std::vector<float>& u, int n)
 {
 	unsigned long j;
@@ -154,9 +137,9 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 
     std::cout << "DEBUG: size_z, size_y = " << lattice_size_x << ", " << lattice_size_y << std::endl;
 
-	for (int i = 0; i <= lattice_size_x-1; i++)     // Populate model grids
+	for (int i = 0; i < lattice_size_x; i++)     // Populate model grids
 	{
-		for (int j = 0; j <= lattice_size_y-1; j++)
+		for (int j = 0; j < lattice_size_y; j++)
 		{
 			topo[i][j] = t[i][j];
 			topoold[i][j] = topo[i][j];
@@ -175,9 +158,9 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 void StreamPower::SetFA(std::vector<std::vector<float>> f)
 {
 	FA = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	for (int i = 0; i <= lattice_size_x-1; i++)     // Populate flow accumulation grid
+	for (int i = 0; i < lattice_size_x; i++)     // Populate flow accumulation grid; only boundary components are retained, zeros otherwise.
 	{
-		for (int j = 0; j <= lattice_size_y-1; j++)
+		for (int j = 0; j < lattice_size_y; j++)
 		{
 			FA[i][j] = f[i][j];
 		}
@@ -186,8 +169,26 @@ void StreamPower::SetFA(std::vector<std::vector<float>> f)
 
 void StreamPower::Flood()
 {
+	// update elev
+	for (int i = 0; i < lattice_size_x; i++)
+	{
+		for (int j = 0; j < lattice_size_y; j++)
+		{
+			elevation(i, j) = topo[i][j];     //  Change indexing to suit flood subroutine.
+		}
+	}
 
 	// perform flooding
+	original_priority_flood(elevation);
+
+	// update topo
+	for (int i = 0; i < lattice_size_x; i++)
+	{
+		for (int j = 0; j < lattice_size_y; j++)
+		{
+			topo[i][j] = elevation(i, j);     //  Back to original indexing
+		}
+	}
 
 }
 
@@ -239,14 +240,14 @@ void StreamPower::MFDFlowRoute(int i, int j)
 		flow8[i][j] = pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1f) / tot;
 	else flow8[i][j] = 0;
 
-	flow[iup[i]][j] += flow[i][j] * flow1[i][j];
-	flow[idown[i]][j] += flow[i][j] * flow2[i][j];
-	flow[i][jup[j]] += flow[i][j] * flow3[i][j];
-	flow[i][jdown[j]] += flow[i][j] * flow4[i][j];
-	flow[iup[i]][jup[j]] += flow[i][j] * flow5[i][j];
-	flow[iup[i]][jdown[j]] += flow[i][j] * flow6[i][j];
-	flow[idown[i]][jup[j]] += flow[i][j] * flow7[i][j];
-	flow[idown[i]][jdown[j]] += flow[i][j] * flow8[i][j];
+	flow[iup[i]][j] += flow[i][j] * flow1[i][j] + FA[i][j];    // final FA(j, i) applies only to edges; zero otherwise
+	flow[idown[i]][j] += flow[i][j] * flow2[i][j] + FA[i][j];
+	flow[i][jup[j]] += flow[i][j] * flow3[i][j] + FA[i][j];
+	flow[i][jdown[j]] += flow[i][j] * flow4[i][j] + FA[i][j];
+	flow[iup[i]][jup[j]] += flow[i][j] * flow5[i][j] + FA[i][j];
+	flow[iup[i]][jdown[j]] += flow[i][j] * flow6[i][j] + FA[i][j];
+	flow[idown[i]][jup[j]] += flow[i][j] * flow7[i][j] + FA[i][j];
+	flow[idown[i]][jdown[j]] += flow[i][j] * flow8[i][j] + FA[i][j];
 }
 
 void StreamPower::InitDiffusion()
@@ -287,12 +288,12 @@ void StreamPower::HillSlopeDiffusion()
 	while (count < 5)
 	{
 		count++;
-		for (i = 0; i <= lattice_size_x-1; i++)
-			for (j = 0; j <= lattice_size_y-1; j++)
+		for (i = 0; i < lattice_size_x; i++)
+			for (j = 0; j < lattice_size_y; j++)
 				topoold[i][j] = topo[i][j];
-		for (i = 0; i <= lattice_size_x-1; i++)
+		for (i = 0; i < lattice_size_x; i++)
 		{
-			for (j = 0; j <= lattice_size_y-1; j++)
+			for (j = 0; j < lattice_size_y; j++)
 			{
 				term1 = D * ann_timestep / (deltax2);
 				if (flow[i][j] < thresholdarea)
@@ -309,13 +310,13 @@ void StreamPower::HillSlopeDiffusion()
 					cy[j] = 0;
 					ry[j] = topoold[i][j];
 				}
-				if (j == 1)
+				if (j == 0)
 				{
 					by[j] = 1;
 					cy[j] = 0;
 					ry[j] = topoold[i][j];
 				}
-				if (j == lattice_size_y)
+				if (j == lattice_size_y-1)
 				{
 					by[j] = 1;
 					ay[j] = 0;
@@ -323,15 +324,15 @@ void StreamPower::HillSlopeDiffusion()
 				}
 			}
 			Tridag(ay, by, cy, ry, uy, lattice_size_y);
-			for (j = 0; j <= lattice_size_y-1; j++)
+			for (j = 0; j < lattice_size_y; j++)
 				topo[i][j] = uy[j];
 		}
-		for (i = 0; i <= lattice_size_x-1; i++)
-			for (j = 0; j <= lattice_size_y-1; j++)
+		for (i = 0; i < lattice_size_x; i++)
+			for (j = 0; j < lattice_size_y; j++)
 				topoold[i][j] = topo[i][j];
-		for (j = 0; j <= lattice_size_y-1; j++)
+		for (j = 0; j < lattice_size_y; j++)
 		{
-			for (i = 0; i <= lattice_size_x-1; i++)
+			for (i = 0; i < lattice_size_x; i++)
 			{
 				term1 = D * timestep / ( deltax2 );
 				if (flow[i][j] < thresholdarea)
@@ -348,13 +349,13 @@ void StreamPower::HillSlopeDiffusion()
 					cx[i] = 0;
 					rx[i] = topoold[i][j];
 				}
-				if (i == 1)
+				if (i == 0)
 				{
 					bx[i] = 1;
 					cx[i] = 0;
 					rx[i] = topoold[i][j];
 				}
-				if (i == lattice_size_x)
+				if (i == lattice_size_x-1)
 				{
 					bx[i] = 1;
 					ax[i] = 0;
@@ -362,7 +363,7 @@ void StreamPower::HillSlopeDiffusion()
 				}
 			}
 			Tridag(ax, bx, cx, rx, ux, lattice_size_x);
-			for (i = 0; i <= lattice_size_x-1; i++)
+			for (i = 0; i < lattice_size_x; i++)
 				topo[i][j] = ux[i];
 		}
 	}
@@ -530,40 +531,42 @@ void StreamPower::Start()
 		while ( t < lattice_size_x * lattice_size_y )
 		{
             topo_indexx.get_ij(t, i, j);
-
 			Avalanche( i , j );
 			t++;
 		}
-		for (j = 0; j <= lattice_size_y-1; j++)
+		for (j = 0; j < lattice_size_y; j++)
 		{
-			for (i = 0; i <= lattice_size_x-1; i++)
+			for (i = 0; i < lattice_size_x; i++)
 			{
 				topoold[i][j] = topo[i][j];
 			}
 		}
 
 		// Pit filling
-		improved_priority_flood(elevation);
+		Flood();
 
 		// Setup grid index again with topo values
-		for (j = 0; j <= lattice_size_y-1; j++)
+		for (j = 0; j < lattice_size_y; j++)
 		{
-			for (i = 0; i <= lattice_size_x-1; i++)
+			for (i = 0; i < lattice_size_x; i++)
 			{
 				// Boundary elements from FA raster
-				if (i == 1 || i == lattice_size_x || j == 1 || j == lattice_size_y)
-					flow[i][j] = FA[i][j] / deltax2;
-				else flow[i][j] = 1;   // default value
+				if (i == 0 || i == (lattice_size_x-1) || j == 0 || j == (lattice_size_y-1) )
+					FA[i][j] = FA[i][j];
+				else FA[i][j] = 0;   // default value
 			}
 		}
         topo_indexx.update_array(topo);
 
-		t = lattice_size_x*lattice_size_y;
+		t = lattice_size_x * lattice_size_y;
 		while (t > 0)
 		{
 			t--;
             topo_indexx.get_ij(t, i, j);
-			MFDFlowRoute(i, j);
+			if (i > 0 && i < (lattice_size_x - 1) && j > 0 && j < (lattice_size_y - 1))  // Don't access boundary elements
+			{
+				MFDFlowRoute(i, j);
+			}
 		}
 
 		// Diffusive hillslope erosion
@@ -669,6 +672,8 @@ void StreamPower::PrintState(char* fname)
 	file << "yllcorner " << yllcorner << std::endl;
 	file << "cellsize " << deltax << std::endl;
 	file << "NODATA_value " << nodata << std::endl;
+
+	deltax2 = deltax * deltax;
 	for (int i = 0; i <= lattice_size_x-1; i++)
 	{
 		for (int j = 0; j <= lattice_size_y-1; j++)
@@ -726,9 +731,9 @@ std::vector<std::vector<float>> StreamPower::ReadArcInfoASCIIGrid(char* fname)
 	raster = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 
 	// read data
-	for (int x = 0; x <= lattice_size_x-1; x++)
+	for (int x = 0; x < lattice_size_x; x++)
 	{
-		for (int y = 0; y <= lattice_size_y-1; y++)
+		for (int y = 0; y < lattice_size_y; y++)
 		{
 			in >> raster[x][y];
 		}
