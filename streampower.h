@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _STREAMPOWER_H_
+#define _STREAMPOWER_H_
 
 #include <vector>
 #include <random>
@@ -93,7 +94,7 @@ public:
 	~StreamPower();
 
 	std::vector<std::vector<float>> CreateRandomField();
-	std::vector<std::vector<float>> ReadArcInfoASCIIGrid(char* fname);
+	std::vector<std::vector<float>> ReadArcInfoASCIIGrid(const char* fname);
 	std::vector<std::vector<float>> GetTopo();
 
 
@@ -110,9 +111,12 @@ public:
 	void SolarInflux();
 	void MeltExposedIce();
 
-	void Init(); // using new vars
+	void Init(std::string parameter_file); // using new vars
+    void LoadInputs();
 	void Start();
 	void PrintState(char* fname);
+
+    std::string topo_file, fa_file, sed_file;
 };
 
 template <typename T> std::vector<T> ArrayToVector(T* a, int size)
@@ -178,3 +182,5 @@ template <typename T> std::vector<int> SortFortranIndices(const std::vector<T>& 
 
 	return idx;
 }
+
+#endif
