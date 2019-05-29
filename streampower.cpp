@@ -136,8 +136,6 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 
 	SetupGridNeighbors();
 
-    std::cout << "DEBUG: size_z, size_y = " << lattice_size_x << ", " << lattice_size_y << std::endl;
-
 	for (int i = 0; i < lattice_size_x; i++)     // Populate model grids
 	{
 		for (int j = 0; j < lattice_size_y; j++)

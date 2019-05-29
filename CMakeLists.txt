@@ -35,6 +35,7 @@ add_library(ThawScapeLib
     priority_flood.hpp
     Array2D.hpp
 )
+target_include_directories(ThawScapeLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # add executable
 add_executable(ThawScape main.cpp)

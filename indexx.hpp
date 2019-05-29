@@ -46,8 +46,8 @@ class Indexx {
 
             // return i, j indices in original array corresponding to t'th value in ordered array
             int index = idx[t];
-            j = index / ny;
-            i = index % ny;
+            i = index / ny;
+            j = index % ny;
         }
 };
 
