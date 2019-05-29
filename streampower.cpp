@@ -65,15 +65,15 @@ void StreamPower::Tridag(std::vector<float>& a, std::vector<float>& b, std::vect
 
 	gam = std::vector<float>(n);
 	u[0] = r[0] / (bet = b[0]);
-	for (j = 1; j <= n-1; j++)
+	for (j = 1; j < n; j++)
 	{
 		gam[j] = c[j - 1] / bet;
 		bet = b[j] - a[j] * gam[j];
 		u[j] = (r[j] - a[j] * u[j - 1]) / bet;
 	}
-	for (j = (n - 1); j >= 1; j--)
+	for (j = (n-2); j > 1; j--)
 	{
-		u[j - 1] -= gam[j] * u[j];
+		u[j] -= gam[j + 1] * u[j + 1];
 	}
 }
 
@@ -119,16 +119,6 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 	ExposureAge = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	ExposureAge_old = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 
-	flow = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow1 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow2 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow3 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow4 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow5 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow6 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow7 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow8 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-
     topo_indexx = Indexx<float>(lattice_size_x, lattice_size_y);
     sed_indexx = Indexx<float>(lattice_size_x, lattice_size_y);
 
@@ -146,7 +136,6 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 			aspect[i][j] = 0;
 			solar_raster[i][j] = 0;
 			veg[i][j] = init_veg;
-			flow[i][j] = 1;
 			Sed_Track[i][j] = init_sed_track;       // 2 m of overburden to begin			
 			ExposureAge[i][j] = init_exposure_age;	// Once over 20, ice is primed for melt.
 		}
@@ -156,12 +145,30 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 
 void StreamPower::SetFA(std::vector<std::vector<float>> f)
 {
-	FA = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	for (int i = 0; i < lattice_size_x; i++)     // Populate flow accumulation grid; only boundary components are retained, zeros otherwise.
+
+	flow = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow1 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow2 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow3 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow4 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow5 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow6 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow7 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow8 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+
+	for (int i = 0; i < lattice_size_x; i++)
 	{
 		for (int j = 0; j < lattice_size_y; j++)
 		{
-			FA[i][j] = f[i][j];
+			flow[i][j] = f[i][j] / deltax2;     // Smallest value should be '1'
+			flow1[i][j] = 1;
+			flow2[i][j] = 1;
+			flow3[i][j] = 1;
+			flow4[i][j] = 1;
+			flow5[i][j] = 1;
+			flow6[i][j] = 1;
+			flow7[i][j] = 1;
+			flow8[i][j] = 1;
 		}
 	}
 }
@@ -214,39 +221,39 @@ void StreamPower::MFDFlowRoute(int i, int j)
 	if (topo[i][j] > topo[idown[i]][jdown[j]])
 		tot += pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1f);
 
-	if (topo[i][j] >= topo[iup[i]][j])
+	if (topo[i][j] > topo[iup[i]][j])
 		flow1[i][j] = pow(topo[i][j] - topo[iup[i]][j], 1.1f) / tot;
 	else flow1[i][j] = 0;
-	if (topo[i][j] >= topo[idown[i]][j])
+	if (topo[i][j] > topo[idown[i]][j])
 		flow2[i][j] = pow(topo[i][j] - topo[idown[i]][j], 1.1f) / tot;
 	else flow2[i][j] = 0;
-	if (topo[i][j] >= topo[i][jup[j]])
+	if (topo[i][j] > topo[i][jup[j]])
 		flow3[i][j] = pow(topo[i][j] - topo[i][jup[j]], 1.1f) / tot;
 	else flow3[i][j] = 0;
-	if (topo[i][j] >= topo[i][jdown[j]])
+	if (topo[i][j] > topo[i][jdown[j]])
 		flow4[i][j] = pow(topo[i][j] - topo[i][jdown[j]], 1.1f) / tot;
 	else flow4[i][j] = 0;
-	if (topo[i][j] >= topo[iup[i]][jup[j]])
+	if (topo[i][j] > topo[iup[i]][jup[j]])
 		flow5[i][j] = pow((topo[i][j] - topo[iup[i]][jup[j]])*oneoversqrt2, 1.1f) / tot;
 	else flow5[i][j] = 0;
-	if (topo[i][j] >= topo[iup[i]][jdown[j]])
+	if (topo[i][j] > topo[iup[i]][jdown[j]])
 		flow6[i][j] = pow((topo[i][j] - topo[iup[i]][jdown[j]])*oneoversqrt2, 1.1f) / tot;
 	else flow6[i][j] = 0;
-	if (topo[i][j] >= topo[idown[i]][jup[j]])
+	if (topo[i][j] > topo[idown[i]][jup[j]])
 		flow7[i][j] = pow((topo[i][j] - topo[idown[i]][jup[j]])*oneoversqrt2, 1.1f) / tot;
 	else flow7[i][j] = 0;
-	if (topo[i][j] >= topo[idown[i]][jdown[j]])
+	if (topo[i][j] > topo[idown[i]][jdown[j]])
 		flow8[i][j] = pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1f) / tot;
 	else flow8[i][j] = 0;
 
-	flow[iup[i]][j] += flow[i][j] * flow1[i][j] + FA[i][j];    // final FA(j, i) applies only to edges; zero otherwise
-	flow[idown[i]][j] += flow[i][j] * flow2[i][j] + FA[i][j];
-	flow[i][jup[j]] += flow[i][j] * flow3[i][j] + FA[i][j];
-	flow[i][jdown[j]] += flow[i][j] * flow4[i][j] + FA[i][j];
-	flow[iup[i]][jup[j]] += flow[i][j] * flow5[i][j] + FA[i][j];
-	flow[iup[i]][jdown[j]] += flow[i][j] * flow6[i][j] + FA[i][j];
-	flow[idown[i]][jup[j]] += flow[i][j] * flow7[i][j] + FA[i][j];
-	flow[idown[i]][jdown[j]] += flow[i][j] * flow8[i][j] + FA[i][j];
+	flow[iup[i]][j] += flow[i][j] * flow1[i][j];
+	flow[idown[i]][j] += flow[i][j] * flow2[i][j];
+	flow[i][jup[j]] += flow[i][j] * flow3[i][j];
+	flow[i][jdown[j]] += flow[i][j] * flow4[i][j];
+	flow[iup[i]][jup[j]] += flow[i][j] * flow5[i][j];
+	flow[iup[i]][jdown[j]] += flow[i][j] * flow6[i][j];
+	flow[idown[i]][jup[j]] += flow[i][j] * flow7[i][j];
+	flow[idown[i]][jdown[j]] += flow[i][j] * flow8[i][j];
 }
 
 void StreamPower::InitDiffusion()
@@ -281,7 +288,7 @@ void StreamPower::HillSlopeDiffusion()
 	uy = std::vector<float>(lattice_size_y);
 	rx = std::vector<float>(lattice_size_x);
 	ry = std::vector<float>(lattice_size_y);
-	//  D = 10.0;    Previous version used initiliazed value of 10M.
+
 	count = 0;
 
 	while (count < 5)
@@ -481,7 +488,7 @@ void StreamPower::Init(std::string parameter_file)
 	// Setup Key Model Variables
 
 	U = reader.GetReal("model", "U", 0.010);        // 'Uplift', m yr^-1
-	K = reader.GetReal("model", "K", 0.050);        // Stream Power
+	K = reader.GetReal("model", "K", 0.001);        // Stream Power, yr^-1
 	D = reader.GetReal("model", "D", 1.500);        // Diffusion, yr^-1
 	melt = reader.GetReal("model", "melt", 250);    // Reciprocal melt rate, for a given radiation input
 
@@ -492,7 +499,7 @@ void StreamPower::Init(std::string parameter_file)
 	yllcorner = reader.GetReal("model", "yllcorner", 0);
 
 	timestep = reader.GetReal("time", "timestep", 1);   // Time step in hours 
-	printinterval = reader.GetInteger("time", "printinterval", 96); // Output timestep, in hours
+	printinterval = reader.GetInteger("time", "printinterval", 1); // Output timestep, in hours
 	ann_timestep = timestep / 8760;    //  Used in formula based on annual rates (e.g. 2 hrs, over 8760 hrs in 365 days)
 
 	thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
@@ -522,14 +529,12 @@ void StreamPower::Init(std::string parameter_file)
     sed_file = reader.Get("input", "sed", "SedThickness.asc");
 }
 
-
 void StreamPower::LoadInputs()
 {
-	SetTopo(ReadArcInfoASCIIGrid(topo_file.c_str()));
 	SetFA(ReadArcInfoASCIIGrid(fa_file.c_str()));
+	SetTopo(ReadArcInfoASCIIGrid(topo_file.c_str()));
 	//sp.SetFA(sp.ReadArcInfoASCIIGrid(sed_file.c_str()));   // Option to set sediment thickness
 }
-
 
 void StreamPower::Start()
 {
@@ -566,16 +571,6 @@ void StreamPower::Start()
 		Flood();
 
 		// Setup grid index again with topo values
-		for (j = 0; j < lattice_size_y; j++)
-		{
-			for (i = 0; i < lattice_size_x; i++)
-			{
-				// Boundary elements from FA raster
-				if (i == 0 || i == (lattice_size_x-1) || j == 0 || j == (lattice_size_y-1) )
-					FA[i][j] = FA[i][j];
-				else FA[i][j] = 0;   // default value
-			}
-		}
         topo_indexx.update_array(topo);
 
 		t = lattice_size_x * lattice_size_y;
@@ -583,7 +578,7 @@ void StreamPower::Start()
 		{
 			t--;
             topo_indexx.get_ij(t, i, j);
-			if (i > 0 && i < (lattice_size_x - 1) && j > 0 && j < (lattice_size_y - 1))  // Don't access boundary elements
+			if ( ( i > 0 ) && ( i < (lattice_size_x - 1) ) && ( j > 0 ) && ( j < (lattice_size_y - 1) ) )  // Do not alter boundary elements
 			{
 				MFDFlowRoute(i, j);
 			}
@@ -591,7 +586,6 @@ void StreamPower::Start()
 
 		// Diffusive hillslope erosion
 		HillSlopeDiffusion();
-
 
 		// Uplift and Slope/Aspect Calcs
 		for (i = 1; i <= lattice_size_x - 2; i++)
@@ -617,7 +611,7 @@ void StreamPower::Start()
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
 			{
-				deltah = ann_timestep * K * sqrt( flow[i][j] ) * deltax * slope[i][j];                  // Fluvial erosion law
+				deltah = ann_timestep * K * sqrt( flow[i][j] ) * deltax * slope[i][j];     // Fluvial erosion law; 
 				topo[i][j] -= deltah;
 				if ( topo[i][j] < 0 ) { topo[i][j] = 0; }
 				if ( K * sqrt( flow[i][j] ) * deltax > max ) { max = K * sqrt( flow[i][j] ) * deltax; }

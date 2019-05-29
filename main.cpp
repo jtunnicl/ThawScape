@@ -9,7 +9,7 @@ int main(int argc, char** argv)
         parameter_file = std::string(argv[1]);
     }
 
-	int nx = 10;
+	int nx = 10;    // Can these be specified from the ini file?
 	int ny = 10;
 	StreamPower sp = StreamPower(nx, ny);
 	sp.Init(parameter_file);
