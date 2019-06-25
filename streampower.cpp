@@ -109,16 +109,29 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 	topoold = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	slope = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	aspect = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+
+	// Radiation Model
 	solar_raster = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	shade_raster = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	I_D = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	I_P = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	N_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	E_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	S_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	W_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	NE_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	SE_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	SW_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	NW_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 
+	// Landscape Elements
 	veg = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	veg_old = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	Sed_Track = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	ExposureAge = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	ExposureAge_old = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 
+	// Indexing
     topo_indexx = Indexx<float>(lattice_size_x, lattice_size_y);
     sed_indexx = Indexx<float>(lattice_size_x, lattice_size_y);
 
@@ -155,12 +168,13 @@ void StreamPower::SetFA(std::vector<std::vector<float>> f)
 	flow6 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	flow7 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	flow8 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	FA_Bounds = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 
 	for (int i = 0; i < lattice_size_x; i++)
 	{
 		for (int j = 0; j < lattice_size_y; j++)
 		{
-			flow[i][j] = f[i][j] / deltax2;     // Smallest value should be '1'
+			flow[i][j] = f[i][j];
 			flow1[i][j] = 1;
 			flow2[i][j] = 1;
 			flow3[i][j] = 1;
@@ -169,6 +183,10 @@ void StreamPower::SetFA(std::vector<std::vector<float>> f)
 			flow6[i][j] = 1;
 			flow7[i][j] = 1;
 			flow8[i][j] = 1;
+			if (i == 0 | j == 0 | i == (lattice_size_x - 1) | j == (lattice_size_y - 1))
+				FA_Bounds[i][j] = f[i][j];   // FA boundary values; zero otherwise
+			else
+				FA_Bounds[i][j] = 0;
 		}
 	}
 }
@@ -246,14 +264,14 @@ void StreamPower::MFDFlowRoute(int i, int j)
 		flow8[i][j] = pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1f) / tot;
 	else flow8[i][j] = 0;
 
-	flow[iup[i]][j] += flow[i][j] * flow1[i][j];
-	flow[idown[i]][j] += flow[i][j] * flow2[i][j];
-	flow[i][jup[j]] += flow[i][j] * flow3[i][j];
-	flow[i][jdown[j]] += flow[i][j] * flow4[i][j];
-	flow[iup[i]][jup[j]] += flow[i][j] * flow5[i][j];
-	flow[iup[i]][jdown[j]] += flow[i][j] * flow6[i][j];
-	flow[idown[i]][jup[j]] += flow[i][j] * flow7[i][j];
-	flow[idown[i]][jdown[j]] += flow[i][j] * flow8[i][j];
+	flow[iup[i]][j] += flow[i][j] * flow1[i][j] + FA_Bounds[i][j];     // final FA_Bounds[i][j] applies only to edges; zero otherwise
+	flow[idown[i]][j] += flow[i][j] * flow2[i][j] + FA_Bounds[i][j];
+	flow[i][jup[j]] += flow[i][j] * flow3[i][j] + FA_Bounds[i][j];
+	flow[i][jdown[j]] += flow[i][j] * flow4[i][j] + FA_Bounds[i][j];
+	flow[iup[i]][jup[j]] += flow[i][j] * flow5[i][j] + FA_Bounds[i][j];
+	flow[iup[i]][jdown[j]] += flow[i][j] * flow6[i][j] + FA_Bounds[i][j];
+	flow[idown[i]][jup[j]] += flow[i][j] * flow7[i][j] + FA_Bounds[i][j];
+	flow[idown[i]][jdown[j]] += flow[i][j] * flow8[i][j] + FA_Bounds[i][j];
 }
 
 void StreamPower::InitDiffusion()
@@ -406,14 +424,24 @@ void StreamPower::SlopeAspect(int i, int j) {
 	float dzdy = ( ( topo[idown[i]][jup[j]] + 2 * topo[i][jup[j]] + topo[iup[i]][jup[j]] ) -
 		( topo[idown[i]][jdown[j]] + 2 * topo[i][jdown[j]] + topo[iup[i]][jdown[j]] ) ) /
 		8 / deltax;
-	aspect[i][j] = atan2(dzdy, dzdx);                            // n.b. Aspect in Radians
-	                                                  // N = 0; E = -1/2 pi; S = -pi/+pi; W = +1/2 pi
-
+	aspect[i][j] = atan2(dzdy, dzdx);                             // n.b. Aspect in Radians
 	slope[i][j] = sqrt(pow(dzdx, 2) + pow(dzdy, 2));              // n.b. Slope in Radians
 }
 
 void StreamPower::SunPosition()
 {
+
+	/*  Documentation for Sun Position and Solar influx come from the following sources:
+	      ME 4131 THERMAL ENVIRONMENTAL ENGINEERING LABORATORY MANUAL, Appendix D
+	      http://www.me.umn.edu/courses/me4131/LabManual/AppDSolarRadiation.pdf
+
+		  Kumar, L., Skidmore, A. and Knowles, E. 1997. Modelling topographic variation 
+		  in solar radiation in a GIS environment. Int J. Information Science, 11(5), p.475-497
+
+		  Angus, R., Muneer, T. 1993. Sun position for daylight models: Precise algorithms for
+		  determination. Lighting Research and Technology 25(2) 81-83.
+	*/
+
 	int Year1, Day1;
 	float m, n, t1, eps, G, C, L, B, alpha, EOT, GHA, AST, LST;
 
@@ -425,7 +453,7 @@ void StreamPower::SunPosition()
 	                           // Equation of Time [hr]
 	LST = ct.hour + ( ct.minute/60 ) + ( r.stdmed - r.longitude ) / 15 + EOT - 0;     //  Last term is Daylight Saving (e.g. +1)
 	                           // Local Solar Time, correcting for distance from nearest time zone meridian
-	r.SHA = 15 * (LST - 12);   // Local Solar Hour
+	r.SHA = 15 * (LST - 12);   // Local Solar Hour  (negative before solar noon, positive after)
 
 	m = sin(r.lattitude * degrad) * sin(r.declination * degrad);
 	n = cos(r.lattitude * degrad) * cos(r.declination * degrad) * cos(r.SHA * degrad);
@@ -434,20 +462,34 @@ void StreamPower::SunPosition()
 	m = sin(r.lattitude * degrad) * cos(r.declination * degrad) * cos(r.SHA * degrad);
 	n = cos(r.lattitude * degrad) * sin(r.declination * degrad);
 	r.azimuth = acos ( (m - n) / cos(r.altitude * degrad) ) / degrad - 180;   // in degrees
-	if (LST > 12) r.azimuth = -r.azimuth;              // N = 0; E = -90; S = -180/+180; W = +90
+
+	if (r.SHA > 0) r.azimuth = -r.azimuth;              // N = 0; E = -90; S = -180/+180; W = +90
+
 }
 
 void StreamPower::SolarInflux(){
 
 // Calculate shading from surrounding terrain
-	int i, j;
-	float m1, m2;
-	float cos_theta, I_DN, I_dH;
+	int i, j, m;
+	float m1, m2, m3, m4, m5, M, asp360, d80;
+	float cos_theta, cos_i, I_o, I_r, tau_b, I_DN, I_dH;
+	std::vector<float> cos_i80, asp_4;
+
 	// Solar position, in radians
 	float azm = r.azimuth * degrad;            //  Anything in the 'r' object uses degrees; converted here to radians
 	float alt = r.altitude * degrad;           //  Invert cos<>sin to obtain zenith angle. 0 is sun at zenith (flat terrain faces up); 90 sun is at the horizon (vertical terrain)
 	float lat = r.lattitude * degrad;
+	float dec = r.declination * degrad;
+	float sha = r.SHA * degrad;
 	float gamma;
+
+	cos_i80 = std::vector<float>(8);
+	d80 = (80 * degrad);
+	asp_4 = { 0, 90, 180, 270, 45, 135, 225, 315 };
+
+	I_o = 1367 * (1 + 0.0344 * cos(360 * ct.day / 365 * degrad));
+	M = sqrt(1229. + pow((614. * sin(alt)), 2.)) - 614 * sin(alt);               // Air mass ratio  (Keith and Kreider 1978)
+	tau_b = 0.56 * (exp(-0.65 * M) + exp(-0.095 * M));                               // Atmospheric transmittance for beam radiation
 
 // Solar: Direct and Diffuse
 	for (i = 2; i <= lattice_size_x - 1; i++)
@@ -456,22 +498,74 @@ void StreamPower::SolarInflux(){
 		{			
 			shade_raster[i][j] = ((sin(alt) * cos(slope[i][j])) + (cos(alt) * sin(slope[i][j]) * cos(azm - aspect[i][j])));
 			if (shade_raster[i][j] < 0) shade_raster[i][j] = 0;
-			else shade_raster[i][j] = 1;                                 //  Temporary, binary on/off for shading effect. This can be improved!
 
-			gamma = azm - aspect[i][j];
-			m1 = cos(alt) * cos(gamma) * sin(slope[i][j]);
-			m2 = sin(alt) * cos(slope[i][j]);
-			cos_theta = m1 + m2;
-			I_DN = 1085 * exp(-0.207 / sin(slope[i][j]));        // Direct solar flux striking the horizontal
-			I_dH = 0.134 * I_DN;                                 // Diffuse solar flux, based on the ASHRAE Clear Day model
-			I_D[i][j] = I_DN * cos_theta * shade_raster[i][j] + I_dH;   // Solar flux moderated by terrain slope and shading effect. Still missing reflected component
+			asp360 = aspect[i][j];                 // Change aspect coordinates for flux estimates:
+			if ( asp360 < PI) asp360 += PI / 2;    // N = 0; E = 1/2 pi; S = pi; W = 1.5 pi
+			if (asp360 < 0) asp360 += 2 * PI;
+
+			// Solar radiation striking a tilted surface
+			m1 = sin(lat) * cos(slope[i][j]);
+			m2 = cos(lat) * sin(slope[i][j]) * cos( asp360 );
+			m3 = cos(lat) * cos(slope[i][j]);
+			m4 = sin(lat) * cos(slope[i][j]) * cos( asp360 );
+			m5 = cos(dec) * sin(slope[i][j]) * sin( sha );
+			// Incident angle of incoming beam radiation
+
+			cos_i = sin(dec) * (m1 - m2) + cos(dec) * cos(sha) * (m3 + m4) + m5;
+
+			I_P[i][j] = (I_o * tau_b) * cos_i;
+			if (I_P[i][j] < 0) I_P[i][j] = 0;
+			if (shade_raster[i][j] < 0) I_P[i][j] = 0;
+			I_D[i][j] = I_o * ( 0.271 - 0.294 * tau_b ) * pow ( cos(slope[i][j] / 2 ),  2 ) * sin(alt);  // Diffuse insolation
+			I_r = 0.2 * I_o * ( 0.271 + 0.706 * tau_b ) * pow ( sin(slope[i][j] / 2 ),  2 ) * sin(alt);  // Reflected insolation
+			I_P[i][j] += I_D[i][j] + I_r;
+
+			//  Maps of incident radiation on near-vertical (>80 deg) slopes in each cardinal direction
+			//  8 Ip values and 'cos_i's; one for each direction
+
+			m1 = sin(lat) * cos(d80);
+			m3 = cos(lat) * cos(d80);
+			m5 = cos(dec) * sin(d80) * sin(sha);
+
+			for (m = 0; 8; m++)
+			{
+				m2 = cos(lat) * sin(d80) * cos(asp_4[m] * degrad);
+				m4 = sin(lat) * cos(d80) * cos(asp_4[m] * degrad);
+				cos_i80[m] = sin(dec) * (m1 - m2) + cos(dec) * cos(sha) * (m3 + m4) + m5;
+			}
+
+			N_Ip[i][j] = (I_o * tau_b) * cos_i80[0] * shade_raster[i][j];
+			E_Ip[i][j] = (I_o * tau_b) * cos_i80[1] * shade_raster[i][j];
+			S_Ip[i][j] = (I_o * tau_b) * cos_i80[2] * shade_raster[i][j];
+			W_Ip[i][j] = (I_o * tau_b) * cos_i80[3] * shade_raster[i][j];
+			NE_Ip[i][j] = (I_o * tau_b) * cos_i80[4] * shade_raster[i][j];
+			SE_Ip[i][j] = (I_o * tau_b) * cos_i80[5] * shade_raster[i][j];
+			SW_Ip[i][j] = (I_o * tau_b) * cos_i80[6] * shade_raster[i][j];
+			NW_Ip[i][j] = (I_o * tau_b) * cos_i80[7] * shade_raster[i][j];
 		}
 	}
 }
 
-void StreamPower::MeltExposedIce() {
+void StreamPower::MeltExposedIce(int i, int j) {
+
+	float IceTop;
+
 	// Do not melt or change boundary pixels; maybe 3 deep from edge.
 	// Maps of elevation drop in each of 8 directions
+
+	// Deal with melt-out first
+
+	IceTop = topo[i][j] - Sed_Track[i][j];      // Sediment-Ice interface at i,j
+
+	// Planar faces
+	if (topo[iup[i]][j] < IceTop) {
+		
+	
+	}
+
+	// Radiation Input and resultant melt
+
+	// I_D[i][j]
 
 
 }
@@ -504,15 +598,16 @@ void StreamPower::Init(std::string parameter_file)
 
 	thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
 	thresh_diag = thresh * sqrt2;
-	thresholdarea = reader.GetReal("model", "thresholdarea", 0.1);  // Threshold for diffusion domain - to prevent diffusion in channels, etc.
+	thresholdarea = reader.GetReal("model", "thresholdarea", 1e35);  // Threshold for diffusion domain - to prevent diffusion in channels, etc. (m2)
 
 	init_exposure_age = reader.GetReal("model", "init_exposure_age", 0);    // Variables used to initiate exposure time, sed depth and veg age rasters
 	init_sed_track = reader.GetReal("model", "init_sed_track", 2);
 	init_veg = reader.GetReal("model", "init_veg", 8);
 
 	ct.year = reader.GetInteger("time", "year", 2010);
-	ct.day = reader.GetInteger("time", "day", 78);  // 144;              // May 25th is the start of melt/rain season
+	ct.day = reader.GetInteger("time", "day", 145);  // 144;              // May 25th is the start of melt/rain season
 	ct.hour = reader.GetInteger("time", "hour", 12);    // 24-hr clock
+	ct.minute = reader.GetInteger("time", "hour", 0);   // 0 in most cases
 	ct.end_year = reader.GetInteger("time", "end_year", 2015);  // Model execution ends on the first day of this year
 	duration = ct.end_year - ct.year;   // Model execution time, in years, keeping in mind melt season is 138 days
 
@@ -544,6 +639,7 @@ void StreamPower::Start()
 	sprintf(fname, "erosion_%d.txt", 0);
 	PrintState(fname);
 	int tstep = 0;    // Counter for printing results to file
+	std::cout << "U: " << U << "; K: " << K << "; D: " << D << std::endl;
 
 	while ( ct.year < ct.end_year )
 	{
@@ -573,16 +669,15 @@ void StreamPower::Start()
 		// Setup grid index again with topo values
         topo_indexx.update_array(topo);
 
+
 		t = lattice_size_x * lattice_size_y;
 		while (t > 0)
 		{
 			t--;
             topo_indexx.get_ij(t, i, j);
-			if ( ( i > 0 ) && ( i < (lattice_size_x - 1) ) && ( j > 0 ) && ( j < (lattice_size_y - 1) ) )  // Do not alter boundary elements
-			{
-				MFDFlowRoute(i, j);
-			}
+            if ( ( i > 3 ) && ( i < (lattice_size_x - 3) ) && ( j > 3 ) && ( j < (lattice_size_y - 3) ) )  MFDFlowRoute(i, j);// Do not alter boundary elements
 		}
+
 
 		// Diffusive hillslope erosion
 		HillSlopeDiffusion();
@@ -603,18 +698,28 @@ void StreamPower::Start()
 		SolarInflux();
 
 		// Carry out melt on exposed pixels
-		// -- Yet to be coded --
+		t = lattice_size_x * lattice_size_y;
+		while (t > 0)
+		{
+			t--;
+			topo_indexx.get_ij(t, i, j);
+			if ((i > 0) && (i < (lattice_size_x - 1)) && (j > 0) && (j < (lattice_size_y - 1)))  // Do not alter boundary elements
+			{
+				MeltExposedIce(i, j);
+			}
+		}
 
 		//Channel erosion
 		max = 0;
 		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
-			{
-				deltah = ann_timestep * K * sqrt( flow[i][j] ) * deltax * slope[i][j];     // Fluvial erosion law; 
+			{				deltah = ann_timestep * K * sqrt( flow[i][j]/1e6 ) * deltax * slope[i][j];     // Fluvial erosion law; 
 				topo[i][j] -= deltah;
+				//std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow[i][j] / 1e6 << ", slope: " << slope[i][j] << std::endl;
+
 				if ( topo[i][j] < 0 ) { topo[i][j] = 0; }
-				if ( K * sqrt( flow[i][j] ) * deltax > max ) { max = K * sqrt( flow[i][j] ) * deltax; }
+				if ( K * sqrt( flow[i][j]/1e6 ) * deltax > max ) { max = K * sqrt( flow[i][j]/1e6 ) * deltax; }
 			}
 		}
 
@@ -666,7 +771,7 @@ void StreamPower::Start()
 		tstep += timestep;
 		if (tstep >= printinterval) {
 			char fname[100];
-			sprintf(fname, "erosion_%i_%i_%i.asc", ct.year, ct.day, ct.hour);
+			sprintf(fname, "erosion_%i_%i_%.3f.asc", ct.day, ct.hour, r.altitude );
 			PrintState(fname);
 			tstep = 0;
 		}
