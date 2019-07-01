@@ -628,6 +628,9 @@ void StreamPower::Init(std::string parameter_file)
     topo_file = reader.Get("input", "topo", "topo.asc");
     fa_file = reader.Get("input", "FA", "FA.asc");
     sed_file = reader.Get("input", "sed", "SedThickness.asc");
+
+    // should we fix the random number seed (for testing)
+    fix_random_seed = reader.GetBoolean("random", "fix_seed", false);
 }
 
 void StreamPower::LoadInputs()
@@ -814,6 +817,10 @@ std::vector<std::vector<float>> StreamPower::CreateRandomField()
 {
 	std::vector<std::vector<float>> mat = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	std::default_random_engine generator;
+    if (fix_random_seed) {
+        Util::Warning("Fixing random seed - this should only be used for testing/debugging!");
+        generator.seed(12345);
+    }
 	std::normal_distribution<float> distribution(0.0f, 1.0f);
 	for (int i = 0; i <= lattice_size_x-1; i++)
 	{
@@ -832,7 +839,7 @@ std::vector<std::vector<float>> StreamPower::ReadArcInfoASCIIGrid(const char* fn
 	std::string line;
 
 	if (in.fail()) 
-	    Util::Warning("Well that didn't work ..!  Missing or invalid file");
+	    Util::Error("Well that didn't work ..!  Missing or invalid file: " + std::string(fname), 1);
 	else 
 		Util::Warning("Reading raster without any checks or guarantees ...");
 

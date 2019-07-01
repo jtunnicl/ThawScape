@@ -41,7 +41,7 @@ int time_fcn::get_end_day() {
 }
 
 bool time_fcn::keep_going() {
-    return (year < end_year && day < end_day);
+    return (year <= end_year && day < end_day);
 }
 
 void time_fcn::increment(int timestep) {

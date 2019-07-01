@@ -70,6 +70,7 @@ public:
 	static std::vector<std::vector<float>> Matrix(int nrl, int nrh, int ncl, int nch);			
 	static std::vector<std::vector<int>> IMatrix(int nrl, int nrh, int ncl, int nch);	
 
+    bool fix_random_seed;
 	static float Ran3(std::default_random_engine& generator, std::uniform_real_distribution<float>& distribution);
 	static float Gasdev(std::default_random_engine& generator, std::normal_distribution<float>& distribution);
 
