@@ -527,7 +527,7 @@ void StreamPower::SolarInflux(){
 			m3 = cos(lat) * cos(d80);
 			m5 = cos(dec) * sin(d80) * sin(sha);
 
-			for (m = 0; 8; m++)
+			for (m = 0; m < 8; m++)
 			{
 				m2 = cos(lat) * sin(d80) * cos(asp_4[m] * degrad);
 				m4 = sin(lat) * cos(d80) * cos(asp_4[m] * degrad);
