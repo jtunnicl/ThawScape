@@ -25,10 +25,11 @@ TEST_CASE("StreamPower Init", "[streampower]") {
     REQUIRE(sp.init_veg == Approx(2));
     REQUIRE(sp.timestep == Approx(4));
     REQUIRE(sp.printinterval == 98);
-    REQUIRE(sp.ct.year == 2012);
-    REQUIRE(sp.ct.day == 74);
-    REQUIRE(sp.ct.hour == 11);
-    REQUIRE(sp.ct.end_year == 2014);
+    REQUIRE(sp.ct.get_year() == 2012);
+    REQUIRE(sp.ct.get_day() == 74);
+    REQUIRE(sp.ct.get_hour() == 11);
+    REQUIRE(sp.ct.get_end_year() == 2014);
+    REQUIRE(sp.ct.get_end_day() == 1);
     REQUIRE(sp.r.lattitude == Approx(1));
     REQUIRE(sp.r.longitude == Approx(3.5));
     REQUIRE(sp.r.stdmed == Approx(135));

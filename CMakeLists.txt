@@ -28,6 +28,8 @@ endif()
 add_library(ThawScapeLib
     indexx.hpp
     data_structures.h
+    time_fcn.h
+    time_fcn.cpp
     streampower.h
     streampower.cpp
     utility.h

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include "Array2D.hpp"
 #include "indexx.hpp"
+#include "time_fcn.h"
 
 #define NR_END 1
 #define FREE_ARG char*
@@ -27,18 +28,6 @@
 #define HALFPI = PI/2
 #define fillincrement 0.01f
 
-
-class time_fcn {
-public:
-	int year;
-	int day;           // Everything works on 365 Julian Day system for now
-	int hour;          // 24 hr clock
-	int minute;
-	int LocalTime;     // Decimal Hour
-	int UT;
-
-	int end_year;      // Model end year
-};
 
 class solar_geom {
 public:

@@ -11,6 +11,7 @@
 #include "priority_flood.hpp"
 #include "indexx.hpp"
 #include "inih/INIReader.h"
+#include "time_fcn.h"
 
 
 /* allocate a float vector with subscript range v[nl..nh] */
@@ -444,14 +445,17 @@ void StreamPower::SunPosition()
 
 	int Year1, Day1;
 	float m, n, t1, eps, G, C, L, B, alpha, EOT, GHA, AST, LST;
+    int day = ct.get_day();
+    int hour = ct.get_hour();
+    int minute = ct.get_minute();
 
 	// Solar declination: angle of suns rays relative to equator. Max pos at summer equinox = +23.5
-	r.declination = 23.45 * sin( 360. / 365. * (284. + ct.day) * degrad);
+	r.declination = 23.45 * sin( 360. / 365. * (284. + day) * degrad);
 
-	B = ( 360. / 364. ) * ( ct.day - 81. ) * degrad;              // result in radians
+	B = ( 360. / 364. ) * ( day - 81. ) * degrad;              // result in radians
 	EOT = 0.165 * sin(2. * B ) - 0.126 * cos( B ) - 0.025 * sin( B ); 
 	                           // Equation of Time [hr]
-	LST = ct.hour + ( ct.minute/60 ) + ( r.stdmed - r.longitude ) / 15 + EOT - 0;     //  Last term is Daylight Saving (e.g. +1)
+	LST = hour + ( minute/60 ) + ( r.stdmed - r.longitude ) / 15 + EOT - 0;     //  Last term is Daylight Saving (e.g. +1)
 	                           // Local Solar Time, correcting for distance from nearest time zone meridian
 	r.SHA = 15 * (LST - 12);   // Local Solar Hour  (negative before solar noon, positive after)
 
@@ -487,7 +491,7 @@ void StreamPower::SolarInflux(){
 	d80 = (80 * degrad);
 	asp_4 = { 0, 90, 180, 270, 45, 135, 225, 315 };
 
-	I_o = 1367 * (1 + 0.0344 * cos(360 * ct.day / 365 * degrad));
+	I_o = 1367 * (1 + 0.0344 * cos(360 * ct.get_day() / 365 * degrad));
 	M = sqrt(1229. + pow((614. * sin(alt)), 2.)) - 614 * sin(alt);               // Air mass ratio  (Keith and Kreider 1978)
 	tau_b = 0.56 * (exp(-0.65 * M) + exp(-0.095 * M));                               // Atmospheric transmittance for beam radiation
 
@@ -604,12 +608,14 @@ void StreamPower::Init(std::string parameter_file)
 	init_sed_track = reader.GetReal("model", "init_sed_track", 2);
 	init_veg = reader.GetReal("model", "init_veg", 8);
 
-	ct.year = reader.GetInteger("time", "year", 2010);
-	ct.day = reader.GetInteger("time", "day", 145);  // 144;              // May 25th is the start of melt/rain season
-	ct.hour = reader.GetInteger("time", "hour", 12);    // 24-hr clock
-	ct.minute = reader.GetInteger("time", "hour", 0);   // 0 in most cases
-	ct.end_year = reader.GetInteger("time", "end_year", 2015);  // Model execution ends on the first day of this year
-	duration = ct.end_year - ct.year;   // Model execution time, in years, keeping in mind melt season is 138 days
+	int year = reader.GetInteger("time", "year", 2010);
+	int day = reader.GetInteger("time", "day", 145);  // 144;              // May 25th is the start of melt/rain season
+	int hour = reader.GetInteger("time", "hour", 12);    // 24-hr clock
+	int minute = reader.GetInteger("time", "hour", 0);   // 0 in most cases
+	int end_year = reader.GetInteger("time", "end_year", 2015);  // Model execution ends on the first day of this year
+    int end_day = reader.GetInteger("time", "end_day", 1);
+    ct = time_fcn(year, day, hour, minute, end_year, end_day);
+	duration = end_year - year;   // Model execution time, in years, keeping in mind melt season is 138 days
 
 	r.lattitude = reader.GetReal("solar_geom", "lattitude", 0); // 67.3;
 	r.longitude = reader.GetReal("solar_geom", "longitude", 0); // 134.9;         // Dempster Coordinates
@@ -641,7 +647,7 @@ void StreamPower::Start()
 	int tstep = 0;    // Counter for printing results to file
 	std::cout << "U: " << U << "; K: " << K << "; D: " << D << std::endl;
 
-	while ( ct.year < ct.end_year )
+	while ( ct.keep_going() )
 	{
 		// Setup grid index with ranked topo values
         topo_indexx.update_array(topo);
@@ -724,15 +730,7 @@ void StreamPower::Start()
 		}
 
 		// Update current time
-		if ( (ct.hour + timestep) <= 24) { ct.hour = ct.hour + timestep; }
-		else {                 // Clicking over 24 hours - day change, possible year change
-			if ( ct.day + 1 > 282 ) {                          // Goes to Oct 10th, freezeup and minimum change after that
-				 ct.year += 1;
-				 ct.day = 144;                                 // Reset to May 25th
-			}
-			else { ct.day += 1; }
-			ct.hour = ( ct.hour + timestep ) - 24;
-		}
+        ct.increment(timestep);
 
 /*         // Rate adjustment, based on deltax
 		if (max > 0.3*deltax / timestep)
@@ -765,13 +763,13 @@ void StreamPower::Start()
 		}
 		*/
 
-		std::cout << "Year: " << ct.year << "; Day: " << ct.day << "; Hour: " << ct.hour << std::endl;
+        ct.print();
 
 		// Write to file at intervals
 		tstep += timestep;
 		if (tstep >= printinterval) {
 			char fname[100];
-			sprintf(fname, "erosion_%i_%i_%.3f.asc", ct.day, ct.hour, r.altitude );
+			sprintf(fname, "erosion_%i_%i_%.3f.asc", ct.get_day(), ct.get_hour(), r.altitude );
 			PrintState(fname);
 			tstep = 0;
 		}
