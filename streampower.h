@@ -69,7 +69,7 @@ public:
     Indexx<float> topo_indexx, sed_indexx;
 	std::vector<std::vector<float>> topo, topoold, topo2, slope, aspect, flow, flow1, flow2, flow3, 
 		flow4, flow5, flow6, flow7, flow8, FA, FA_Bounds, veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
-	std::vector<std::vector<float>> solar_raster, shade_raster, I_D, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
+	std::vector<std::vector<float>> solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
 	std::vector<std::vector<std::vector<float>>> Ip_D8;     // Map of incoming solar flux, 8 directions
 	Array2D<float> elevation;
 

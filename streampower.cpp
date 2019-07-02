@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 #include <ctime>
 #include <string>
@@ -25,6 +26,11 @@ std::vector<int> StreamPower::IVector(int nl, int nh)
 {
 	int size = nh - nl + 1 + NR_END;
 	return std::vector<int>(size);
+}
+
+int getMinInt(std::vector<float>& v)
+{
+	return *min_element(v.begin(), v.end());
 }
 
 std::vector<std::vector<int>> StreamPower::IMatrix(int nrl, int nrh, int ncl, int nch)
@@ -114,6 +120,7 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 	solar_raster = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	shade_raster = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	I_D = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	I_R = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	I_P = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	N_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
 	E_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
@@ -396,10 +403,25 @@ void StreamPower::HillSlopeDiffusion()
 void StreamPower::Avalanche(int i, int j)
 {
 
+	// Code in Init subroutine:
+	//	thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
+	//  thresh_diag = thresh * sqrt2;
 	// NEED TO ASSESS WHETHER PIXEL HAS SEDIMENT, BEFORE FAILURE CALCS?
 
-	if (topo[iup[i]][j] - topo[i][j] > thresh)
-		topo[iup[i]][j] = topo[i][j] + thresh;
+	float clifftop = 0;
+
+	if (topo[iup[i]][j] - topo[i][j] > thresh) {
+		clifftop = topo[iup[i]][j];    // Height of overhanging pixel
+		topo[iup[i]][j] = std::max((topo[i][j] + thresh), (topo[iup[i]][j] - Sed_Track[iup[i]][j]));
+	}
+		//Sed_Track[iup[i]][j]
+
+		//Sed_Track[iup[i]][j] = 
+
+
+
+
+
 	if (topo[idown[i]][j] - topo[i][j] > thresh)
 		topo[idown[i]][j] = topo[i][j] + thresh;
 	if (topo[i][jup[j]] - topo[i][j] > thresh)
@@ -472,7 +494,7 @@ void StreamPower::SolarInflux(){
 // Calculate shading from surrounding terrain
 	int i, j, m;
 	float m1, m2, m3, m4, m5, M, asp360, d80;
-	float cos_theta, cos_i, I_o, I_r, tau_b, I_DN, I_dH;
+	float cos_theta, cos_i, I_o, tau_b, I_DN, I_dH;
 	std::vector<float> cos_i80, asp_4;
 
 	// Solar position, in radians
@@ -517,8 +539,9 @@ void StreamPower::SolarInflux(){
 			if (I_P[i][j] < 0) I_P[i][j] = 0;
 			if (shade_raster[i][j] < 0) I_P[i][j] = 0;
 			I_D[i][j] = I_o * ( 0.271 - 0.294 * tau_b ) * pow ( cos(slope[i][j] / 2 ),  2 ) * sin(alt);  // Diffuse insolation
-			I_r = 0.2 * I_o * ( 0.271 + 0.706 * tau_b ) * pow ( sin(slope[i][j] / 2 ),  2 ) * sin(alt);  // Reflected insolation
-			I_P[i][j] += I_D[i][j] + I_r;
+			I_R[i][j] = 0.2 * I_o * ( 0.271 + 0.706 * tau_b ) * pow ( sin(slope[i][j] / 2 ),  2 ) * sin(alt);  // Reflected insolation
+			if (I_R[i][j] < 0) I_R[i][j] = 0;
+			I_P[i][j] += I_D[i][j];
 
 			//  Maps of incident radiation on near-vertical (>80 deg) slopes in each cardinal direction
 			//  8 Ip values and 'cos_i's; one for each direction
@@ -527,7 +550,7 @@ void StreamPower::SolarInflux(){
 			m3 = cos(lat) * cos(d80);
 			m5 = cos(dec) * sin(d80) * sin(sha);
 
-			for (m = 0; 8; m++)
+			for (m = 0; m < 8; m++)
 			{
 				m2 = cos(lat) * sin(d80) * cos(asp_4[m] * degrad);
 				m4 = sin(lat) * cos(d80) * cos(asp_4[m] * degrad);
@@ -542,32 +565,97 @@ void StreamPower::SolarInflux(){
 			SE_Ip[i][j] = (I_o * tau_b) * cos_i80[5] * shade_raster[i][j];
 			SW_Ip[i][j] = (I_o * tau_b) * cos_i80[6] * shade_raster[i][j];
 			NW_Ip[i][j] = (I_o * tau_b) * cos_i80[7] * shade_raster[i][j];
+
 		}
 	}
 }
 
 void StreamPower::MeltExposedIce(int i, int j) {
 
-	float IceTop;
+	float N, E, S, W, NE, SE, SW, NW;
+	float incoming = 0;
+	float elev_drop = 0;       // Decrease in elevation at central pixel, following ice melt
+	float accommodation = 0;   // Volume available to fill below central pixel, in the immediate neighbourhood
+	float lowestpixel;         // Elevation of the lowest pixel in the 9-element neighbourhood.
+	int m = 0;
 
-	// Do not melt or change boundary pixels; maybe 3 deep from edge.
-	// Maps of elevation drop in each of 8 directions
+	std::vector<float> neighb{ topo[idown[i]][jup[j]], topo[i][jup[j]], topo[iup[i]][jup[j]],    // Elevations within 9-element neighbourhood NW-N-NE-W-ctr-E-SW-S-SE
+		topo[idown[i]][j], topo[i][j], topo[iup[i]][j],
+		topo[idown[i]][jdown[j]], topo[i][jdown[j]], topo[iup[i]][jdown[j]] };
 
-	// Deal with melt-out first
+	lowestpixel = getMinInt(neighb);
 
-	IceTop = topo[i][j] - Sed_Track[i][j];      // Sediment-Ice interface at i,j
+	if (topo[i][j] > lowestpixel)      // If any neighbouring pixels are higher than central pixel, then proceed with melt/avalanche algorithm
+	{
+		// Extent (m2) of exposed faces in each of 8 directions
+		N = std::max((topo[i][j] - Sed_Track[i][j] - topo[i][jup[j]]), 0.0f) * deltax * 0.8;  // If ice is exposed, positive value, otherwise zero
+		E = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][j]), 0.0f) * deltax * 0.8;
+		S = std::max((topo[i][j] - Sed_Track[i][j] - topo[i][jdown[j]]), 0.0f) * deltax * 0.8;
+		W = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][j]), 0.0f) * deltax * 0.8;
+		NE = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jup[j]]), 0.0f) * deltax * 0.2;  //  Faces have 0.8 of deltax resolution; corners have 0.2
+		SE = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jdown[j]]), 0.0f) * deltax * 0.2;
+		SW = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jdown[j]]), 0.0f) * deltax * 0.2;
+		NW = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jup[j]]), 0.0f) * deltax * 0.2;
 
-	// Planar faces
-	if (topo[iup[i]][j] < IceTop) {
-		
-	
+		// Radiative flux (m2 * W·m-2 = W) to ice for each face and corner of the pixel block
+
+		if (N > 0) {
+			incoming = N * I_P[i][j] * N_Ip[i][j];         //  Area exposed (m2) * direct+diffuse (W·m-2) * vertical faces (W·m-2)
+			if ((aspect[i][jup[j]] < -7 * (PI / 8)) || (aspect[i][jup[j]] > 7 * (PI / 8)))
+				incoming += N * I_R[i][jup[j]];
+		}           //  Add reflected radiation component (I_R), if applicable (e.g. pixel to the North is sloping Southward)
+		if (E > 0) {
+			incoming += E * I_P[i][j] * E_Ip[i][j];
+			if ((aspect[iup[i]][j] < 7 * (PI / 8)) && (aspect[iup[i]][j] > 3 * (PI / 8)))
+				incoming += E * I_R[iup[i]][j];
+		}
+		if (S > 0) {
+			incoming += S * I_P[i][j] * S_Ip[i][j];
+			if ((aspect[i][jdown[j]] < (PI / 8)) && (aspect[i][jdown[j]] > -1 * (PI / 8)))
+				incoming += S * I_R[i][jdown[j]];
+		}
+		if (W > 0) {
+			incoming += W * I_P[i][j] * E_Ip[i][j];
+			if ((aspect[idown[i]][j] < -5 * (PI / 8)) && (aspect[idown[i]][j] > -3 * (PI / 8)))
+				incoming += W * I_R[idown[i]][j];
+		}
+		if (NE > 0) {
+			incoming += NE * I_P[i][j] * NE_Ip[i][j];
+			if ((aspect[iup[i]][jup[j]] < 7 * (PI / 8)) && (aspect[iup[i]][jup[j]] > 5 * (PI / 8)))
+				incoming += NE * I_R[iup[i]][jup[j]];
+		}
+		if (SE > 0) {
+			incoming += SE * I_P[i][j] * SE_Ip[i][j];
+			if ((aspect[iup[i]][jdown[j]] < 3 * (PI / 8)) && (aspect[iup[i]][jdown[j]] > 1 * (PI / 8)))
+				incoming += SE * I_R[iup[i]][jdown[j]];
+		}
+		if (SW > 0) {
+			incoming += SW * I_P[i][j] * SW_Ip[i][j];
+			if ((aspect[idown[i]][jdown[j]] < -1 * (PI / 8)) && (aspect[idown[i]][jdown[j]] > -3 * (PI / 8)))
+				incoming += SW * I_R[idown[i]][jdown[j]];
+		}
+		if (NW > 0) {
+			incoming += NW * I_P[i][j] * NW_Ip[i][j];
+			if ((aspect[idown[i]][jup[j]] < -5 * (PI / 8)) && (aspect[idown[i]][jup[j]] > -7 * (PI / 8)))
+				incoming += NW * I_R[idown[i]][jup[j]];
+		}
+
+		// Ice mass lost, based on ablation at each face
+		// incoming watts / meltrate / pixel area
+
+		for (m = 0; m < 8; m++) {
+			if (topo[i][j] - neighb[m] > 0) accommodation += deltax2 * (topo[i][j] - neighb[m]);   // sum up all the volume available on pixels below the central pixel
+		}
+
+		elev_drop = incoming / melt / deltax2;
+		if (elev_drop * deltax < accommodation)           // i.e. There is room to accommodate the failed mass in neighbouring cells
+			topo[i][j] -= elev_drop;
+		else
+			topo[i][j] = lowestpixel;
+
+
+		// Water lost in melt flows downstream (add to 'flow' raster)
 	}
-
-	// Radiation Input and resultant melt
-
-	// I_D[i][j]
-
-
 }
 
 void StreamPower::Init(std::string parameter_file)
