@@ -105,32 +105,32 @@ void StreamPower::SetupGridNeighbors()
 
 void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 {
-	topo = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	topo2 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	topoold = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	slope = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	aspect = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	topo = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	topo2 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	topoold = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	slope = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	aspect = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
 
 	// Radiation Model
-	solar_raster = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	shade_raster = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	I_D = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	I_P = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	N_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	E_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	S_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	W_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	NE_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	SE_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	SW_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	NW_Ip = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	solar_raster = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	shade_raster = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	I_D = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	I_P = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	N_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	E_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	S_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	W_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	NE_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	SE_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	SW_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	NW_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
 
 	// Landscape Elements
-	veg = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	veg_old = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	Sed_Track = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	ExposureAge = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	ExposureAge_old = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	veg = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	veg_old = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	Sed_Track = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	ExposureAge = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	ExposureAge_old = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
 
 	// Indexing
     topo_indexx = Indexx<float>(lattice_size_x, lattice_size_y);
@@ -160,16 +160,16 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 void StreamPower::SetFA(std::vector<std::vector<float>> f)
 {
 
-	flow = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow1 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow2 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow3 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow4 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow5 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow6 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow7 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	flow8 = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
-	FA_Bounds = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	flow = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	flow1 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	flow2 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	flow3 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	flow4 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	flow5 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	flow6 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	flow7 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	flow8 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	FA_Bounds = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
 
 	for (int i = 0; i < lattice_size_x; i++)
 	{
@@ -815,7 +815,7 @@ void StreamPower::PrintState(char* fname)
 
 std::vector<std::vector<float>> StreamPower::CreateRandomField()
 {
-	std::vector<std::vector<float>> mat = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	std::vector<std::vector<float>> mat = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
 	std::default_random_engine generator;
     if (fix_random_seed) {
         Util::Warning("Fixing random seed - this should only be used for testing/debugging!");
@@ -852,7 +852,7 @@ std::vector<std::vector<float>> StreamPower::ReadArcInfoASCIIGrid(const char* fn
 	in >> key; in >> deltax;
 	in >> key; in >> nodata;
 
-	raster = std::vector<std::vector<float>>(lattice_size_y, std::vector<float>(lattice_size_x));
+	raster = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
 
 	// read data
 	for (int x = 0; x < lattice_size_x; x++)
