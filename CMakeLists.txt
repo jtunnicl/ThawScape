@@ -26,6 +26,7 @@ endif()
 
 # add the library
 add_library(ThawScapeLib
+    timer.hpp
     indexx.hpp
     data_structures.h
     time_fcn.h

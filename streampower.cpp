@@ -5,6 +5,8 @@
 #include <fstream>
 #include <ctime>
 #include <string>
+#include <map>
+#include <chrono>
 
 #include "streampower.h"
 #include "utility.h"
@@ -12,6 +14,7 @@
 #include "indexx.hpp"
 #include "inih/INIReader.h"
 #include "time_fcn.h"
+#include "timer.hpp"
 
 
 /* allocate a float vector with subscript range v[nl..nh] */
@@ -650,14 +653,28 @@ void StreamPower::Start()
 	int tstep = 0;    // Counter for printing results to file
 	std::cout << "U: " << U << "; K: " << K << "; D: " << D << std::endl;
 
+    // set up some timers
+    AccumulateTimer<std::chrono::milliseconds> total_time;
+    std::vector<std::string> timer_names {"Avalanche", "Flood", "Indexx", "MFDFlowRoute",
+        "HillSlopeDiffusion", "UpliftAndSlopeAspect", "SolarCharacteristics", "Melt",
+        "ChannelErosion"};
+    std::map<std::string, AccumulateTimer<std::chrono::milliseconds> > timers;
+    for (auto timer_name : timer_names) {
+        timers[timer_name] = AccumulateTimer<std::chrono::milliseconds>();
+    }
+
+    total_time.start();
 	while ( ct.keep_going() )
 	{
 		// Setup grid index with ranked topo values
+        timers["Indexx"].start();
         topo_indexx.update_array(topo);
         sed_indexx.update_array(Sed_Track);
+        timers["Indexx"].stop();
 
 		t = 0;	
 		// Landsliding, proceeding from high elev to low
+        timers["Avalanche"].start();
 		while ( t < lattice_size_x * lattice_size_y )
 		{
             topo_indexx.get_ij(t, i, j);
@@ -671,14 +688,20 @@ void StreamPower::Start()
 				topoold[i][j] = topo[i][j];
 			}
 		}
+        timers["Avalanche"].stop();
 
 		// Pit filling
+        timers["Flood"].start();
 		Flood();
+        timers["Flood"].stop();
 
 		// Setup grid index again with topo values
+        timers["Indexx"].start();
         topo_indexx.update_array(topo);
+        timers["Indexx"].stop();
 
 
+        timers["MFDFlowRoute"].start();
 		t = lattice_size_x * lattice_size_y;
 		while (t > 0)
 		{
@@ -686,12 +709,16 @@ void StreamPower::Start()
             topo_indexx.get_ij(t, i, j);
             if ( ( i > 3 ) && ( i < (lattice_size_x - 3) ) && ( j > 3 ) && ( j < (lattice_size_y - 3) ) )  MFDFlowRoute(i, j);// Do not alter boundary elements
 		}
+        timers["MFDFlowRoute"].stop();
 
 
 		// Diffusive hillslope erosion
+        timers["HillSlopeDiffusion"].start();
 		HillSlopeDiffusion();
+        timers["HillSlopeDiffusion"].stop();
 
 		// Uplift and Slope/Aspect Calcs
+        timers["UpliftAndSlopeAspect"].start();
 		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
@@ -701,12 +728,16 @@ void StreamPower::Start()
                 SlopeAspect(i, j);
 			}
 		}
+        timers["UpliftAndSlopeAspect"].stop();
 
 		// Update solar characteristics
+        timers["SolarCharacteristics"].start();
 		SunPosition();
 		SolarInflux();
+        timers["SolarCharacteristics"].stop();
 
 		// Carry out melt on exposed pixels
+        timers["Melt"].start();
 		t = lattice_size_x * lattice_size_y;
 		while (t > 0)
 		{
@@ -717,8 +748,10 @@ void StreamPower::Start()
 				MeltExposedIce(i, j);
 			}
 		}
+        timers["Melt"].stop();
 
 		//Channel erosion
+        timers["ChannelErosion"].start();
 		max = 0;
 		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
@@ -731,6 +764,7 @@ void StreamPower::Start()
 				if ( K * sqrt( flow[i][j]/1e6 ) * deltax > max ) { max = K * sqrt( flow[i][j]/1e6 ) * deltax; }
 			}
 		}
+        timers["ChannelErosion"].stop();
 
 		// Update current time
         ct.increment(timestep);
@@ -777,7 +811,19 @@ void StreamPower::Start()
 			tstep = 0;
 		}
 	}
+    total_time.stop();
 
+    // summarise timings (TODO: make this optional?)
+    std::cout << std::endl << "Post run diagnostics..." << std::endl;
+    double total_time_secs = total_time.get_total_time() / 1000.0;
+    std::cout << "  Total time (excluding input): " << total_time_secs << " s" << std::endl;
+    std::cout << "  Component timings:" << std::endl;
+    for (auto item : timers) {
+        double item_time_secs = item.second.get_total_time() / 1000.0;
+        std::cout << "    " << item.first << ": " << item_time_secs << " s";
+        std::cout << " (" << item_time_secs / total_time_secs * 100 << " %)" << std::endl;
+    }
+    std::cout << std::endl;
 }
 
 void StreamPower::PrintState(char* fname)
