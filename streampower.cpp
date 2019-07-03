@@ -648,7 +648,7 @@ void StreamPower::Start()
 	float deltah, max;
 	int idum, i, j, t, step;
 	char fname[100];
-	sprintf(fname, "erosion_%d.txt", 0);
+	sprintf(fname, "erosion_%d.asc", 0);
 	PrintState(fname);
 	int tstep = 0;    // Counter for printing results to file
 	std::cout << "U: " << U << "; K: " << K << "; D: " << D << std::endl;

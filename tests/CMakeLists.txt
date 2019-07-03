@@ -20,6 +20,7 @@ add_test(
     COMMAND ${CMAKE_COMMAND}
         -DTEST_RUN_DIR=${CMAKE_CURRENT_BINARY_DIR}/ThawScapeFullRun
         -DTEST_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DTEST_REF_DIR=${CMAKE_CURRENT_SOURCE_DIR}/full-run-ref
         -DTEST_BINARY=$<TARGET_FILE:ThawScape>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/run_test.cmake
 )
