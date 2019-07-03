@@ -187,7 +187,7 @@ void StreamPower::SetFA(std::vector<std::vector<float>> f)
 			flow6[i][j] = 1;
 			flow7[i][j] = 1;
 			flow8[i][j] = 1;
-			if (i == 0 | j == 0 | i == (lattice_size_x - 1) | j == (lattice_size_y - 1))
+			if (i == 0 || j == 0 || i == (lattice_size_x - 1) || j == (lattice_size_y - 1))
 				FA_Bounds[i][j] = f[i][j];   // FA boundary values; zero otherwise
 			else
 				FA_Bounds[i][j] = 0;

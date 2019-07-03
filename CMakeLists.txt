@@ -13,6 +13,16 @@ if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
 endif()
 
+# enable compiler warnings
+message("COMPILER ID IS: ${CMAKE_CXX_COMPILER_ID}")
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
+        ${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang" OR
+        ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic")
+elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+endif()
+
 # option to gather profiling data
 option(ENABLE_PROFILING "Enable gprof profiling" OFF)
 if (ENABLE_PROFILING)
