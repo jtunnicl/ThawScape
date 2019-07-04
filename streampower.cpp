@@ -171,14 +171,6 @@ void StreamPower::SetFA(std::vector<std::vector<float>> f)
 {
 
 	flow = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	flow1 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	flow2 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	flow3 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	flow4 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	flow5 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	flow6 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	flow7 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	flow8 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
 	FA_Bounds = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
 
 	for (int i = 0; i < lattice_size_x; i++)
@@ -186,14 +178,6 @@ void StreamPower::SetFA(std::vector<std::vector<float>> f)
 		for (int j = 0; j < lattice_size_y; j++)
 		{
 			flow[i][j] = f[i][j];
-			flow1[i][j] = 1;
-			flow2[i][j] = 1;
-			flow3[i][j] = 1;
-			flow4[i][j] = 1;
-			flow5[i][j] = 1;
-			flow6[i][j] = 1;
-			flow7[i][j] = 1;
-			flow8[i][j] = 1;
 			if (i == 0 || j == 0 || i == (lattice_size_x - 1) || j == (lattice_size_y - 1))
 				FA_Bounds[i][j] = f[i][j];   // FA boundary values; zero otherwise
 			else
@@ -230,59 +214,69 @@ void StreamPower::Flood()
 void StreamPower::MFDFlowRoute(int i, int j)
 {
 	float tot;
+    float flow1 = 0;
+    float flow2 = 0;
+    float flow3 = 0;
+    float flow4 = 0;
+    float flow5 = 0;
+    float flow6 = 0;
+    float flow7 = 0;
+    float flow8 = 0;
 
 	// Note that deltax is not used in this computation, so the flow raster represents simply the number of contributing unit cells upstream.
 	tot = 0;
-	if (topo[i][j] > topo[iup[i]][j])
-		tot += pow(topo[i][j] - topo[iup[i]][j], 1.1f);
-	if (topo[i][j] > topo[idown[i]][j])
-		tot += pow(topo[i][j] - topo[idown[i]][j], 1.1f);
-	if (topo[i][j] > topo[i][jup[j]])
-		tot += pow(topo[i][j] - topo[i][jup[j]], 1.1f);
-	if (topo[i][j] > topo[i][jdown[j]])
-		tot += pow(topo[i][j] - topo[i][jdown[j]], 1.1f);
-	if (topo[i][j] > topo[iup[i]][jup[j]])
-		tot += pow((topo[i][j] - topo[iup[i]][jup[j]])*oneoversqrt2, 1.1f);
-	if (topo[i][j] > topo[iup[i]][jdown[j]])
-		tot += pow((topo[i][j] - topo[iup[i]][jdown[j]])*oneoversqrt2, 1.1f);
-	if (topo[i][j] > topo[idown[i]][jup[j]])
-		tot += pow((topo[i][j] - topo[idown[i]][jup[j]])*oneoversqrt2, 1.1f);
-	if (topo[i][j] > topo[idown[i]][jdown[j]])
-		tot += pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1f);
+	if (topo[i][j] > topo[iup[i]][j]) {
+		flow1 = pow(topo[i][j] - topo[iup[i]][j], 1.1f);
+        tot += flow1;
+    }
+	if (topo[i][j] > topo[idown[i]][j]) {
+		flow2 = pow(topo[i][j] - topo[idown[i]][j], 1.1f);
+        tot += flow2;
+    }
+	if (topo[i][j] > topo[i][jup[j]]) {
+		flow3 = pow(topo[i][j] - topo[i][jup[j]], 1.1f);
+        tot += flow3;
+    }
+	if (topo[i][j] > topo[i][jdown[j]]) {
+		flow4 = pow(topo[i][j] - topo[i][jdown[j]], 1.1f);
+        tot += flow4;
+    }
+	if (topo[i][j] > topo[iup[i]][jup[j]]) {
+		flow5 = pow((topo[i][j] - topo[iup[i]][jup[j]])*oneoversqrt2, 1.1f);
+        tot += flow5;
+    }
+	if (topo[i][j] > topo[iup[i]][jdown[j]]) {
+		flow6 = pow((topo[i][j] - topo[iup[i]][jdown[j]])*oneoversqrt2, 1.1f);
+        tot += flow6;
+    }
+	if (topo[i][j] > topo[idown[i]][jup[j]]) {
+		flow7 = pow((topo[i][j] - topo[idown[i]][jup[j]])*oneoversqrt2, 1.1f);
+        tot += flow7;
+    }
+	if (topo[i][j] > topo[idown[i]][jdown[j]]) {
+		flow8 = pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1f);
+        tot += flow8;
+    }
 
-	if (topo[i][j] > topo[iup[i]][j])
-		flow1[i][j] = pow(topo[i][j] - topo[iup[i]][j], 1.1f) / tot;
-	else flow1[i][j] = 0;
-	if (topo[i][j] > topo[idown[i]][j])
-		flow2[i][j] = pow(topo[i][j] - topo[idown[i]][j], 1.1f) / tot;
-	else flow2[i][j] = 0;
-	if (topo[i][j] > topo[i][jup[j]])
-		flow3[i][j] = pow(topo[i][j] - topo[i][jup[j]], 1.1f) / tot;
-	else flow3[i][j] = 0;
-	if (topo[i][j] > topo[i][jdown[j]])
-		flow4[i][j] = pow(topo[i][j] - topo[i][jdown[j]], 1.1f) / tot;
-	else flow4[i][j] = 0;
-	if (topo[i][j] > topo[iup[i]][jup[j]])
-		flow5[i][j] = pow((topo[i][j] - topo[iup[i]][jup[j]])*oneoversqrt2, 1.1f) / tot;
-	else flow5[i][j] = 0;
-	if (topo[i][j] > topo[iup[i]][jdown[j]])
-		flow6[i][j] = pow((topo[i][j] - topo[iup[i]][jdown[j]])*oneoversqrt2, 1.1f) / tot;
-	else flow6[i][j] = 0;
-	if (topo[i][j] > topo[idown[i]][jup[j]])
-		flow7[i][j] = pow((topo[i][j] - topo[idown[i]][jup[j]])*oneoversqrt2, 1.1f) / tot;
-	else flow7[i][j] = 0;
-	if (topo[i][j] > topo[idown[i]][jdown[j]])
-		flow8[i][j] = pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1f) / tot;
-	else flow8[i][j] = 0;
+    if (tot != 0) {
+        flow1 /= tot;
+        flow2 /= tot;
+        flow3 /= tot;
+        flow4 /= tot;
+        flow5 /= tot;
+        flow6 /= tot;
+        flow7 /= tot;
+        flow8 /= tot;
+    }
 
-	flow[iup[i]][j] += flow[i][j] * flow1[i][j] + FA_Bounds[i][j];     // final FA_Bounds[i][j] applies only to edges; zero otherwise
-	flow[idown[i]][j] += flow[i][j] * flow2[i][j] + FA_Bounds[i][j];
-	flow[i][jup[j]] += flow[i][j] * flow3[i][j] + FA_Bounds[i][j];
-	flow[i][jdown[j]] += flow[i][j] * flow4[i][j] + FA_Bounds[i][j];
-	flow[iup[i]][jup[j]] += flow[i][j] * flow5[i][j] + FA_Bounds[i][j];
-	flow[iup[i]][jdown[j]] += flow[i][j] * flow6[i][j] + FA_Bounds[i][j];
-	flow[idown[i]][jup[j]] += flow[i][j] * flow7[i][j] + FA_Bounds[i][j];
-	flow[idown[i]][jdown[j]] += flow[i][j] * flow8[i][j] + FA_Bounds[i][j];
+	flow[iup[i]][j] += flow[i][j] * flow1 + FA_Bounds[i][j];     // final FA_Bounds[i][j] applies only to edges; zero otherwise
+	flow[idown[i]][j] += flow[i][j] * flow2 + FA_Bounds[i][j];
+	flow[i][jup[j]] += flow[i][j] * flow3 + FA_Bounds[i][j];
+	flow[i][jdown[j]] += flow[i][j] * flow4 + FA_Bounds[i][j];
+	flow[iup[i]][jup[j]] += flow[i][j] * flow5 + FA_Bounds[i][j];
+	flow[iup[i]][jdown[j]] += flow[i][j] * flow6 + FA_Bounds[i][j];
+	flow[idown[i]][jup[j]] += flow[i][j] * flow7 + FA_Bounds[i][j];
+	flow[idown[i]][jdown[j]] += flow[i][j] * flow8 + FA_Bounds[i][j];
 }
 
 void StreamPower::InitDiffusion()
