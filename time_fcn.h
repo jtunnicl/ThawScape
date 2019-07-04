@@ -1,6 +1,9 @@
 #ifndef _TIME_FCN_H_
 #define _TIME_FCN_H_
 
+#define FIRST_DAY 144  // May 25th
+#define LAST_DAY 282   // Oct 10th, freezeup and minimum change after that
+
 class time_fcn {
 public:
     time_fcn(int year = 0, int day = 0, int hour = 0, int minute = 0, int end_year = 0, int end_day = 0);

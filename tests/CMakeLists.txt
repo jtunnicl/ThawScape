@@ -6,6 +6,7 @@ set(TEST_SRC
     tests.cpp
     test_indexx.cpp
     test_streampower.cpp
+    test_time_fcn.cpp
 )
 add_executable(ThawScapeTests ${TEST_SRC})
 target_link_libraries(ThawScapeTests ThawScapeLib)

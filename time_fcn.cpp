@@ -1,8 +1,6 @@
 #include <iostream>
+#include "utility.h"
 #include "time_fcn.h"
-
-#define FIRST_DAY 144  // May 25th
-#define LAST_DAY 282   // Oct 10th, freezeup and minimum change after that
 
 
 time_fcn::time_fcn(int year_, int day_, int hour_, int minute_, int end_year_, int end_day_) {
@@ -41,10 +39,14 @@ int time_fcn::get_end_day() {
 }
 
 bool time_fcn::keep_going() {
-    return (year <= end_year && day < end_day);
+    return (year < end_year || (year == end_year && day < end_day));
 }
 
 void time_fcn::increment(int timestep) {
+    if (timestep >= 24) {
+        Util::Error("Timestep must be less than 24", 1);
+    }
+
     if ( (hour + timestep) <= 24) {
         hour = hour + timestep;
     }
