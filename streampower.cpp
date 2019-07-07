@@ -8,7 +8,9 @@
 #include <string>
 #include <map>
 #include <chrono>
+#include <iomanip>
 
+#include "global_defs.h"
 #include "streampower.h"
 #include "utility.h"
 #include "priority_flood.hpp"
@@ -18,11 +20,11 @@
 #include "timer.hpp"
 
 
-/* allocate a float vector with subscript range v[nl..nh] */
-std::vector<float> StreamPower::Vector(int nl, int nh)
+/* allocate a calcs_t vector with subscript range v[nl..nh] */
+std::vector<calcs_t> StreamPower::Vector(int nl, int nh)
 {
 	int size = nh - nl + 1 + NR_END;
-	return std::vector<float>(size);
+	return std::vector<calcs_t>(size);
 }
 
 /* allocate an integer vector with subscript range v[nl..nh] */
@@ -32,7 +34,7 @@ std::vector<int> StreamPower::IVector(int nl, int nh)
 	return std::vector<int>(size);
 }
 
-int getMinInt(std::vector<float>& v)
+calcs_t getMinInt(std::vector<calcs_t>& v)
 {
 	return *min_element(v.begin(), v.end());
 }
@@ -44,19 +46,19 @@ std::vector<std::vector<int>> StreamPower::IMatrix(int nrl, int nrh, int ncl, in
 	return std::vector<std::vector<int>>(rsize, std::vector<int>(csize));
 }
 
-std::vector<std::vector<float>> StreamPower::Matrix(int nrl, int nrh, int ncl, int nch)
+std::vector<std::vector<calcs_t>> StreamPower::Matrix(int nrl, int nrh, int ncl, int nch)
 {
 	int rsize = nrh - nrl + 1 + NR_END;
 	int csize = nch - ncl + 1 + NR_END;
-	return std::vector<std::vector<float>>(rsize, std::vector<float>(csize));
+	return std::vector<std::vector<calcs_t>>(rsize, std::vector<calcs_t>(csize));
 }
 
-float StreamPower::Ran3(std::default_random_engine& generator, std::uniform_real_distribution<float>& distribution)
+calcs_t StreamPower::Ran3(std::default_random_engine& generator, std::uniform_real_distribution<calcs_t>& distribution)
 {
 	return distribution(generator);
 }
 
-float StreamPower::Gasdev(std::default_random_engine& generator, std::normal_distribution<float>& distribution)
+calcs_t StreamPower::Gasdev(std::default_random_engine& generator, std::normal_distribution<calcs_t>& distribution)
 {
 	/*
 		Assuming this is the same code from here: http://www.stat.berkeley.edu/~paciorek/diss/code/regression.binomial/gasdev.C
@@ -67,13 +69,13 @@ float StreamPower::Gasdev(std::default_random_engine& generator, std::normal_dis
 
 }
 
-void StreamPower::Tridag(std::vector<float>& a, std::vector<float>& b, std::vector<float>& c, std::vector<float>& r, std::vector<float>& u, int n)
+void StreamPower::Tridag(std::vector<calcs_t>& a, std::vector<calcs_t>& b, std::vector<calcs_t>& c, std::vector<calcs_t>& r, std::vector<calcs_t>& u, int n)
 {
 	unsigned long j;
-	float bet;
-	std::vector<float> gam;
+	calcs_t bet;
+	std::vector<calcs_t> gam;
 
-	gam = std::vector<float>(n);
+	gam = std::vector<calcs_t>(n);
 	u[0] = r[0] / (bet = b[0]);
 	for (j = 1; j < n; j++)
 	{
@@ -112,41 +114,44 @@ void StreamPower::SetupGridNeighbors()
 	jup[lattice_size_y - 1] = lattice_size_y - 1;
 }
 
-void StreamPower::SetTopo(std::vector<std::vector<float>> t)
+void StreamPower::SetTopo(std::vector<std::vector<calcs_t>> t)
 {
-	topo = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	topo2 = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	topoold = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	slope = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	aspect = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	topo = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	topo2 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	topoold = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	slope = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	aspect = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 
 	// Radiation Model
-	solar_raster = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	shade_raster = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	I_D = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	I_R = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	I_P = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	N_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	E_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	S_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	W_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	NE_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	SE_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	SW_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	NW_Ip = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	solar_raster = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	shade_raster = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	I_D = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	I_R = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	I_P = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	N_Ip = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	E_Ip = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	S_Ip = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	W_Ip = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	NE_Ip = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	SE_Ip = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	SW_Ip = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	NW_Ip = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 
 	// Landscape Elements
-	veg = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	veg_old = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	Sed_Track = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	ExposureAge = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	ExposureAge_old = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	veg = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	veg_old = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	Sed_Track = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	ExposureAge = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	ExposureAge_old = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 
 	// Indexing
-    topo_indexx = Indexx<float>(lattice_size_x, lattice_size_y);
-    sed_indexx = Indexx<float>(lattice_size_x, lattice_size_y);
+    topo_indexx = Indexx<calcs_t>(lattice_size_x, lattice_size_y);
+    sed_indexx = Indexx<calcs_t>(lattice_size_x, lattice_size_y);
+    
+    // debugging
+	debug_raster = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 
-	elevation = Array2D<float>(lattice_size_x, lattice_size_y, -9999.0f);
+	elevation = Array2D<calcs_t>(lattice_size_x, lattice_size_y, -9999.0f);
 
 	SetupGridNeighbors();
 
@@ -167,11 +172,11 @@ void StreamPower::SetTopo(std::vector<std::vector<float>> t)
 	InitDiffusion();
 }
 
-void StreamPower::SetFA(std::vector<std::vector<float>> f)
+void StreamPower::SetFA(std::vector<std::vector<calcs_t>> f)
 {
 
-	flow = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
-	FA_Bounds = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	flow = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	FA_Bounds = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 
 	for (int i = 0; i < lattice_size_x; i++)
 	{
@@ -213,15 +218,15 @@ void StreamPower::Flood()
 
 void StreamPower::MFDFlowRoute(int i, int j)
 {
-	float tot;
-    float flow1 = 0;
-    float flow2 = 0;
-    float flow3 = 0;
-    float flow4 = 0;
-    float flow5 = 0;
-    float flow6 = 0;
-    float flow7 = 0;
-    float flow8 = 0;
+	calcs_t tot;
+    calcs_t flow1 = 0;
+    calcs_t flow2 = 0;
+    calcs_t flow3 = 0;
+    calcs_t flow4 = 0;
+    calcs_t flow5 = 0;
+    calcs_t flow6 = 0;
+    calcs_t flow7 = 0;
+    calcs_t flow8 = 0;
 
 	// Note that deltax is not used in this computation, so the flow raster represents simply the number of contributing unit cells upstream.
 	tot = 0;
@@ -299,18 +304,18 @@ void StreamPower::InitDiffusion()
 void StreamPower::HillSlopeDiffusion()
 {
 	int i, j, count;
-	float term1;
+	calcs_t term1;
 
-	ax = std::vector<float>(lattice_size_x);
-	ay = std::vector<float>(lattice_size_y);
-	bx = std::vector<float>(lattice_size_x);
-	by = std::vector<float>(lattice_size_y);
-	cx = std::vector<float>(lattice_size_x);
-	cy = std::vector<float>(lattice_size_y);
-	ux = std::vector<float>(lattice_size_x);
-	uy = std::vector<float>(lattice_size_y);
-	rx = std::vector<float>(lattice_size_x);
-	ry = std::vector<float>(lattice_size_y);
+	ax = std::vector<calcs_t>(lattice_size_x);
+	ay = std::vector<calcs_t>(lattice_size_y);
+	bx = std::vector<calcs_t>(lattice_size_x);
+	by = std::vector<calcs_t>(lattice_size_y);
+	cx = std::vector<calcs_t>(lattice_size_x);
+	cy = std::vector<calcs_t>(lattice_size_y);
+	ux = std::vector<calcs_t>(lattice_size_x);
+	uy = std::vector<calcs_t>(lattice_size_y);
+	rx = std::vector<calcs_t>(lattice_size_x);
+	ry = std::vector<calcs_t>(lattice_size_y);
 
 	count = 0;
 
@@ -406,7 +411,7 @@ void StreamPower::Avalanche(int i, int j)
 	//  thresh_diag = thresh * sqrt2;
 	// NEED TO ASSESS WHETHER PIXEL HAS SEDIMENT, BEFORE FAILURE CALCS?
 
-	float clifftop = 0;
+	calcs_t clifftop = 0;
 
 	if (topo[iup[i]][j] - topo[i][j] > thresh) {
 		clifftop = topo[iup[i]][j];    // Height of overhanging pixel
@@ -438,10 +443,10 @@ void StreamPower::Avalanche(int i, int j)
 
 void StreamPower::SlopeAspect(int i, int j) {
 
-	float dzdx = ( ( topo[iup[i]][jdown[j]] + 2 * topo[iup[i]][j] + topo[iup[i]][jup[j]] ) -
+	calcs_t dzdx = ( ( topo[iup[i]][jdown[j]] + 2 * topo[iup[i]][j] + topo[iup[i]][jup[j]] ) -
 		( topo[idown[i]][jdown[j]] + 2 * topo[idown[i]][j] + topo[idown[i]][jup[j]] ) ) /
 		8 / deltax;
-	float dzdy = ( ( topo[idown[i]][jup[j]] + 2 * topo[i][jup[j]] + topo[iup[i]][jup[j]] ) -
+	calcs_t dzdy = ( ( topo[idown[i]][jup[j]] + 2 * topo[i][jup[j]] + topo[iup[i]][jup[j]] ) -
 		( topo[idown[i]][jdown[j]] + 2 * topo[i][jdown[j]] + topo[iup[i]][jdown[j]] ) ) /
 		8 / deltax;
 	aspect[i][j] = atan2(dzdy, dzdx);                             // n.b. Aspect in Radians
@@ -463,7 +468,7 @@ void StreamPower::SunPosition()
 	*/
 
 	int Year1, Day1;
-	float m, n, t1, eps, G, C, L, B, alpha, EOT, GHA, AST, LST;
+	calcs_t m, n, t1, eps, G, C, L, B, alpha, EOT, GHA, AST, LST;
     int day = ct.get_day();
     int hour = ct.get_hour();
     int minute = ct.get_minute();
@@ -494,19 +499,19 @@ void StreamPower::SolarInflux(){
 
 // Calculate shading from surrounding terrain
 	int i, j, m;
-	float m1, m2, m3, m4, m5, M, asp360, d80;
-	float cos_theta, cos_i, I_o, tau_b, I_DN, I_dH;
-	std::vector<float> cos_i80, asp_4;
+	calcs_t m1, m2, m3, m4, m5, M, asp360, d80;
+	calcs_t cos_theta, cos_i, I_o, tau_b, I_DN, I_dH;
+	std::vector<calcs_t> cos_i80, asp_4;
 
 	// Solar position, in radians
-	float azm = r.azimuth * degrad;            //  Anything in the 'r' object uses degrees; converted here to radians
-	float alt = r.altitude * degrad;           //  Invert cos<>sin to obtain zenith angle. 0 is sun at zenith (flat terrain faces up); 90 sun is at the horizon (vertical terrain)
-	float lat = r.lattitude * degrad;
-	float dec = r.declination * degrad;
-	float sha = r.SHA * degrad;
-	float gamma;
+	calcs_t azm = r.azimuth * degrad;            //  Anything in the 'r' object uses degrees; converted here to radians
+	calcs_t alt = r.altitude * degrad;           //  Invert cos<>sin to obtain zenith angle. 0 is sun at zenith (flat terrain faces up); 90 sun is at the horizon (vertical terrain)
+	calcs_t lat = r.lattitude * degrad;
+	calcs_t dec = r.declination * degrad;
+	calcs_t sha = r.SHA * degrad;
+	calcs_t gamma;
 
-	cos_i80 = std::vector<float>(8);
+	cos_i80 = std::vector<calcs_t>(8);
 	d80 = (80 * degrad);
 	asp_4 = { 0, 90, 180, 270, 45, 135, 225, 315 };
 
@@ -573,30 +578,40 @@ void StreamPower::SolarInflux(){
 
 void StreamPower::MeltExposedIce(int i, int j) {
 
-	float N, E, S, W, NE, SE, SW, NW;
-	float incoming = 0;
-	float elev_drop = 0;       // Decrease in elevation at central pixel, following ice melt
-	float accommodation = 0;   // Volume available to fill below central pixel, in the immediate neighbourhood
-	float lowestpixel;         // Elevation of the lowest pixel in the 9-element neighbourhood.
+	calcs_t N, E, S, W, NE, SE, SW, NW;
+	calcs_t incoming = 0;
+	calcs_t elev_drop = 0;       // Decrease in elevation at central pixel, following ice melt
+	calcs_t accommodation = 0;   // Volume available to fill below central pixel, in the immediate neighbourhood
+	calcs_t lowestpixel;         // Elevation of the lowest pixel in the 9-element neighbourhood.
 	int m = 0;
 
-	std::vector<float> neighb{ topo[idown[i]][jup[j]], topo[i][jup[j]], topo[iup[i]][jup[j]],    // Elevations within 9-element neighbourhood NW-N-NE-W-ctr-E-SW-S-SE
+	std::vector<calcs_t> neighb{ topo[idown[i]][jup[j]], topo[i][jup[j]], topo[iup[i]][jup[j]],    // Elevations within 9-element neighbourhood NW-N-NE-W-ctr-E-SW-S-SE
 		topo[idown[i]][j], topo[i][j], topo[iup[i]][j],
 		topo[idown[i]][jdown[j]], topo[i][jdown[j]], topo[iup[i]][jdown[j]] };
 
 	lowestpixel = getMinInt(neighb);
 
+    if (i == 42 && j == 442) {
+        std::cerr << ">>> i == 42 && j == 442: lowest pixel = " << lowestpixel << std::endl;
+        std::cerr << "iup[i] = " << iup[i] << std::endl;
+        for (const auto nb : neighb) {
+            std::cerr << nb << " ";
+        }
+        std::cerr << std::endl;
+    }
+    debug_raster[i][j] = lowestpixel;
+
 	if (topo[i][j] > lowestpixel)      // If any neighbouring pixels are higher than central pixel, then proceed with melt/avalanche algorithm
 	{
 		// Extent (m2) of exposed faces in each of 8 directions
-		N = std::max((topo[i][j] - Sed_Track[i][j] - topo[i][jup[j]]), 0.0f) * deltax * 0.8;  // If ice is exposed, positive value, otherwise zero
-		E = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][j]), 0.0f) * deltax * 0.8;
-		S = std::max((topo[i][j] - Sed_Track[i][j] - topo[i][jdown[j]]), 0.0f) * deltax * 0.8;
-		W = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][j]), 0.0f) * deltax * 0.8;
-		NE = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jup[j]]), 0.0f) * deltax * 0.2;  //  Faces have 0.8 of deltax resolution; corners have 0.2
-		SE = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jdown[j]]), 0.0f) * deltax * 0.2;
-		SW = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jdown[j]]), 0.0f) * deltax * 0.2;
-		NW = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jup[j]]), 0.0f) * deltax * 0.2;
+		N = std::max((topo[i][j] - Sed_Track[i][j] - topo[i][jup[j]]), 0.0) * deltax * 0.8;  // If ice is exposed, positive value, otherwise zero
+		E = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][j]), 0.0) * deltax * 0.8;
+		S = std::max((topo[i][j] - Sed_Track[i][j] - topo[i][jdown[j]]), 0.0) * deltax * 0.8;
+		W = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][j]), 0.0) * deltax * 0.8;
+		NE = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jup[j]]), 0.0) * deltax * 0.2;  //  Faces have 0.8 of deltax resolution; corners have 0.2
+		SE = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jdown[j]]), 0.0) * deltax * 0.2;
+		SW = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jdown[j]]), 0.0) * deltax * 0.2;
+		NW = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jup[j]]), 0.0) * deltax * 0.2;
 
 		// Radiative flux (m2 * W·m-2 = W) to ice for each face and corner of the pixel block
 
@@ -727,7 +742,7 @@ void StreamPower::LoadInputs()
 
 void StreamPower::Start()
 {
-	float deltah, max;
+	calcs_t deltah, max;
 	int idum, i, j, t, step;
 	char fname[100];
 	sprintf(fname, "erosion_%d.asc", 0);
@@ -908,11 +923,16 @@ void StreamPower::Start()
     std::cout << std::endl;
 }
 
-void StreamPower::PrintState(char* fname)
+void StreamPower::PrintState(const char* fname) {
+    PrintState(fname, topo);    
+}
+
+void StreamPower::PrintState(const char* fname, std::vector<std::vector<calcs_t> > &state)
 {
 	std::ofstream file, file2;
 
 	file.open(fname);
+    file << std::fixed << std::setprecision(12);
 	// write arcgrid format
 	file << "ncols " << lattice_size_y << std::endl;
 	file << "nrows " << lattice_size_x << std::endl;
@@ -926,7 +946,7 @@ void StreamPower::PrintState(char* fname)
 	{
 		for (int j = 0; j <= lattice_size_y-1; j++)
 		{
-			file << topo[i][j] << " ";
+			file << state[i][j] << " ";
 		}
 		file << std::endl;
 	}
@@ -941,15 +961,15 @@ void StreamPower::PrintState(char* fname)
 
 }
 
-std::vector<std::vector<float>> StreamPower::CreateRandomField()
+std::vector<std::vector<calcs_t>> StreamPower::CreateRandomField()
 {
-	std::vector<std::vector<float>> mat = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	std::vector<std::vector<calcs_t>> mat = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 	std::default_random_engine generator;
     if (fix_random_seed) {
         Util::Warning("Fixing random seed - this should only be used for testing/debugging!");
         generator.seed(12345);
     }
-	std::normal_distribution<float> distribution(0.0f, 1.0f);
+	std::normal_distribution<calcs_t> distribution(0.0f, 1.0f);
 	for (int i = 0; i <= lattice_size_x-1; i++)
 	{
 		for (int j = 0; j <= lattice_size_y-1; j++)
@@ -960,10 +980,10 @@ std::vector<std::vector<float>> StreamPower::CreateRandomField()
 	return mat;
 }
 
-std::vector<std::vector<float>> StreamPower::ReadArcInfoASCIIGrid(const char* fname)
+std::vector<std::vector<calcs_t>> StreamPower::ReadArcInfoASCIIGrid(const char* fname)
 {
 	std::ifstream in(fname);
-	std::vector<std::vector<float>> raster;
+	std::vector<std::vector<calcs_t>> raster;
 	std::string line;
 
 	if (in.fail()) 
@@ -980,7 +1000,7 @@ std::vector<std::vector<float>> StreamPower::ReadArcInfoASCIIGrid(const char* fn
 	in >> key; in >> deltax;
 	in >> key; in >> nodata;
 
-	raster = std::vector<std::vector<float>>(lattice_size_x, std::vector<float>(lattice_size_y));
+	raster = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 
 	// read data
 	for (int x = 0; x < lattice_size_x; x++)
@@ -1003,7 +1023,7 @@ StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny
 
 StreamPower::~StreamPower() {}
 
-std::vector<std::vector<float>> StreamPower::GetTopo()
+std::vector<std::vector<calcs_t>> StreamPower::GetTopo()
 {
 	return topo;
 }
