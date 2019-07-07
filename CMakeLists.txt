@@ -35,6 +35,7 @@ endif()
 
 # add the library
 add_library(ThawScapeLib
+    global_defs.h
     timer.hpp
     indexx.hpp
     data_structures.h
