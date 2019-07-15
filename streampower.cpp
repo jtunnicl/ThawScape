@@ -597,16 +597,6 @@ void StreamPower::MeltExposedIce(int i, int j) {
 
 	lowestpixel = getMinInt(neighb);
 
-    if (i == 42 && j == 442) {
-        std::cerr << ">>> i == 42 && j == 442: lowest pixel = " << lowestpixel << std::endl;
-        std::cerr << "iup[i] = " << iup[i] << std::endl;
-        for (const auto nb : neighb) {
-            std::cerr << nb << " ";
-        }
-        std::cerr << std::endl;
-    }
-    debug_raster[i][j] = lowestpixel;
-
 	if (topo[i][j] > lowestpixel)      // If any neighbouring pixels are higher than central pixel, then proceed with melt/avalanche algorithm
 	{
 		// Extent (m2) of exposed faces in each of 8 directions
