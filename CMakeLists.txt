@@ -13,6 +13,12 @@ if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
 endif()
 
+# option to use double precision (default is single)
+option(DOUBLE_PRECISION "Use double precision" OFF)
+if (DOUBLE_PRECISION)
+    add_definitions(-DDOUBLE_PRECISION)
+endif()
+
 # enable compiler warnings
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
         ${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang" OR

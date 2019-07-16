@@ -600,14 +600,14 @@ void StreamPower::MeltExposedIce(int i, int j) {
 	if (topo[i][j] > lowestpixel)      // If any neighbouring pixels are higher than central pixel, then proceed with melt/avalanche algorithm
 	{
 		// Extent (m2) of exposed faces in each of 8 directions
-		N = std::max((topo[i][j] - Sed_Track[i][j] - topo[i][jup[j]]), 0.0) * deltax * 0.8;  // If ice is exposed, positive value, otherwise zero
-		E = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][j]), 0.0) * deltax * 0.8;
-		S = std::max((topo[i][j] - Sed_Track[i][j] - topo[i][jdown[j]]), 0.0) * deltax * 0.8;
-		W = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][j]), 0.0) * deltax * 0.8;
-		NE = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jup[j]]), 0.0) * deltax * 0.2;  //  Faces have 0.8 of deltax resolution; corners have 0.2
-		SE = std::max((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jdown[j]]), 0.0) * deltax * 0.2;
-		SW = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jdown[j]]), 0.0) * deltax * 0.2;
-		NW = std::max((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jup[j]]), 0.0) * deltax * 0.2;
+		N = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[i][jup[j]]), 0.0) * deltax * 0.8;  // If ice is exposed, positive value, otherwise zero
+		E = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][j]), 0.0) * deltax * 0.8;
+		S = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[i][jdown[j]]), 0.0) * deltax * 0.8;
+		W = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][j]), 0.0) * deltax * 0.8;
+		NE = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jup[j]]), 0.0) * deltax * 0.2;  //  Faces have 0.8 of deltax resolution; corners have 0.2
+		SE = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jdown[j]]), 0.0) * deltax * 0.2;
+		SW = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jdown[j]]), 0.0) * deltax * 0.2;
+		NW = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jup[j]]), 0.0) * deltax * 0.2;
 
 		// Radiative flux (m2 * W·m-2 = W) to ice for each face and corner of the pixel block
 
@@ -928,7 +928,7 @@ void StreamPower::PrintState(const char* fname, std::vector<std::vector<calcs_t>
 	std::ofstream file, file2;
 
 	file.open(fname);
-    file << std::fixed << std::setprecision(12);
+    //file << std::fixed << std::setprecision(12);
 	// write arcgrid format
 	file << "ncols " << lattice_size_y << std::endl;
 	file << "nrows " << lattice_size_x << std::endl;

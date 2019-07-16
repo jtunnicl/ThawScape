@@ -1,7 +1,10 @@
 #ifndef _GLOBAL_DEFS_H_
 #define _GLOBAL_DEFS_H_
 
-//typedef float calcs_t;
+#ifdef DOUBLE_PRECISION
 typedef double calcs_t;
+#else
+typedef float calcs_t;
+#endif
 
 #endif
