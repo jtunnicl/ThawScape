@@ -18,6 +18,7 @@
 #include "inih/INIReader.h"
 #include "time_fcn.h"
 #include "timer.hpp"
+#include "raster.h"
 
 
 /* allocate a calcs_t vector with subscript range v[nl..nh] */
@@ -119,8 +120,8 @@ void StreamPower::SetTopo(std::vector<std::vector<calcs_t>> t)
 	topo = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 	topo2 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 	topoold = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
-	slope = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
-	aspect = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+    slope = Raster(lattice_size_x, lattice_size_y, 0.0);
+    aspect = Raster(lattice_size_x, lattice_size_y, 0.0);
 
 	// Radiation Model
 	solar_raster = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
@@ -161,8 +162,6 @@ void StreamPower::SetTopo(std::vector<std::vector<calcs_t>> t)
 		{
 			topo[i][j] = t[i][j];
 			topoold[i][j] = topo[i][j];
-			slope[i][j] = 0;
-			aspect[i][j] = 0;
 			solar_raster[i][j] = 0;
 			veg[i][j] = init_veg;
 			Sed_Track[i][j] = init_sed_track;       // 2 m of overburden to begin			
@@ -455,8 +454,8 @@ void StreamPower::SlopeAspect(int i, int j) {
 	calcs_t dzdy = ( ( topo[idown[i]][jup[j]] + 2 * topo[i][jup[j]] + topo[iup[i]][jup[j]] ) -
 		( topo[idown[i]][jdown[j]] + 2 * topo[i][jdown[j]] + topo[iup[i]][jdown[j]] ) ) /
 		8 / deltax;
-	aspect[i][j] = atan2(dzdy, dzdx);                             // n.b. Aspect in Radians
-	slope[i][j] = sqrt(pow(dzdx, 2) + pow(dzdy, 2));              // n.b. Slope in Radians
+	aspect(i, j) = atan2(dzdy, dzdx);                             // n.b. Aspect in Radians
+	slope(i, j) = sqrt(pow(dzdx, 2) + pow(dzdy, 2));              // n.b. Slope in Radians
 }
 
 void StreamPower::SunPosition()
@@ -530,19 +529,19 @@ void StreamPower::SolarInflux(){
 	{
 		for (j = 2; j <= lattice_size_y - 1; j++)
 		{			
-			shade_raster[i][j] = ((sin(alt) * cos(slope[i][j])) + (cos(alt) * sin(slope[i][j]) * cos(azm - aspect[i][j])));
+			shade_raster[i][j] = ((sin(alt) * cos(slope(i, j))) + (cos(alt) * sin(slope(i, j)) * cos(azm - aspect(i, j))));
 			if (shade_raster[i][j] < 0) shade_raster[i][j] = 0;
 
-			asp360 = aspect[i][j];                 // Change aspect coordinates for flux estimates:
+			asp360 = aspect(i, j);                 // Change aspect coordinates for flux estimates:
 			if ( asp360 < PI) asp360 += PI / 2;    // N = 0; E = 1/2 pi; S = pi; W = 1.5 pi
 			if (asp360 < 0) asp360 += 2 * PI;
 
 			// Solar radiation striking a tilted surface
-			m1 = sin(lat) * cos(slope[i][j]);
-			m2 = cos(lat) * sin(slope[i][j]) * cos( asp360 );
-			m3 = cos(lat) * cos(slope[i][j]);
-			m4 = sin(lat) * cos(slope[i][j]) * cos( asp360 );
-			m5 = cos(dec) * sin(slope[i][j]) * sin( sha );
+			m1 = sin(lat) * cos(slope(i, j));
+			m2 = cos(lat) * sin(slope(i, j)) * cos( asp360 );
+			m3 = cos(lat) * cos(slope(i, j));
+			m4 = sin(lat) * cos(slope(i, j)) * cos( asp360 );
+			m5 = cos(dec) * sin(slope(i, j)) * sin( sha );
 			// Incident angle of incoming beam radiation
 
 			cos_i = sin(dec) * (m1 - m2) + cos(dec) * cos(sha) * (m3 + m4) + m5;
@@ -550,8 +549,8 @@ void StreamPower::SolarInflux(){
 			I_P[i][j] = (I_o * tau_b) * cos_i;
 			if (I_P[i][j] < 0) I_P[i][j] = 0;
 			if (shade_raster[i][j] < 0) I_P[i][j] = 0;
-			I_D[i][j] = I_o * ( 0.271 - 0.294 * tau_b ) * pow ( cos(slope[i][j] / 2 ),  2 ) * sin(alt);  // Diffuse insolation
-			I_R[i][j] = 0.2 * I_o * ( 0.271 + 0.706 * tau_b ) * pow ( sin(slope[i][j] / 2 ),  2 ) * sin(alt);  // Reflected insolation
+			I_D[i][j] = I_o * ( 0.271 - 0.294 * tau_b ) * pow ( cos(slope(i, j) / 2 ),  2 ) * sin(alt);  // Diffuse insolation
+			I_R[i][j] = 0.2 * I_o * ( 0.271 + 0.706 * tau_b ) * pow ( sin(slope(i, j) / 2 ),  2 ) * sin(alt);  // Reflected insolation
 			if (I_R[i][j] < 0) I_R[i][j] = 0;
 			I_P[i][j] += I_D[i][j];
 
@@ -613,42 +612,42 @@ void StreamPower::MeltExposedIce(int i, int j) {
 
 		if (N > 0) {
 			incoming = N * I_P[i][j] * N_Ip[i][j];         //  Area exposed (m2) * direct+diffuse (W·m-2) * vertical faces (W·m-2)
-			if ((aspect[i][jup[j]] < -7 * (PI / 8)) || (aspect[i][jup[j]] > 7 * (PI / 8)))
+			if ((aspect(i, jup[j]) < -7 * (PI / 8)) || (aspect(i, jup[j]) > 7 * (PI / 8)))
 				incoming += N * I_R[i][jup[j]];
 		}           //  Add reflected radiation component (I_R), if applicable (e.g. pixel to the North is sloping Southward)
 		if (E > 0) {
 			incoming += E * I_P[i][j] * E_Ip[i][j];
-			if ((aspect[iup[i]][j] < 7 * (PI / 8)) && (aspect[iup[i]][j] > 3 * (PI / 8)))
+			if ((aspect(iup[i], j) < 7 * (PI / 8)) && (aspect(iup[i], j) > 3 * (PI / 8)))
 				incoming += E * I_R[iup[i]][j];
 		}
 		if (S > 0) {
 			incoming += S * I_P[i][j] * S_Ip[i][j];
-			if ((aspect[i][jdown[j]] < (PI / 8)) && (aspect[i][jdown[j]] > -1 * (PI / 8)))
+			if ((aspect(i, jdown[j]) < (PI / 8)) && (aspect(i, jdown[j]) > -1 * (PI / 8)))
 				incoming += S * I_R[i][jdown[j]];
 		}
 		if (W > 0) {
 			incoming += W * I_P[i][j] * E_Ip[i][j];
-			if ((aspect[idown[i]][j] < -5 * (PI / 8)) && (aspect[idown[i]][j] > -3 * (PI / 8)))
+			if ((aspect(idown[i], j) < -5 * (PI / 8)) && (aspect(idown[i], j) > -3 * (PI / 8)))
 				incoming += W * I_R[idown[i]][j];
 		}
 		if (NE > 0) {
 			incoming += NE * I_P[i][j] * NE_Ip[i][j];
-			if ((aspect[iup[i]][jup[j]] < 7 * (PI / 8)) && (aspect[iup[i]][jup[j]] > 5 * (PI / 8)))
+			if ((aspect(iup[i], jup[j]) < 7 * (PI / 8)) && (aspect(iup[i], jup[j]) > 5 * (PI / 8)))
 				incoming += NE * I_R[iup[i]][jup[j]];
 		}
 		if (SE > 0) {
 			incoming += SE * I_P[i][j] * SE_Ip[i][j];
-			if ((aspect[iup[i]][jdown[j]] < 3 * (PI / 8)) && (aspect[iup[i]][jdown[j]] > 1 * (PI / 8)))
+			if ((aspect(iup[i], jdown[j]) < 3 * (PI / 8)) && (aspect(iup[i], jdown[j]) > 1 * (PI / 8)))
 				incoming += SE * I_R[iup[i]][jdown[j]];
 		}
 		if (SW > 0) {
 			incoming += SW * I_P[i][j] * SW_Ip[i][j];
-			if ((aspect[idown[i]][jdown[j]] < -1 * (PI / 8)) && (aspect[idown[i]][jdown[j]] > -3 * (PI / 8)))
+			if ((aspect(idown[i], jdown[j]) < -1 * (PI / 8)) && (aspect(idown[i], jdown[j]) > -3 * (PI / 8)))
 				incoming += SW * I_R[idown[i]][jdown[j]];
 		}
 		if (NW > 0) {
 			incoming += NW * I_P[i][j] * NW_Ip[i][j];
-			if ((aspect[idown[i]][jup[j]] < -5 * (PI / 8)) && (aspect[idown[i]][jup[j]] > -7 * (PI / 8)))
+			if ((aspect(idown[i], jup[j]) < -5 * (PI / 8)) && (aspect(idown[i], jup[j]) > -7 * (PI / 8)))
 				incoming += NW * I_R[idown[i]][jup[j]];
 		}
 
@@ -849,9 +848,9 @@ void StreamPower::Start()
 		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
-			{				deltah = ann_timestep * K * sqrt( flow[i][j]/1e6 ) * deltax * slope[i][j];     // Fluvial erosion law; 
+			{				deltah = ann_timestep * K * sqrt( flow[i][j]/1e6 ) * deltax * slope(i, j);     // Fluvial erosion law; 
 				topo[i][j] -= deltah;
-				//std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow[i][j] / 1e6 << ", slope: " << slope[i][j] << std::endl;
+				//std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow[i][j] / 1e6 << ", slope: " << slope(i, j) << std::endl;
 
 				if ( topo[i][j] < 0 ) { topo[i][j] = 0; }
 				if ( K * sqrt( flow[i][j]/1e6 ) * deltax > max ) { max = K * sqrt( flow[i][j]/1e6 ) * deltax; }
