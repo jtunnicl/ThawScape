@@ -7,6 +7,7 @@ set(TEST_SRC
     test_indexx.cpp
     test_streampower.cpp
     test_time_fcn.cpp
+    test_raster.cpp
 )
 add_executable(ThawScapeTests ${TEST_SRC})
 target_link_libraries(ThawScapeTests ThawScapeLib)
@@ -14,6 +15,7 @@ catch_discover_tests(ThawScapeTests)
 
 # copy test input files
 configure_file(ThawScapeTestInit.ini ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+configure_file(test_raster.asc ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 # run test of full code running
 add_test(
