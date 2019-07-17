@@ -151,7 +151,7 @@ void StreamPower::SetTopo(std::vector<std::vector<calcs_t>> t)
     // debugging
 	debug_raster = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 
-	elevation = Array2D<calcs_t>(lattice_size_x, lattice_size_y, -9999.0f);
+	elevation = Array2D<calcs_t>(lattice_size_x, lattice_size_y, -9999.0);
 
 	SetupGridNeighbors();
 
@@ -239,45 +239,45 @@ void StreamPower::MFDFlowRoute(int i, int j)
     // Note that deltax is not used in this computation, so the flow raster represents simply the number of contributing unit cells upstream.
     tot = 0;
     if (topo[i][j] > topo[iup[i]][j])
-        tot += pow(topo[i][j] - topo[iup[i]][j], 1.1f);
+        tot += pow(topo[i][j] - topo[iup[i]][j], 1.1);
     if (topo[i][j] > topo[idown[i]][j])
-        tot += pow(topo[i][j] - topo[idown[i]][j], 1.1f);
+        tot += pow(topo[i][j] - topo[idown[i]][j], 1.1);
     if (topo[i][j] > topo[i][jup[j]])
-        tot += pow(topo[i][j] - topo[i][jup[j]], 1.1f);
+        tot += pow(topo[i][j] - topo[i][jup[j]], 1.1);
     if (topo[i][j] > topo[i][jdown[j]])
-        tot += pow(topo[i][j] - topo[i][jdown[j]], 1.1f);
+        tot += pow(topo[i][j] - topo[i][jdown[j]], 1.1);
     if (topo[i][j] > topo[iup[i]][jup[j]])
-        tot += pow((topo[i][j] - topo[iup[i]][jup[j]])*oneoversqrt2, 1.1f);
+        tot += pow((topo[i][j] - topo[iup[i]][jup[j]])*oneoversqrt2, 1.1);
     if (topo[i][j] > topo[iup[i]][jdown[j]])
-        tot += pow((topo[i][j] - topo[iup[i]][jdown[j]])*oneoversqrt2, 1.1f);
+        tot += pow((topo[i][j] - topo[iup[i]][jdown[j]])*oneoversqrt2, 1.1);
     if (topo[i][j] > topo[idown[i]][jup[j]])
-        tot += pow((topo[i][j] - topo[idown[i]][jup[j]])*oneoversqrt2, 1.1f);
+        tot += pow((topo[i][j] - topo[idown[i]][jup[j]])*oneoversqrt2, 1.1);
     if (topo[i][j] > topo[idown[i]][jdown[j]])
-        tot += pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1f);
+        tot += pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1);
 
     if (topo[i][j] > topo[iup[i]][j])
-        flow1[i][j] = pow(topo[i][j] - topo[iup[i]][j], 1.1f) / tot;
+        flow1[i][j] = pow(topo[i][j] - topo[iup[i]][j], 1.1) / tot;
     else flow1[i][j] = 0;
     if (topo[i][j] > topo[idown[i]][j])
-        flow2[i][j] = pow(topo[i][j] - topo[idown[i]][j], 1.1f) / tot;
+        flow2[i][j] = pow(topo[i][j] - topo[idown[i]][j], 1.1) / tot;
     else flow2[i][j] = 0;
     if (topo[i][j] > topo[i][jup[j]])
-        flow3[i][j] = pow(topo[i][j] - topo[i][jup[j]], 1.1f) / tot;
+        flow3[i][j] = pow(topo[i][j] - topo[i][jup[j]], 1.1) / tot;
     else flow3[i][j] = 0;
     if (topo[i][j] > topo[i][jdown[j]])
-        flow4[i][j] = pow(topo[i][j] - topo[i][jdown[j]], 1.1f) / tot;
+        flow4[i][j] = pow(topo[i][j] - topo[i][jdown[j]], 1.1) / tot;
     else flow4[i][j] = 0;
     if (topo[i][j] > topo[iup[i]][jup[j]])
-        flow5[i][j] = pow((topo[i][j] - topo[iup[i]][jup[j]])*oneoversqrt2, 1.1f) / tot;
+        flow5[i][j] = pow((topo[i][j] - topo[iup[i]][jup[j]])*oneoversqrt2, 1.1) / tot;
     else flow5[i][j] = 0;
     if (topo[i][j] > topo[iup[i]][jdown[j]])
-        flow6[i][j] = pow((topo[i][j] - topo[iup[i]][jdown[j]])*oneoversqrt2, 1.1f) / tot;
+        flow6[i][j] = pow((topo[i][j] - topo[iup[i]][jdown[j]])*oneoversqrt2, 1.1) / tot;
     else flow6[i][j] = 0;
     if (topo[i][j] > topo[idown[i]][jup[j]])
-        flow7[i][j] = pow((topo[i][j] - topo[idown[i]][jup[j]])*oneoversqrt2, 1.1f) / tot;
+        flow7[i][j] = pow((topo[i][j] - topo[idown[i]][jup[j]])*oneoversqrt2, 1.1) / tot;
     else flow7[i][j] = 0;
     if (topo[i][j] > topo[idown[i]][jdown[j]])
-        flow8[i][j] = pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1f) / tot;
+        flow8[i][j] = pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1) / tot;
     else flow8[i][j] = 0;
 
     flow[iup[i]][j] += flow[i][j] * flow1[i][j] + FA_Bounds[i][j];     // final FA_Bounds[i][j] applies only to edges; zero otherwise
@@ -965,7 +965,7 @@ std::vector<std::vector<calcs_t>> StreamPower::CreateRandomField()
         Util::Warning("Fixing random seed - this should only be used for testing/debugging!");
         generator.seed(12345);
     }
-	std::normal_distribution<calcs_t> distribution(0.0f, 1.0f);
+	std::normal_distribution<calcs_t> distribution(0.0f, 1.0);
 	for (int i = 0; i <= lattice_size_x-1; i++)
 	{
 		for (int j = 0; j <= lattice_size_y-1; j++)
