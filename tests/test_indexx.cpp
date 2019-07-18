@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include "catch2/catch.hpp"
+#include "global_defs.h"
 #include "indexx.hpp"
 
 
@@ -8,7 +9,7 @@ TEST_CASE("Indexx class", "[indexx]") {
     // input array
     int nx = 5;
     int ny = 3;
-    std::vector< std::vector<float> > array = std::vector<std::vector<float>>(nx, std::vector<float>(ny));
+    std::vector< std::vector<real_type> > array = std::vector<std::vector<real_type>>(nx, std::vector<real_type>(ny));
     array[0][0] = 10;
     array[0][1] = 1;
     array[0][2] = 15;
@@ -26,12 +27,12 @@ TEST_CASE("Indexx class", "[indexx]") {
     array[4][2] = 39;
 
     // expected values in order
-    std::vector<float> expected_vals = {0.5, 1, 2, 4, 6, 7, 9, 10, 11, 12, 15, 22, 25, 29, 39};
+    std::vector<real_type> expected_vals = {0.5, 1, 2, 4, 6, 7, 9, 10, 11, 12, 15, 22, 25, 29, 39};
     std::vector<int> expected_i      = {2,   0, 4, 3, 4, 2, 2, 0,  1,  1,  0,  1,  3,  3,  4};
     std::vector<int> expected_j      = {0,   1, 1, 2, 0, 1, 2, 0,  2,  0,  2,  1,  1,  0,  2};
 
     // do the ordering
-    Indexx<float> array_indexx(nx, ny);
+    Indexx<real_type> array_indexx(nx, ny);
     array_indexx.update_array(array);
 
     // check the result
@@ -45,7 +46,7 @@ TEST_CASE("Indexx class", "[indexx]") {
         REQUIRE(j == expected_j[t]);
 
         // check the value is correct
-        float value = array[i][j];
+        real_type value = array[i][j];
         REQUIRE(value == expected_vals[t]);
     }
 }

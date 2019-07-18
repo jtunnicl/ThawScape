@@ -2,9 +2,9 @@
 #define _GLOBAL_DEFS_H_
 
 #ifdef DOUBLE_PRECISION
-typedef double calcs_t;
+typedef double real_type;
 #else
-typedef float calcs_t;
+typedef float real_type;
 #endif
 
 #endif
