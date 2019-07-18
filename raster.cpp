@@ -23,7 +23,7 @@ Raster::Raster(int size_x_, int size_y_, calcs_t value) : Raster(size_x_, size_y
 }
 
 // load Raster from file
-Raster::Raster(std::string filename) {
+Raster::Raster(const std::string &filename) {
     load(filename);
 }
 
@@ -35,7 +35,7 @@ void Raster::resize(int size_x_, int size_y_) {
     idx = std::vector<int>();
 }
 
-void Raster::load(std::string filename) {
+void Raster::load(const std::string &filename) {
     std::ifstream fin(filename);
 
     if (!fin) {
@@ -70,7 +70,7 @@ void Raster::load(std::string filename) {
 }
 
 // save Raster to file
-void Raster::save(std::string filename) {
+void Raster::save(const std::string &filename) {
     std::ofstream fout(filename);
     if (!fout) {
         Util::Error("Error opening file to save raster: " + filename, 1);
@@ -129,10 +129,13 @@ void Raster::sort_data() {
 void Raster::get_sorted_ij(int t, int &i, int &j) {
     if (t >= idx.size() || t < 0) {
         std::cerr << "Warning: out of bounds in Raster::get_sorted_ij()" << std::endl;
+        i = -1;
+        j = -1;
     }
-
-    // return i, j indices in original array corresponding to t'th value in ordered array
-    int index = idx[t];
-    i = index / size_y;
-    j = index % size_y;
+    else {
+        // return i, j indices in original array corresponding to t'th value in ordered array
+        int index = idx[t];
+        i = index / size_y;
+        j = index % size_y;
+    }
 }

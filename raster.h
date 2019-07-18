@@ -18,12 +18,12 @@ class Raster {
         Raster();
         Raster(int size_x_, int size_y_);
         Raster(int size_x_, int size_y_, calcs_t value);
-        Raster(std::string filename);
+        Raster(const std::string &filename);
         const calcs_t& operator()(int i, int j) const { return data.at(i * size_y + j); }
         calcs_t& operator()(int i, int j) { return data.at(i * size_y + j); }
         void resize(int size_x_, int size_y_);
-        void load(std::string filename);
-        void save(std::string filename);
+        void load(const std::string &filename);
+        void save(const std::string &filename);
         void set_data(calcs_t value);
         bool is_nodata(int i, int j);
         void set_nodata(int i, int j);
