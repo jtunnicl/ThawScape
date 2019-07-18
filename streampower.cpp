@@ -115,9 +115,17 @@ void StreamPower::SetupGridNeighbors()
 	jup[lattice_size_y - 1] = lattice_size_y - 1;
 }
 
-void StreamPower::SetTopo(std::vector<std::vector<calcs_t>> t)
+void StreamPower::SetTopo()
 {
-	topo = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+	topo = Raster(topo_file);
+    lattice_size_x = topo.get_size_x();
+    lattice_size_y = topo.get_size_y();
+    xllcorner = topo.get_xllcorner();
+    yllcorner = topo.get_yllcorner();
+    deltax = topo.get_deltax();
+    deltax2 = deltax * deltax;
+    nodata = topo.get_nodata();
+
 	topo2 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 	topoold = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
     slope = Raster(lattice_size_x, lattice_size_y, 0.0);
@@ -146,7 +154,6 @@ void StreamPower::SetTopo(std::vector<std::vector<calcs_t>> t)
 	ExposureAge_old = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 
 	// Indexing
-    topo_indexx = Indexx<calcs_t>(lattice_size_x, lattice_size_y);
     sed_indexx = Indexx<calcs_t>(lattice_size_x, lattice_size_y);
     
     // debugging
@@ -160,8 +167,7 @@ void StreamPower::SetTopo(std::vector<std::vector<calcs_t>> t)
 	{
 		for (int j = 0; j < lattice_size_y; j++)
 		{
-			topo[i][j] = t[i][j];
-			topoold[i][j] = topo[i][j];
+			topoold[i][j] = topo(i, j);
 			solar_raster[i][j] = 0;
 			veg[i][j] = init_veg;
 			Sed_Track[i][j] = init_sed_track;       // 2 m of overburden to begin			
@@ -213,7 +219,7 @@ void StreamPower::Flood()
 	{
 		for (int j = 0; j < lattice_size_y; j++)
 		{
-			elevation(i, j) = topo[i][j];     //  Change indexing to suit flood subroutine.
+			elevation(i, j) = topo(i, j);     //  Change indexing to suit flood subroutine.
 		}
 	}
 
@@ -225,7 +231,7 @@ void StreamPower::Flood()
 	{
 		for (int j = 0; j < lattice_size_y; j++)
 		{
-			topo[i][j] = elevation(i, j);     //  Back to original indexing
+			topo(i, j) = elevation(i, j);     //  Back to original indexing
 		}
 	}
 
@@ -237,46 +243,46 @@ void StreamPower::MFDFlowRoute(int i, int j)
 
     // Note that deltax is not used in this computation, so the flow raster represents simply the number of contributing unit cells upstream.
     tot = 0;
-    if (topo[i][j] > topo[iup[i]][j])
-        tot += pow(topo[i][j] - topo[iup[i]][j], 1.1);
-    if (topo[i][j] > topo[idown[i]][j])
-        tot += pow(topo[i][j] - topo[idown[i]][j], 1.1);
-    if (topo[i][j] > topo[i][jup[j]])
-        tot += pow(topo[i][j] - topo[i][jup[j]], 1.1);
-    if (topo[i][j] > topo[i][jdown[j]])
-        tot += pow(topo[i][j] - topo[i][jdown[j]], 1.1);
-    if (topo[i][j] > topo[iup[i]][jup[j]])
-        tot += pow((topo[i][j] - topo[iup[i]][jup[j]])*oneoversqrt2, 1.1);
-    if (topo[i][j] > topo[iup[i]][jdown[j]])
-        tot += pow((topo[i][j] - topo[iup[i]][jdown[j]])*oneoversqrt2, 1.1);
-    if (topo[i][j] > topo[idown[i]][jup[j]])
-        tot += pow((topo[i][j] - topo[idown[i]][jup[j]])*oneoversqrt2, 1.1);
-    if (topo[i][j] > topo[idown[i]][jdown[j]])
-        tot += pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1);
+    if (topo(i, j) > topo(iup[i], j))
+        tot += pow(topo(i, j) - topo(iup[i], j), 1.1);
+    if (topo(i, j) > topo(idown[i], j))
+        tot += pow(topo(i, j) - topo(idown[i], j), 1.1);
+    if (topo(i, j) > topo(i, jup[j]))
+        tot += pow(topo(i, j) - topo(i, jup[j]), 1.1);
+    if (topo(i, j) > topo(i, jdown[j]))
+        tot += pow(topo(i, j) - topo(i, jdown[j]), 1.1);
+    if (topo(i, j) > topo(iup[i], jup[j]))
+        tot += pow((topo(i, j) - topo(iup[i], jup[j]))*oneoversqrt2, 1.1);
+    if (topo(i, j) > topo(iup[i], jdown[j]))
+        tot += pow((topo(i, j) - topo(iup[i], jdown[j]))*oneoversqrt2, 1.1);
+    if (topo(i, j) > topo(idown[i], jup[j]))
+        tot += pow((topo(i, j) - topo(idown[i], jup[j]))*oneoversqrt2, 1.1);
+    if (topo(i, j) > topo(idown[i], jdown[j]))
+        tot += pow((topo(i, j) - topo(idown[i], jdown[j]))*oneoversqrt2, 1.1);
 
-    if (topo[i][j] > topo[iup[i]][j])
-        flow1[i][j] = pow(topo[i][j] - topo[iup[i]][j], 1.1) / tot;
+    if (topo(i, j) > topo(iup[i], j))
+        flow1[i][j] = pow(topo(i, j) - topo(iup[i], j), 1.1) / tot;
     else flow1[i][j] = 0;
-    if (topo[i][j] > topo[idown[i]][j])
-        flow2[i][j] = pow(topo[i][j] - topo[idown[i]][j], 1.1) / tot;
+    if (topo(i, j) > topo(idown[i], j))
+        flow2[i][j] = pow(topo(i, j) - topo(idown[i], j), 1.1) / tot;
     else flow2[i][j] = 0;
-    if (topo[i][j] > topo[i][jup[j]])
-        flow3[i][j] = pow(topo[i][j] - topo[i][jup[j]], 1.1) / tot;
+    if (topo(i, j) > topo(i, jup[j]))
+        flow3[i][j] = pow(topo(i, j) - topo(i, jup[j]), 1.1) / tot;
     else flow3[i][j] = 0;
-    if (topo[i][j] > topo[i][jdown[j]])
-        flow4[i][j] = pow(topo[i][j] - topo[i][jdown[j]], 1.1) / tot;
+    if (topo(i, j) > topo(i, jdown[j]))
+        flow4[i][j] = pow(topo(i, j) - topo(i, jdown[j]), 1.1) / tot;
     else flow4[i][j] = 0;
-    if (topo[i][j] > topo[iup[i]][jup[j]])
-        flow5[i][j] = pow((topo[i][j] - topo[iup[i]][jup[j]])*oneoversqrt2, 1.1) / tot;
+    if (topo(i, j) > topo(iup[i], jup[j]))
+        flow5[i][j] = pow((topo(i, j) - topo(iup[i], jup[j]))*oneoversqrt2, 1.1) / tot;
     else flow5[i][j] = 0;
-    if (topo[i][j] > topo[iup[i]][jdown[j]])
-        flow6[i][j] = pow((topo[i][j] - topo[iup[i]][jdown[j]])*oneoversqrt2, 1.1) / tot;
+    if (topo(i, j) > topo(iup[i], jdown[j]))
+        flow6[i][j] = pow((topo(i, j) - topo(iup[i], jdown[j]))*oneoversqrt2, 1.1) / tot;
     else flow6[i][j] = 0;
-    if (topo[i][j] > topo[idown[i]][jup[j]])
-        flow7[i][j] = pow((topo[i][j] - topo[idown[i]][jup[j]])*oneoversqrt2, 1.1) / tot;
+    if (topo(i, j) > topo(idown[i], jup[j]))
+        flow7[i][j] = pow((topo(i, j) - topo(idown[i], jup[j]))*oneoversqrt2, 1.1) / tot;
     else flow7[i][j] = 0;
-    if (topo[i][j] > topo[idown[i]][jdown[j]])
-        flow8[i][j] = pow((topo[i][j] - topo[idown[i]][jdown[j]])*oneoversqrt2, 1.1) / tot;
+    if (topo(i, j) > topo(idown[i], jdown[j]))
+        flow8[i][j] = pow((topo(i, j) - topo(idown[i], jdown[j]))*oneoversqrt2, 1.1) / tot;
     else flow8[i][j] = 0;
 
     flow[iup[i]][j] += flow[i][j] * flow1[i][j] + FA_Bounds[i][j];     // final FA_Bounds[i][j] applies only to edges; zero otherwise
@@ -299,7 +305,7 @@ void StreamPower::InitDiffusion()
 		{
 			for (int j = 1; j <= lattice_size_y - 2; j++)
 			{
-				topo[i][j] += 0.1;
+				topo(i, j) += 0.1;
 				topoold[i][j] += 0.1;
 			}
 		}
@@ -329,7 +335,7 @@ void StreamPower::HillSlopeDiffusion()
 		count++;
 		for (i = 0; i < lattice_size_x; i++)
 			for (j = 0; j < lattice_size_y; j++)
-				topoold[i][j] = topo[i][j];
+				topoold[i][j] = topo(i, j);
 		for (i = 0; i < lattice_size_x; i++)
 		{
 			for (j = 0; j < lattice_size_y; j++)
@@ -340,7 +346,7 @@ void StreamPower::HillSlopeDiffusion()
 					ay[j] = -term1;
 					cy[j] = -term1;
 					by[j] = 4 * term1 + 1;
-					ry[j] = term1 * ( topo[iup[i]][j] + topo[idown[i]][j] ) + topoold[i][j];
+					ry[j] = term1 * ( topo(iup[i], j) + topo(idown[i], j) ) + topoold[i][j];
 				}
 				else
 				{
@@ -364,11 +370,11 @@ void StreamPower::HillSlopeDiffusion()
 			}
 			Tridag(ay, by, cy, ry, uy, lattice_size_y);
 			for (j = 0; j < lattice_size_y; j++)
-				topo[i][j] = uy[j];
+				topo(i, j) = uy[j];
 		}
 		for (i = 0; i < lattice_size_x; i++)
 			for (j = 0; j < lattice_size_y; j++)
-				topoold[i][j] = topo[i][j];
+				topoold[i][j] = topo(i, j);
 		for (j = 0; j < lattice_size_y; j++)
 		{
 			for (i = 0; i < lattice_size_x; i++)
@@ -379,7 +385,7 @@ void StreamPower::HillSlopeDiffusion()
 					ax[i] = -term1;
 					cx[i] = -term1;
 					bx[i] = 4 * term1 + 1;
-					rx[i] = term1 * ( topo[i][jup[j]] + topo[i][jdown[j]] ) + topoold[i][j];
+					rx[i] = term1 * ( topo(i, jup[j]) + topo(i, jdown[j]) ) + topoold[i][j];
 				}
 				else
 				{
@@ -403,7 +409,7 @@ void StreamPower::HillSlopeDiffusion()
 			}
 			Tridag(ax, bx, cx, rx, ux, lattice_size_x);
 			for (i = 0; i < lattice_size_x; i++)
-				topo[i][j] = ux[i];
+				topo(i, j) = ux[i];
 		}
 	}
 }
@@ -418,9 +424,9 @@ void StreamPower::Avalanche(int i, int j)
 
 	calcs_t clifftop = 0;
 
-	if (topo[iup[i]][j] - topo[i][j] > thresh) {
-		clifftop = topo[iup[i]][j];    // Height of overhanging pixel
-		topo[iup[i]][j] = std::max((topo[i][j] + thresh), (topo[iup[i]][j] - Sed_Track[iup[i]][j]));
+	if (topo(iup[i], j) - topo(i, j) > thresh) {
+		clifftop = topo(iup[i], j);    // Height of overhanging pixel
+		topo(iup[i], j) = std::max((topo(i, j) + thresh), (topo(iup[i], j) - Sed_Track[iup[i]][j]));
 	}
 		//Sed_Track[iup[i]][j]
 
@@ -430,29 +436,29 @@ void StreamPower::Avalanche(int i, int j)
 
 
 
-	if (topo[idown[i]][j] - topo[i][j] > thresh)
-		topo[idown[i]][j] = topo[i][j] + thresh;
-	if (topo[i][jup[j]] - topo[i][j] > thresh)
-		topo[i][jup[j]] = topo[i][j] + thresh;
-	if (topo[i][jdown[j]] - topo[i][j] > thresh)
-		topo[i][jdown[j]] = topo[i][j] + thresh;
-	if (topo[iup[i]][jup[j]] - topo[i][j] > (thresh_diag))
-		topo[iup[i]][jup[j]] = topo[i][j] + thresh_diag;
-	if (topo[iup[i]][jdown[j]] - topo[i][j] > (thresh_diag))
-		topo[iup[i]][jdown[j]] = topo[i][j] + thresh_diag;
-	if (topo[idown[i]][jup[j]] - topo[i][j] > (thresh_diag))
-		topo[idown[i]][jup[j]] = topo[i][j] + thresh_diag;
-	if (topo[idown[i]][jdown[j]] - topo[i][j] > (thresh_diag))
-		topo[idown[i]][jdown[j]] = topo[i][j] + thresh_diag;
+	if (topo(idown[i], j) - topo(i, j) > thresh)
+		topo(idown[i], j) = topo(i, j) + thresh;
+	if (topo(i, jup[j]) - topo(i, j) > thresh)
+		topo(i, jup[j]) = topo(i, j) + thresh;
+	if (topo(i, jdown[j]) - topo(i, j) > thresh)
+		topo(i, jdown[j]) = topo(i, j) + thresh;
+	if (topo(iup[i], jup[j]) - topo(i, j) > (thresh_diag))
+		topo(iup[i], jup[j]) = topo(i, j) + thresh_diag;
+	if (topo(iup[i], jdown[j]) - topo(i, j) > (thresh_diag))
+		topo(iup[i], jdown[j]) = topo(i, j) + thresh_diag;
+	if (topo(idown[i], jup[j]) - topo(i, j) > (thresh_diag))
+		topo(idown[i], jup[j]) = topo(i, j) + thresh_diag;
+	if (topo(idown[i], jdown[j]) - topo(i, j) > (thresh_diag))
+		topo(idown[i], jdown[j]) = topo(i, j) + thresh_diag;
 }
 
 void StreamPower::SlopeAspect(int i, int j) {
 
-	calcs_t dzdx = ( ( topo[iup[i]][jdown[j]] + 2 * topo[iup[i]][j] + topo[iup[i]][jup[j]] ) -
-		( topo[idown[i]][jdown[j]] + 2 * topo[idown[i]][j] + topo[idown[i]][jup[j]] ) ) /
+	calcs_t dzdx = ( ( topo(iup[i], jdown[j]) + 2 * topo(iup[i], j) + topo(iup[i], jup[j]) ) -
+		( topo(idown[i], jdown[j]) + 2 * topo(idown[i], j) + topo(idown[i], jup[j]) ) ) /
 		8 / deltax;
-	calcs_t dzdy = ( ( topo[idown[i]][jup[j]] + 2 * topo[i][jup[j]] + topo[iup[i]][jup[j]] ) -
-		( topo[idown[i]][jdown[j]] + 2 * topo[i][jdown[j]] + topo[iup[i]][jdown[j]] ) ) /
+	calcs_t dzdy = ( ( topo(idown[i], jup[j]) + 2 * topo(i, jup[j]) + topo(iup[i], jup[j]) ) -
+		( topo(idown[i], jdown[j]) + 2 * topo(i, jdown[j]) + topo(iup[i], jdown[j]) ) ) /
 		8 / deltax;
 	aspect(i, j) = atan2(dzdy, dzdx);                             // n.b. Aspect in Radians
 	slope(i, j) = sqrt(pow(dzdx, 2) + pow(dzdy, 2));              // n.b. Slope in Radians
@@ -590,23 +596,23 @@ void StreamPower::MeltExposedIce(int i, int j) {
 	calcs_t lowestpixel;         // Elevation of the lowest pixel in the 9-element neighbourhood.
 	int m = 0;
 
-	std::vector<calcs_t> neighb{ topo[idown[i]][jup[j]], topo[i][jup[j]], topo[iup[i]][jup[j]],    // Elevations within 9-element neighbourhood NW-N-NE-W-ctr-E-SW-S-SE
-		topo[idown[i]][j], topo[i][j], topo[iup[i]][j],
-		topo[idown[i]][jdown[j]], topo[i][jdown[j]], topo[iup[i]][jdown[j]] };
+	std::vector<calcs_t> neighb{ topo(idown[i], jup[j]), topo(i, jup[j]), topo(iup[i], jup[j]),    // Elevations within 9-element neighbourhood NW-N-NE-W-ctr-E-SW-S-SE
+		topo(idown[i], j), topo(i, j), topo(iup[i], j),
+		topo(idown[i], jdown[j]), topo(i, jdown[j]), topo(iup[i], jdown[j]) };
 
 	lowestpixel = getMinInt(neighb);
 
-	if (topo[i][j] > lowestpixel)      // If any neighbouring pixels are higher than central pixel, then proceed with melt/avalanche algorithm
+	if (topo(i, j) > lowestpixel)      // If any neighbouring pixels are higher than central pixel, then proceed with melt/avalanche algorithm
 	{
 		// Extent (m2) of exposed faces in each of 8 directions
-		N = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[i][jup[j]]), 0.0) * deltax * 0.8;  // If ice is exposed, positive value, otherwise zero
-		E = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][j]), 0.0) * deltax * 0.8;
-		S = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[i][jdown[j]]), 0.0) * deltax * 0.8;
-		W = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][j]), 0.0) * deltax * 0.8;
-		NE = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jup[j]]), 0.0) * deltax * 0.2;  //  Faces have 0.8 of deltax resolution; corners have 0.2
-		SE = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[iup[i]][jdown[j]]), 0.0) * deltax * 0.2;
-		SW = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jdown[j]]), 0.0) * deltax * 0.2;
-		NW = std::max<calcs_t>((topo[i][j] - Sed_Track[i][j] - topo[idown[i]][jup[j]]), 0.0) * deltax * 0.2;
+		N = std::max<calcs_t>((topo(i, j) - Sed_Track[i][j] - topo(i, jup[j])), 0.0) * deltax * 0.8;  // If ice is exposed, positive value, otherwise zero
+		E = std::max<calcs_t>((topo(i, j) - Sed_Track[i][j] - topo(iup[i], j)), 0.0) * deltax * 0.8;
+		S = std::max<calcs_t>((topo(i, j) - Sed_Track[i][j] - topo(i, jdown[j])), 0.0) * deltax * 0.8;
+		W = std::max<calcs_t>((topo(i, j) - Sed_Track[i][j] - topo(idown[i], j)), 0.0) * deltax * 0.8;
+		NE = std::max<calcs_t>((topo(i, j) - Sed_Track[i][j] - topo(iup[i], jup[j])), 0.0) * deltax * 0.2;  //  Faces have 0.8 of deltax resolution; corners have 0.2
+		SE = std::max<calcs_t>((topo(i, j) - Sed_Track[i][j] - topo(iup[i], jdown[j])), 0.0) * deltax * 0.2;
+		SW = std::max<calcs_t>((topo(i, j) - Sed_Track[i][j] - topo(idown[i], jdown[j])), 0.0) * deltax * 0.2;
+		NW = std::max<calcs_t>((topo(i, j) - Sed_Track[i][j] - topo(idown[i], jup[j])), 0.0) * deltax * 0.2;
 
 		// Radiative flux (m2 * W·m-2 = W) to ice for each face and corner of the pixel block
 
@@ -655,14 +661,14 @@ void StreamPower::MeltExposedIce(int i, int j) {
 		// incoming watts / meltrate / pixel area
 
 		for (m = 0; m < 8; m++) {
-			if (topo[i][j] - neighb[m] > 0) accommodation += deltax2 * (topo[i][j] - neighb[m]);   // sum up all the volume available on pixels below the central pixel
+			if (topo(i, j) - neighb[m] > 0) accommodation += deltax2 * (topo(i, j) - neighb[m]);   // sum up all the volume available on pixels below the central pixel
 		}
 
 		elev_drop = incoming / melt / deltax2;
 		if (elev_drop * deltax < accommodation)           // i.e. There is room to accommodate the failed mass in neighbouring cells
-			topo[i][j] -= elev_drop;
+			topo(i, j) -= elev_drop;
 		else
-			topo[i][j] = lowestpixel;
+			topo(i, j) = lowestpixel;
 
 
 		// Water lost in melt flows downstream (add to 'flow' raster)
@@ -731,7 +737,7 @@ void StreamPower::Init(std::string parameter_file)
 void StreamPower::LoadInputs()
 {
 	SetFA(ReadArcInfoASCIIGrid(fa_file.c_str()));
-	SetTopo(ReadArcInfoASCIIGrid(topo_file.c_str()));
+	SetTopo();
 	//sp.SetFA(sp.ReadArcInfoASCIIGrid(sed_file.c_str()));   // Option to set sediment thickness
 }
 
@@ -741,7 +747,7 @@ void StreamPower::Start()
 	int idum, i, j, t, step;
 	char fname[100];
 	sprintf(fname, "erosion_%d.asc", 0);
-	PrintState(fname);
+    topo.save(fname);
 	int tstep = 0;    // Counter for printing results to file
 	std::cout << "U: " << U << "; K: " << K << "; D: " << D << std::endl;
 
@@ -760,7 +766,7 @@ void StreamPower::Start()
 	{
 		// Setup grid index with ranked topo values
         timers["Indexx"].start();
-        topo_indexx.update_array(topo);
+        topo.sort_data();
         sed_indexx.update_array(Sed_Track);
         timers["Indexx"].stop();
 
@@ -769,7 +775,7 @@ void StreamPower::Start()
         timers["Avalanche"].start();
 		while ( t < lattice_size_x * lattice_size_y )
 		{
-            topo_indexx.get_ij(t, i, j);
+            topo.get_sorted_ij(t, i, j);
 			Avalanche( i , j );
 			t++;
 		}
@@ -777,7 +783,7 @@ void StreamPower::Start()
 		{
 			for (i = 0; i < lattice_size_x; i++)
 			{
-				topoold[i][j] = topo[i][j];
+				topoold[i][j] = topo(i, j);
 			}
 		}
         timers["Avalanche"].stop();
@@ -789,7 +795,7 @@ void StreamPower::Start()
 
 		// Setup grid index again with topo values
         timers["Indexx"].start();
-        topo_indexx.update_array(topo);
+        topo.sort_data();
         timers["Indexx"].stop();
 
 
@@ -798,7 +804,7 @@ void StreamPower::Start()
 		while (t > 0)
 		{
 			t--;
-            topo_indexx.get_ij(t, i, j);
+            topo.get_sorted_ij(t, i, j);
             if ( ( i > 3 ) && ( i < (lattice_size_x - 3) ) && ( j > 3 ) && ( j < (lattice_size_y - 3) ) )  MFDFlowRoute(i, j);// Do not alter boundary elements
 		}
         timers["MFDFlowRoute"].stop();
@@ -815,7 +821,7 @@ void StreamPower::Start()
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
 			{
-				topo[i][j] += U * ann_timestep;
+				topo(i, j) += U * ann_timestep;
 				topoold[i][j] += U * ann_timestep;
                 SlopeAspect(i, j);
 			}
@@ -834,7 +840,7 @@ void StreamPower::Start()
 		while (t > 0)
 		{
 			t--;
-			topo_indexx.get_ij(t, i, j);
+            topo.get_sorted_ij(t, i, j);
 			if ((i > 0) && (i < (lattice_size_x - 1)) && (j > 0) && (j < (lattice_size_y - 1)))  // Do not alter boundary elements
 			{
 				MeltExposedIce(i, j);
@@ -849,10 +855,10 @@ void StreamPower::Start()
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
 			{				deltah = ann_timestep * K * sqrt( flow[i][j]/1e6 ) * deltax * slope(i, j);     // Fluvial erosion law; 
-				topo[i][j] -= deltah;
+				topo(i, j) -= deltah;
 				//std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow[i][j] / 1e6 << ", slope: " << slope(i, j) << std::endl;
 
-				if ( topo[i][j] < 0 ) { topo[i][j] = 0; }
+				if ( topo(i, j) < 0 ) { topo(i, j) = 0; }
 				if ( K * sqrt( flow[i][j]/1e6 ) * deltax > max ) { max = K * sqrt( flow[i][j]/1e6 ) * deltax; }
 			}
 		}
@@ -870,7 +876,7 @@ void StreamPower::Start()
 			{
 				for (j = 2; j <= lattice_size_y - 1; j++)
 				{
-					topo[i][j] = topoold[i][j] - U*timestep;
+					topo(i, j) = topoold[i][j] - U*timestep;
 				}
 			}
 		}
@@ -884,7 +890,7 @@ void StreamPower::Start()
 			{
 				for (i = 1; i <= lattice_size_x; i++)
 				{
-					topoold[i][j] = topo[i][j];
+					topoold[i][j] = topo(i, j);
 				}
 
 			}
@@ -899,7 +905,7 @@ void StreamPower::Start()
 		if (tstep >= printinterval) {
 			char fname[100];
 			sprintf(fname, "erosion_%i_%i_%.3f.asc", ct.get_day(), ct.get_hour(), r.altitude );
-			PrintState(fname);
+            topo.save(fname);
 			tstep = 0;
 		}
 	}
@@ -916,10 +922,6 @@ void StreamPower::Start()
         std::cout << " (" << item_time_secs / total_time_secs * 100 << " %)" << std::endl;
     }
     std::cout << std::endl;
-}
-
-void StreamPower::PrintState(const char* fname) {
-    PrintState(fname, topo);    
 }
 
 void StreamPower::PrintState(const char* fname, std::vector<std::vector<calcs_t> > &state)
@@ -1018,7 +1020,7 @@ StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny
 
 StreamPower::~StreamPower() {}
 
-std::vector<std::vector<calcs_t>> StreamPower::GetTopo()
+Raster StreamPower::GetTopo()
 {
 	return topo;
 }

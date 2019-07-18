@@ -57,9 +57,9 @@ public:
 	calcs_t xllcorner, yllcorner, nodata;
 	std::vector<int> iup, idown, jup, jdown;
 	std::vector<calcs_t> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;
-    Indexx<calcs_t> topo_indexx, sed_indexx;
-    Raster slope, aspect;
-	std::vector<std::vector<calcs_t>> topo, topoold, topo2, flow, flow1, flow2, flow3,
+    Indexx<calcs_t> sed_indexx;
+    Raster topo, slope, aspect;
+	std::vector<std::vector<calcs_t>> topoold, topo2, flow, flow1, flow2, flow3,
 		flow4, flow5, flow6, flow7, flow8, FA, FA_Bounds, veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old, debug_raster;
 	std::vector<std::vector<calcs_t>> solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
 	std::vector<std::vector<std::vector<calcs_t>>> Ip_D8;     // Map of incoming solar flux, 8 directions
@@ -88,11 +88,11 @@ public:
 
 	std::vector<std::vector<calcs_t>> CreateRandomField();
 	std::vector<std::vector<calcs_t>> ReadArcInfoASCIIGrid(const char* fname);
-	std::vector<std::vector<calcs_t>> GetTopo();
+	Raster GetTopo();
 
 
 	void SetupGridNeighbors();
-	void SetTopo(std::vector<std::vector<calcs_t>> t);
+	void SetTopo();
 	void SetFA(std::vector<std::vector<calcs_t>> f);     // Set flow accumulation raster
 	void Flood(); // Barnes pit filling
 	void MFDFlowRoute(int i, int j); //new implementation
@@ -108,7 +108,6 @@ public:
     void LoadInputs();
 	void Start();
 	void PrintState(const char* fname, std::vector<std::vector<calcs_t> > &state);
-	void PrintState(const char* fname);
 
     std::string topo_file, fa_file, sed_file;
 };
