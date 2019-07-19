@@ -43,7 +43,6 @@ endif()
 add_library(ThawScapeLib
     global_defs.h
     timer.hpp
-    indexx.hpp
     raster.h
     raster.cpp
     data_structures.h

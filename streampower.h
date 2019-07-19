@@ -7,7 +7,6 @@
 #include <algorithm>
 #include "global_defs.h"
 #include "Array2D.hpp"
-#include "indexx.hpp"
 #include "time_fcn.h"
 #include "raster.h"
 
@@ -57,12 +56,11 @@ public:
 	calcs_t xllcorner, yllcorner, nodata;
 	std::vector<int> iup, idown, jup, jdown;
 	std::vector<calcs_t> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;
-    Indexx<calcs_t> sed_indexx;
-    Raster topo, slope, aspect;
+    Raster topo, topoold, slope, aspect;
     Raster flow, flow1, flow2, flow3, flow4, flow5, flow6, flow7, flow8, FA_Bounds;
-	std::vector<std::vector<calcs_t>> topoold, topo2, veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
-	std::vector<std::vector<calcs_t>> solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
-	std::vector<std::vector<std::vector<calcs_t>>> Ip_D8;     // Map of incoming solar flux, 8 directions
+	Raster veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
+	Raster solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
+	Raster Ip_D8;     // Map of incoming solar flux, 8 directions
 	Array2D<calcs_t> elevation;
 
 	time_fcn ct;             // Current model time
@@ -76,9 +74,6 @@ public:
     bool fix_random_seed;
 	static calcs_t Ran3(std::default_random_engine& generator, std::uniform_real_distribution<calcs_t>& distribution);
 	static calcs_t Gasdev(std::default_random_engine& generator, std::normal_distribution<calcs_t>& distribution);
-
-//	static void Indexx(int n, calcs_t* arr, int* indx);	// interface from old to new implementation
-//	static std::vector<int> Indexx(std::vector<calcs_t>& arr);	// new implementation
 
 	static void Tridag(calcs_t a[], calcs_t b[], calcs_t c[], calcs_t r[], calcs_t u[], unsigned long n); // interface from old to new implementation
 	static void Tridag(std::vector<calcs_t>& a, std::vector<calcs_t>& b, std::vector<calcs_t>& c, std::vector<calcs_t>& r, std::vector<calcs_t>& u, int n); // new implementation
@@ -107,7 +102,6 @@ public:
 	void Init(std::string parameter_file); // using new vars
     void LoadInputs();
 	void Start();
-	void PrintState(const char* fname, std::vector<std::vector<calcs_t> > &state);
 
     std::string topo_file, fa_file, sed_file;
 };

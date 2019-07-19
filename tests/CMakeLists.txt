@@ -4,7 +4,6 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/catch2/cmake/Catch.cmake")
 # test ThawScape
 set(TEST_SRC
     tests.cpp
-    test_indexx.cpp
     test_streampower.cpp
     test_time_fcn.cpp
     test_raster.cpp
