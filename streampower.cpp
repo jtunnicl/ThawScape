@@ -177,10 +177,17 @@ void StreamPower::SetTopo()
 	InitDiffusion();
 }
 
-void StreamPower::SetFA(std::vector<std::vector<calcs_t>> f)
+void StreamPower::SetFA()
 {
+    flow = Raster(fa_file);
+    lattice_size_x = flow.get_size_x();
+    lattice_size_y = flow.get_size_y();
+    xllcorner = flow.get_xllcorner();
+    yllcorner = flow.get_yllcorner();
+    deltax = flow.get_deltax();
+    deltax2 = deltax * deltax;
+    nodata = flow.get_nodata();
 
-	flow = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
 	flow1 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
     flow2 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
     flow3 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
@@ -195,7 +202,6 @@ void StreamPower::SetFA(std::vector<std::vector<calcs_t>> f)
 	{
 		for (int j = 0; j < lattice_size_y; j++)
 		{
-			flow[i][j] = f[i][j];
 			flow1[i][j] = 1;
             flow2[i][j] = 1;
             flow3[i][j] = 1;
@@ -205,7 +211,7 @@ void StreamPower::SetFA(std::vector<std::vector<calcs_t>> f)
             flow7[i][j] = 1;
             flow8[i][j] = 1;
 			if (i == 0 || j == 0 || i == (lattice_size_x - 1) || j == (lattice_size_y - 1))
-				FA_Bounds[i][j] = f[i][j];   // FA boundary values; zero otherwise
+				FA_Bounds[i][j] = flow(i, j);   // FA boundary values; zero otherwise
 			else
 				FA_Bounds[i][j] = 0;
 		}
@@ -285,14 +291,14 @@ void StreamPower::MFDFlowRoute(int i, int j)
         flow8[i][j] = pow((topo(i, j) - topo(idown[i], jdown[j]))*oneoversqrt2, 1.1) / tot;
     else flow8[i][j] = 0;
 
-    flow[iup[i]][j] += flow[i][j] * flow1[i][j] + FA_Bounds[i][j];     // final FA_Bounds[i][j] applies only to edges; zero otherwise
-    flow[idown[i]][j] += flow[i][j] * flow2[i][j] + FA_Bounds[i][j];
-    flow[i][jup[j]] += flow[i][j] * flow3[i][j] + FA_Bounds[i][j];
-    flow[i][jdown[j]] += flow[i][j] * flow4[i][j] + FA_Bounds[i][j];
-    flow[iup[i]][jup[j]] += flow[i][j] * flow5[i][j] + FA_Bounds[i][j];
-    flow[iup[i]][jdown[j]] += flow[i][j] * flow6[i][j] + FA_Bounds[i][j];
-    flow[idown[i]][jup[j]] += flow[i][j] * flow7[i][j] + FA_Bounds[i][j];
-    flow[idown[i]][jdown[j]] += flow[i][j] * flow8[i][j] + FA_Bounds[i][j];
+    flow(iup[i], j) += flow(i, j) * flow1[i][j] + FA_Bounds[i][j];     // final FA_Bounds[i][j] applies only to edges; zero otherwise
+    flow(idown[i], j) += flow(i, j) * flow2[i][j] + FA_Bounds[i][j];
+    flow(i, jup[j]) += flow(i, j) * flow3[i][j] + FA_Bounds[i][j];
+    flow(i, jdown[j]) += flow(i, j) * flow4[i][j] + FA_Bounds[i][j];
+    flow(iup[i], jup[j]) += flow(i, j) * flow5[i][j] + FA_Bounds[i][j];
+    flow(iup[i], jdown[j]) += flow(i, j) * flow6[i][j] + FA_Bounds[i][j];
+    flow(idown[i], jup[j]) += flow(i, j) * flow7[i][j] + FA_Bounds[i][j];
+    flow(idown[i], jdown[j]) += flow(i, j) * flow8[i][j] + FA_Bounds[i][j];
 }
 
 void StreamPower::InitDiffusion()
@@ -341,7 +347,7 @@ void StreamPower::HillSlopeDiffusion()
 			for (j = 0; j < lattice_size_y; j++)
 			{
 				term1 = D * ann_timestep / (deltax2);
-				if (flow[i][j] < thresholdarea)
+				if (flow(i, j) < thresholdarea)
 				{
 					ay[j] = -term1;
 					cy[j] = -term1;
@@ -380,7 +386,7 @@ void StreamPower::HillSlopeDiffusion()
 			for (i = 0; i < lattice_size_x; i++)
 			{
 				term1 = D * timestep / ( deltax2 );
-				if (flow[i][j] < thresholdarea)
+				if (flow(i, j) < thresholdarea)
 				{
 					ax[i] = -term1;
 					cx[i] = -term1;
@@ -736,7 +742,7 @@ void StreamPower::Init(std::string parameter_file)
 
 void StreamPower::LoadInputs()
 {
-	SetFA(ReadArcInfoASCIIGrid(fa_file.c_str()));
+	SetFA();
 	SetTopo();
 	//sp.SetFA(sp.ReadArcInfoASCIIGrid(sed_file.c_str()));   // Option to set sediment thickness
 }
@@ -854,12 +860,12 @@ void StreamPower::Start()
 		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
-			{				deltah = ann_timestep * K * sqrt( flow[i][j]/1e6 ) * deltax * slope(i, j);     // Fluvial erosion law; 
+			{				deltah = ann_timestep * K * sqrt( flow(i, j)/1e6 ) * deltax * slope(i, j);     // Fluvial erosion law; 
 				topo(i, j) -= deltah;
-				//std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow[i][j] / 1e6 << ", slope: " << slope(i, j) << std::endl;
+				//std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow(i, j) / 1e6 << ", slope: " << slope(i, j) << std::endl;
 
 				if ( topo(i, j) < 0 ) { topo(i, j) = 0; }
-				if ( K * sqrt( flow[i][j]/1e6 ) * deltax > max ) { max = K * sqrt( flow[i][j]/1e6 ) * deltax; }
+				if ( K * sqrt( flow(i, j)/1e6 ) * deltax > max ) { max = K * sqrt( flow(i, j)/1e6 ) * deltax; }
 			}
 		}
         timers["ChannelErosion"].stop();
