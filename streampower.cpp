@@ -156,9 +156,6 @@ void StreamPower::SetTopo()
 	// Indexing
     sed_indexx = Indexx<calcs_t>(lattice_size_x, lattice_size_y);
     
-    // debugging
-	debug_raster = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
-
 	elevation = Array2D<calcs_t>(lattice_size_x, lattice_size_y, -9999.0);
 
 	SetupGridNeighbors();
@@ -188,34 +185,27 @@ void StreamPower::SetFA()
     deltax2 = deltax * deltax;
     nodata = flow.get_nodata();
 
-	flow1 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
-    flow2 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
-    flow3 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
-    flow4 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
-    flow5 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
-    flow6 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
-    flow7 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
-    flow8 = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
-	FA_Bounds = std::vector<std::vector<calcs_t>>(lattice_size_x, std::vector<calcs_t>(lattice_size_y));
+    flow1 = Raster(lattice_size_x, lattice_size_y, 1.0);
+    flow2 = Raster(lattice_size_x, lattice_size_y, 1.0);
+    flow3 = Raster(lattice_size_x, lattice_size_y, 1.0);
+    flow4 = Raster(lattice_size_x, lattice_size_y, 1.0);
+    flow5 = Raster(lattice_size_x, lattice_size_y, 1.0);
+    flow6 = Raster(lattice_size_x, lattice_size_y, 1.0);
+    flow7 = Raster(lattice_size_x, lattice_size_y, 1.0);
+    flow8 = Raster(lattice_size_x, lattice_size_y, 1.0);
+    FA_Bounds = Raster(lattice_size_x, lattice_size_y, 0.0);
 
+    // FA boundary values; zero otherwise
 	for (int i = 0; i < lattice_size_x; i++)
 	{
-		for (int j = 0; j < lattice_size_y; j++)
-		{
-			flow1[i][j] = 1;
-            flow2[i][j] = 1;
-            flow3[i][j] = 1;
-            flow4[i][j] = 1;
-            flow5[i][j] = 1;
-            flow6[i][j] = 1;
-            flow7[i][j] = 1;
-            flow8[i][j] = 1;
-			if (i == 0 || j == 0 || i == (lattice_size_x - 1) || j == (lattice_size_y - 1))
-				FA_Bounds[i][j] = flow(i, j);   // FA boundary values; zero otherwise
-			else
-				FA_Bounds[i][j] = 0;
-		}
+        FA_Bounds(i, 0) = flow(i, 0);
+        FA_Bounds(i, lattice_size_y - 1) = flow(i, lattice_size_y - 1);
 	}
+    for (int j = 0; j < lattice_size_y; j++)
+    {
+        FA_Bounds(0, j) = flow(0, j);
+        FA_Bounds(lattice_size_x - 1, j) = flow(lattice_size_x - 1, j);
+    }
 }
 
 void StreamPower::Flood()
@@ -267,38 +257,38 @@ void StreamPower::MFDFlowRoute(int i, int j)
         tot += pow((topo(i, j) - topo(idown[i], jdown[j]))*oneoversqrt2, 1.1);
 
     if (topo(i, j) > topo(iup[i], j))
-        flow1[i][j] = pow(topo(i, j) - topo(iup[i], j), 1.1) / tot;
-    else flow1[i][j] = 0;
+        flow1(i, j) = pow(topo(i, j) - topo(iup[i], j), 1.1) / tot;
+    else flow1(i, j) = 0;
     if (topo(i, j) > topo(idown[i], j))
-        flow2[i][j] = pow(topo(i, j) - topo(idown[i], j), 1.1) / tot;
-    else flow2[i][j] = 0;
+        flow2(i, j) = pow(topo(i, j) - topo(idown[i], j), 1.1) / tot;
+    else flow2(i, j) = 0;
     if (topo(i, j) > topo(i, jup[j]))
-        flow3[i][j] = pow(topo(i, j) - topo(i, jup[j]), 1.1) / tot;
-    else flow3[i][j] = 0;
+        flow3(i, j) = pow(topo(i, j) - topo(i, jup[j]), 1.1) / tot;
+    else flow3(i, j) = 0;
     if (topo(i, j) > topo(i, jdown[j]))
-        flow4[i][j] = pow(topo(i, j) - topo(i, jdown[j]), 1.1) / tot;
-    else flow4[i][j] = 0;
+        flow4(i, j) = pow(topo(i, j) - topo(i, jdown[j]), 1.1) / tot;
+    else flow4(i, j) = 0;
     if (topo(i, j) > topo(iup[i], jup[j]))
-        flow5[i][j] = pow((topo(i, j) - topo(iup[i], jup[j]))*oneoversqrt2, 1.1) / tot;
-    else flow5[i][j] = 0;
+        flow5(i, j) = pow((topo(i, j) - topo(iup[i], jup[j]))*oneoversqrt2, 1.1) / tot;
+    else flow5(i, j) = 0;
     if (topo(i, j) > topo(iup[i], jdown[j]))
-        flow6[i][j] = pow((topo(i, j) - topo(iup[i], jdown[j]))*oneoversqrt2, 1.1) / tot;
-    else flow6[i][j] = 0;
+        flow6(i, j) = pow((topo(i, j) - topo(iup[i], jdown[j]))*oneoversqrt2, 1.1) / tot;
+    else flow6(i, j) = 0;
     if (topo(i, j) > topo(idown[i], jup[j]))
-        flow7[i][j] = pow((topo(i, j) - topo(idown[i], jup[j]))*oneoversqrt2, 1.1) / tot;
-    else flow7[i][j] = 0;
+        flow7(i, j) = pow((topo(i, j) - topo(idown[i], jup[j]))*oneoversqrt2, 1.1) / tot;
+    else flow7(i, j) = 0;
     if (topo(i, j) > topo(idown[i], jdown[j]))
-        flow8[i][j] = pow((topo(i, j) - topo(idown[i], jdown[j]))*oneoversqrt2, 1.1) / tot;
-    else flow8[i][j] = 0;
+        flow8(i, j) = pow((topo(i, j) - topo(idown[i], jdown[j]))*oneoversqrt2, 1.1) / tot;
+    else flow8(i, j) = 0;
 
-    flow(iup[i], j) += flow(i, j) * flow1[i][j] + FA_Bounds[i][j];     // final FA_Bounds[i][j] applies only to edges; zero otherwise
-    flow(idown[i], j) += flow(i, j) * flow2[i][j] + FA_Bounds[i][j];
-    flow(i, jup[j]) += flow(i, j) * flow3[i][j] + FA_Bounds[i][j];
-    flow(i, jdown[j]) += flow(i, j) * flow4[i][j] + FA_Bounds[i][j];
-    flow(iup[i], jup[j]) += flow(i, j) * flow5[i][j] + FA_Bounds[i][j];
-    flow(iup[i], jdown[j]) += flow(i, j) * flow6[i][j] + FA_Bounds[i][j];
-    flow(idown[i], jup[j]) += flow(i, j) * flow7[i][j] + FA_Bounds[i][j];
-    flow(idown[i], jdown[j]) += flow(i, j) * flow8[i][j] + FA_Bounds[i][j];
+    flow(iup[i], j) += flow(i, j) * flow1(i, j) + FA_Bounds(i, j);     // final FA_Bounds(i, j) applies only to edges; zero otherwise
+    flow(idown[i], j) += flow(i, j) * flow2(i, j) + FA_Bounds(i, j);
+    flow(i, jup[j]) += flow(i, j) * flow3(i, j) + FA_Bounds(i, j);
+    flow(i, jdown[j]) += flow(i, j) * flow4(i, j) + FA_Bounds(i, j);
+    flow(iup[i], jup[j]) += flow(i, j) * flow5(i, j) + FA_Bounds(i, j);
+    flow(iup[i], jdown[j]) += flow(i, j) * flow6(i, j) + FA_Bounds(i, j);
+    flow(idown[i], jup[j]) += flow(i, j) * flow7(i, j) + FA_Bounds(i, j);
+    flow(idown[i], jdown[j]) += flow(i, j) * flow8(i, j) + FA_Bounds(i, j);
 }
 
 void StreamPower::InitDiffusion()

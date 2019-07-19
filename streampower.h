@@ -59,9 +59,8 @@ public:
 	std::vector<calcs_t> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;
     Indexx<calcs_t> sed_indexx;
     Raster topo, slope, aspect;
-    Raster flow;
-	std::vector<std::vector<calcs_t>> topoold, topo2, flow1, flow2, flow3,
-		flow4, flow5, flow6, flow7, flow8, FA, FA_Bounds, veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old, debug_raster;
+    Raster flow, flow1, flow2, flow3, flow4, flow5, flow6, flow7, flow8, FA_Bounds;
+	std::vector<std::vector<calcs_t>> topoold, topo2, veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
 	std::vector<std::vector<calcs_t>> solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
 	std::vector<std::vector<std::vector<calcs_t>>> Ip_D8;     // Map of incoming solar flux, 8 directions
 	Array2D<calcs_t> elevation;
