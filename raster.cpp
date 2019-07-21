@@ -22,9 +22,26 @@ Raster::Raster(int size_x_, int size_y_, calcs_t value) : Raster(size_x_, size_y
     set_data(value);
 }
 
-// load Raster from file
+// create Raster by loading from file
 Raster::Raster(const std::string &filename) {
     load(filename);
+}
+
+// operators for accessing underlying data
+const calcs_t& Raster::operator()(int i, int j) const {
+#ifdef NDEBUG
+    return data[i * size_y + j];
+#else
+    return data.at(i * size_y + j);
+#endif
+}
+
+calcs_t& Raster::operator()(int i, int j) {
+#ifdef NDEBUG
+    return data[i * size_y + j];
+#else
+    return data.at(i * size_y + j);
+#endif
 }
 
 // destructively resize the data
@@ -35,6 +52,7 @@ void Raster::resize(int size_x_, int size_y_) {
     idx = std::vector<int>();
 }
 
+// load Raster from file
 void Raster::load(const std::string &filename) {
     std::ifstream fin(filename);
 
