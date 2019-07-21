@@ -18,7 +18,7 @@ Raster::Raster(int size_x_, int size_y_) : Raster() {
 }
 
 // create Raster of given size with data initialised to specified value
-Raster::Raster(int size_x_, int size_y_, calcs_t value) : Raster(size_x_, size_y_) {
+Raster::Raster(int size_x_, int size_y_, real_type value) : Raster(size_x_, size_y_) {
     set_data(value);
 }
 
@@ -28,7 +28,7 @@ Raster::Raster(const std::string &filename) {
 }
 
 // operators for accessing underlying data
-const calcs_t& Raster::operator()(int i, int j) const {
+const real_type& Raster::operator()(int i, int j) const {
 #ifdef NDEBUG
     return data[i * size_y + j];
 #else
@@ -36,7 +36,7 @@ const calcs_t& Raster::operator()(int i, int j) const {
 #endif
 }
 
-calcs_t& Raster::operator()(int i, int j) {
+real_type& Raster::operator()(int i, int j) {
 #ifdef NDEBUG
     return data[i * size_y + j];
 #else
@@ -48,7 +48,7 @@ calcs_t& Raster::operator()(int i, int j) {
 void Raster::resize(int size_x_, int size_y_) {
     size_x = size_x_;
     size_y = size_y_;
-    data = std::vector<calcs_t>(size_x * size_y);
+    data = std::vector<real_type>(size_x * size_y);
     idx = std::vector<int>();
 }
 
@@ -73,7 +73,7 @@ void Raster::load(const std::string &filename) {
     fin >> key; fin >> nodata;
 
     // create vector
-    data = std::vector<calcs_t>(size_x * size_y);
+    data = std::vector<real_type>(size_x * size_y);
 
     // read data
     for (int x = 0; x < size_x; x++)
@@ -118,7 +118,7 @@ void Raster::save(const std::string &filename) {
 }
 
 // set all elements of data to a value
-void Raster::set_data(calcs_t value) {
+void Raster::set_data(real_type value) {
     std::fill(data.begin(), data.end(), value);
 }
 

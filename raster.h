@@ -8,33 +8,33 @@
 class Raster {
     private:
         int size_x, size_y;
-        std::vector<calcs_t> data;
-        calcs_t xllcorner, yllcorner;
-        calcs_t deltax;
-        calcs_t nodata;
+        std::vector<real_type> data;
+        real_type xllcorner, yllcorner;
+        real_type deltax;
+        real_type nodata;
         std::vector<int> idx;
 
     public:
         Raster();
         Raster(int size_x_, int size_y_);
-        Raster(int size_x_, int size_y_, calcs_t value);
+        Raster(int size_x_, int size_y_, real_type value);
         Raster(const std::string &filename);
-        const calcs_t& operator()(int i, int j) const;
-        calcs_t& operator()(int i, int j);
+        const real_type& operator()(int i, int j) const;
+        real_type& operator()(int i, int j);
         void resize(int size_x_, int size_y_);
         void load(const std::string &filename);
         void save(const std::string &filename);
-        void set_data(calcs_t value);
+        void set_data(real_type value);
         bool is_nodata(int i, int j);
         void set_nodata(int i, int j);
         void sort_data();
         void get_sorted_ij(int t, int &i, int &j);
-        calcs_t get_size_x() { return size_x; }
-        calcs_t get_size_y() { return size_y; }
-        calcs_t get_xllcorner() { return xllcorner; }
-        calcs_t get_yllcorner() { return yllcorner; }
-        calcs_t get_deltax() { return deltax; }
-        calcs_t get_nodata() { return nodata; }
+        real_type get_size_x() { return size_x; }
+        real_type get_size_y() { return size_y; }
+        real_type get_xllcorner() { return xllcorner; }
+        real_type get_yllcorner() { return yllcorner; }
+        real_type get_deltax() { return deltax; }
+        real_type get_nodata() { return nodata; }
 };
 
 #endif

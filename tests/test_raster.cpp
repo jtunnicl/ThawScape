@@ -30,9 +30,9 @@ TEST_CASE("Raster class", "[raster]") {
 
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 6; j++) {
-                calcs_t id = static_cast<calcs_t>(i);
-                calcs_t jd = static_cast<calcs_t>(j);
-                calcs_t expected = id + 1 + (jd + 1) / 10;
+                real_type id = static_cast<real_type>(i);
+                real_type jd = static_cast<real_type>(j);
+                real_type expected = id + 1 + (jd + 1) / 10;
                 REQUIRE(test(i, j) == Approx(expected));
             }
         }
@@ -79,7 +79,7 @@ TEST_CASE("Raster class", "[raster]") {
 
             SECTION("Sorting data") {
                 // expected values in order
-                std::vector<calcs_t> expected_vals = {0.5, 1, 2, 4, 6, 7, 9, 10, 11, 12, 15, 22, 25, 29, 39};
+                std::vector<real_type> expected_vals = {0.5, 1, 2, 4, 6, 7, 9, 10, 11, 12, 15, 22, 25, 29, 39};
                 std::vector<int> expected_i      = {2,   0, 4, 3, 4, 2, 2, 0,  1,  1,  0,  1,  3,  3,  4};
                 std::vector<int> expected_j      = {0,   1, 1, 2, 0, 1, 2, 0,  2,  0,  2,  1,  1,  0,  2};
 
@@ -97,7 +97,7 @@ TEST_CASE("Raster class", "[raster]") {
                     REQUIRE(j == expected_j[t]);
 
                     // check the value is correct
-                    calcs_t value = test(i, j);
+                    real_type value = test(i, j);
                     REQUIRE(value == Approx(expected_vals[t]));
                 }
             }

@@ -32,14 +32,14 @@
 
 class solar_geom {
 public:
-	calcs_t lattitude;
-	calcs_t longitude;
-	calcs_t stdmed;          // LSTM = (UTC - 7H * 15 deg)
-	calcs_t declination;     // Declination of sun from equatorial plane
-	calcs_t altitude;        // Sun altitude in the sky
-	calcs_t azimuth;         // Compass angle of sun
-	calcs_t incidence;       // Angle of sun's incidence
-	calcs_t SHA;             // Solar Hour Angle is 0° at solar noon.  Since the Earth rotates 15° per hour,
+	real_type lattitude;
+	real_type longitude;
+	real_type stdmed;          // LSTM = (UTC - 7H * 15 deg)
+	real_type declination;     // Declination of sun from equatorial plane
+	real_type altitude;        // Sun altitude in the sky
+	real_type azimuth;         // Compass angle of sun
+	real_type incidence;       // Angle of sun's incidence
+	real_type SHA;             // Solar Hour Angle is 0° at solar noon.  Since the Earth rotates 15° per hour,
 		            // each hour away from solar noon corresponds to an angular motion of the sun in the sky of 15°.
 		            // In the morning the hour angle is negative, in the afternoon the hour angle is positive.
 };
@@ -49,46 +49,46 @@ class StreamPower
 public:
 
 	int lattice_size_x, lattice_size_y, duration, printinterval, printstep;
-	calcs_t U, K, D, melt, timestep, ann_timestep, deltax, deltax2, thresh, thresh_diag, thresholdarea;
-	calcs_t init_exposure_age, init_sed_track, init_veg;
+	real_type U, K, D, melt, timestep, ann_timestep, deltax, deltax2, thresh, thresh_diag, thresholdarea;
+	real_type init_exposure_age, init_sed_track, init_veg;
 
 	// new vars
-	calcs_t xllcorner, yllcorner, nodata;
+	real_type xllcorner, yllcorner, nodata;
 	std::vector<int> iup, idown, jup, jdown;
-	std::vector<calcs_t> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;
+	std::vector<real_type> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;
     Raster topo, topoold, slope, aspect;
     Raster flow, flow1, flow2, flow3, flow4, flow5, flow6, flow7, flow8, FA_Bounds;
 	Raster veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
 	Raster solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
 	Raster Ip_D8;     // Map of incoming solar flux, 8 directions
-	Array2D<calcs_t> elevation;
+	Array2D<real_type> elevation;
 
 	time_fcn ct;             // Current model time
 	solar_geom r;
 
-	static std::vector<calcs_t> Vector(int nl, int nh);
+	static std::vector<real_type> Vector(int nl, int nh);
 	static std::vector<int> IVector(int nl, int nh);
-	static std::vector<std::vector<calcs_t>> Matrix(int nrl, int nrh, int ncl, int nch);			
+	static std::vector<std::vector<real_type>> Matrix(int nrl, int nrh, int ncl, int nch);			
 	static std::vector<std::vector<int>> IMatrix(int nrl, int nrh, int ncl, int nch);	
 
     bool fix_random_seed;
-	static calcs_t Ran3(std::default_random_engine& generator, std::uniform_real_distribution<calcs_t>& distribution);
-	static calcs_t Gasdev(std::default_random_engine& generator, std::normal_distribution<calcs_t>& distribution);
+	static real_type Ran3(std::default_random_engine& generator, std::uniform_real_distribution<real_type>& distribution);
+	static real_type Gasdev(std::default_random_engine& generator, std::normal_distribution<real_type>& distribution);
 
-	static void Tridag(calcs_t a[], calcs_t b[], calcs_t c[], calcs_t r[], calcs_t u[], unsigned long n); // interface from old to new implementation
-	static void Tridag(std::vector<calcs_t>& a, std::vector<calcs_t>& b, std::vector<calcs_t>& c, std::vector<calcs_t>& r, std::vector<calcs_t>& u, int n); // new implementation
+	static void Tridag(real_type a[], real_type b[], real_type c[], real_type r[], real_type u[], unsigned long n); // interface from old to new implementation
+	static void Tridag(std::vector<real_type>& a, std::vector<real_type>& b, std::vector<real_type>& c, std::vector<real_type>& r, std::vector<real_type>& u, int n); // new implementation
 
 	StreamPower(int nx, int ny);
 	~StreamPower();
 
-	std::vector<std::vector<calcs_t>> CreateRandomField();
-	std::vector<std::vector<calcs_t>> ReadArcInfoASCIIGrid(const char* fname);
+	std::vector<std::vector<real_type>> CreateRandomField();
+	std::vector<std::vector<real_type>> ReadArcInfoASCIIGrid(const char* fname);
 	Raster GetTopo();
 
 
 	void SetupGridNeighbors();
 	void SetTopo();
-	void SetFA();     // Set flow accumulation raster
+	void SetFA();
 	void Flood(); // Barnes pit filling
 	void MFDFlowRoute(int i, int j); //new implementation
 	void InitDiffusion();
