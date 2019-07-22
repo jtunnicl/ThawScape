@@ -82,10 +82,10 @@ class Raster {
         void get_sorted_ij(int t, int &i, int &j);
 
         /// \brief Get the size of the raster in the x dimension
-        real_type get_size_x() { return size_x; }
+        int get_size_x() { return size_x; }
 
         /// \brief Get the size of the raster in the y dimension
-        real_type get_size_y() { return size_y; }
+        int get_size_y() { return size_y; }
 
         /// \brief Get the x coordinate of the lower left corner
         real_type get_xllcorner() { return xllcorner; }
