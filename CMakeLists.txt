@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.1.0)
-project(ThawScape LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.9.0)
+project(ThawScape
+        DESCRIPTION "ThawScape is an experimental code to simulate the influence of thermokarst dynamics upon ice-cored terrain"
+        LANGUAGES CXX)
 
 # CXX standard
 set(CMAKE_CXX_STANDARD 11)
@@ -10,13 +12,17 @@ include(CTest)
 
 # default to RELEASE build if not specified
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+    message(STATUS "Defaulting to RELWITHDEBINFO build")
+    set(CMAKE_BUILD_TYPE "RELWITHDEBINFO" CACHE STRING "" FORCE)
 endif()
 
 # option to use double precision (default is single)
 option(DOUBLE_PRECISION "Use double precision" OFF)
 if (DOUBLE_PRECISION)
     add_definitions(-DDOUBLE_PRECISION)
+    message(STATUS "Double precision build")
+else()
+    message(STATUS "Single precision build")
 endif()
 
 # enable compiler warnings
@@ -39,8 +45,8 @@ if (ENABLE_PROFILING)
     endif()
 endif()
 
-# add the library
-add_library(ThawScapeLib
+# list of source files
+set(ThawScapeSrc
     global_defs.h
     timer.hpp
     raster.h
@@ -55,6 +61,9 @@ add_library(ThawScapeLib
     priority_flood.hpp
     Array2D.hpp
 )
+
+# add the library
+add_library(ThawScapeLib ${ThawScapeSrc})
 target_include_directories(ThawScapeLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # add executable
@@ -69,4 +78,21 @@ configure_file(ThawScape.ini ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 # add tests directory
 if (BUILD_TESTING)
     add_subdirectory(tests)
+endif()
+
+# add documentation directory
+option(BUILD_DOC "Build the documentation" ON)
+if (BUILD_DOC)
+    find_package(Doxygen REQUIRED dot)
+    if (DOXYGEN_FOUND)
+        set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
+        set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
+        set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
+        doxygen_add_docs(doc
+            ${ThawScapeSrc} README.md
+            COMMENT "Build Doxygen documentation"
+        )
+    else()
+        message(WARNING "Doxygen must be installed to build documentation")
+    endif()
 endif()
