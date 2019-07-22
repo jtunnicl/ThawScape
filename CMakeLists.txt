@@ -52,8 +52,8 @@ set(ThawScapeSrc
     raster.h
     raster.cpp
     data_structures.h
-    time_fcn.h
-    time_fcn.cpp
+    model_time.h
+    model_time.cpp
     streampower.h
     streampower.cpp
     utility.h
@@ -88,6 +88,7 @@ if (BUILD_DOC)
         set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
         set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
         set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
+        set(DOXYGEN_EXTRACT_PRIVATE YES)
         doxygen_add_docs(doc
             ${ThawScapeSrc} README.md
             COMMENT "Build Doxygen documentation"

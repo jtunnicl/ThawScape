@@ -5,7 +5,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/catch2/cmake/Catch.cmake")
 set(TEST_SRC
     tests.cpp
     test_streampower.cpp
-    test_time_fcn.cpp
+    test_model_time.cpp
     test_raster.cpp
 )
 add_executable(ThawScapeTests ${TEST_SRC})

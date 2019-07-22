@@ -1,9 +1,9 @@
 #include <iostream>
 #include "utility.h"
-#include "time_fcn.h"
+#include "model_time.h"
 
 
-time_fcn::time_fcn(int year_, int day_, int hour_, int minute_, int end_year_, int end_day_) {
+ModelTime::ModelTime(int year_, int day_, int hour_, int minute_, int end_year_, int end_day_) {
     year = year_;
     day = day_;
     hour = hour_;
@@ -14,35 +14,35 @@ time_fcn::time_fcn(int year_, int day_, int hour_, int minute_, int end_year_, i
     end_day = end_day_;
 }
 
-int time_fcn::get_year() {
+int ModelTime::get_year() {
     return year;
 }
 
-int time_fcn::get_day() {
+int ModelTime::get_day() {
     return day;
 }
 
-int time_fcn::get_hour() {
+int ModelTime::get_hour() {
     return hour;
 }
 
-int time_fcn::get_minute() {
+int ModelTime::get_minute() {
     return minute;
 }
 
-int time_fcn::get_end_year() {
+int ModelTime::get_end_year() {
     return end_year;
 }
 
-int time_fcn::get_end_day() {
+int ModelTime::get_end_day() {
     return end_day;
 }
 
-bool time_fcn::keep_going() {
+bool ModelTime::keep_going() {
     return (year < end_year || (year == end_year && day < end_day));
 }
 
-void time_fcn::increment(int timestep) {
+void ModelTime::increment(int timestep) {
     if (timestep >= 24) {
         Util::Error("Timestep must be less than 24", 1);
     }
@@ -62,6 +62,6 @@ void time_fcn::increment(int timestep) {
     }
 }
 
-void time_fcn::print() {
+void ModelTime::print() {
     std::cout << "Year: " << year << "; Day: " << day << "; Hour: " << hour << std::endl;
 }

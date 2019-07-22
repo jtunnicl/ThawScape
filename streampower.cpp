@@ -15,7 +15,7 @@
 #include "utility.h"
 #include "priority_flood.hpp"
 #include "inih/INIReader.h"
-#include "time_fcn.h"
+#include "model_time.h"
 #include "timer.hpp"
 #include "raster.h"
 
@@ -702,7 +702,7 @@ void StreamPower::Init(std::string parameter_file)
 	int minute = reader.GetInteger("time", "hour", 0);   // 0 in most cases
 	int end_year = reader.GetInteger("time", "end_year", 2015);  // Model execution ends on the first day of this year
     int end_day = reader.GetInteger("time", "end_day", 1);
-    ct = time_fcn(year, day, hour, minute, end_year, end_day);
+    ct = ModelTime(year, day, hour, minute, end_year, end_day);
 	duration = end_year - year;   // Model execution time, in years, keeping in mind melt season is 138 days
 
 	r.lattitude = reader.GetReal("solar_geom", "lattitude", 0); // 67.3;

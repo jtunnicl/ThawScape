@@ -5,6 +5,8 @@
 #include <string>
 #include "global_defs.h"
 
+
+/// \brief Class for storing a Raster array including methods for loading, saving and sorting
 class Raster {
     private:
         int size_x;  ///< x dimension of the raster

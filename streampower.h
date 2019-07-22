@@ -7,7 +7,7 @@
 #include <algorithm>
 #include "global_defs.h"
 #include "Array2D.hpp"
-#include "time_fcn.h"
+#include "model_time.h"
 #include "raster.h"
 
 #define NR_END 1
@@ -63,7 +63,7 @@ public:
 	Raster Ip_D8;     // Map of incoming solar flux, 8 directions
 	Array2D<real_type> elevation;
 
-	time_fcn ct;             // Current model time
+	ModelTime ct;             // Current model time
 	solar_geom r;
 
 	static std::vector<real_type> Vector(int nl, int nh);

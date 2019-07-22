@@ -1,6 +1,6 @@
 #include <iostream>
 #include "catch2/catch.hpp"
-#include "time_fcn.h"
+#include "model_time.h"
 
 
 TEST_CASE("time_fcn class", "[time_fcn]") {
@@ -10,7 +10,7 @@ TEST_CASE("time_fcn class", "[time_fcn]") {
     int minute = 1;
     int end_year = 2016;
     int end_day = FIRST_DAY + 1;
-    time_fcn mytime(year, day, hour, minute, end_year, end_day);
+    ModelTime mytime(year, day, hour, minute, end_year, end_day);
     REQUIRE(year == mytime.get_year()); 
     REQUIRE(day == mytime.get_day()); 
     REQUIRE(hour == mytime.get_hour()); 

@@ -1,20 +1,21 @@
-#ifndef _TIME_FCN_H_
-#define _TIME_FCN_H_
+#ifndef _MODEL_TIME_H_
+#define _MODEL_TIME_H_
 
 #define FIRST_DAY 144  // May 25th
 #define LAST_DAY 282   // Oct 10th, freezeup and minimum change after that
 
 
-class time_fcn {
+/// \brief Class for tracking simulation time
+class ModelTime {
     public:
-        /// \brief Create a time_fcn object
+        /// \brief Create a ModelTime object
         /// \param year The initial year
         /// \param day The initial day
         /// \param hour The initial hour
         /// \param minute The initial minute
         /// \param end_year The final year
         /// \param end_day The final day
-        time_fcn(int year = 0, int day = 0, int hour = 0, int minute = 0, int end_year = 0, int end_day = 0);
+        ModelTime(int year = 0, int day = 0, int hour = 0, int minute = 0, int end_year = 0, int end_day = 0);
 
         /// \brief Determine whether to keep going (if we haven't reached the end yet)
         bool keep_going();
@@ -39,6 +40,8 @@ class time_fcn {
 
         /// \brief Advance the current time by the specified increment
         /// \param timestep The number of hours to move time forwards by
+        ///
+        /// \note With the current implementation, \p timestep must be less than 24 hours
         void increment(int timestep);
 
         /// \brief Print some information about the current date time
