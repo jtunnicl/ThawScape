@@ -725,7 +725,6 @@ void StreamPower::LoadInputs()
 {
 	SetFA();
 	SetTopo();
-	//sp.SetFA(sp.ReadArcInfoASCIIGrid(sed_file.c_str()));   // Option to set sediment thickness
 }
 
 void StreamPower::Start()
@@ -928,42 +927,6 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 		}
 	}
 	return mat;
-}
-
-std::vector<std::vector<real_type>> StreamPower::ReadArcInfoASCIIGrid(const char* fname)
-{
-	std::ifstream in(fname);
-	std::vector<std::vector<real_type>> raster;
-	std::string line;
-
-	if (in.fail())
-	    Util::Error("Well that didn't work ..!  Missing or invalid file: " + std::string(fname), 1);
-	else
-		Util::Warning("Reading raster without any checks or guarantees ...");
-
-	// read 6 lines of metadata
-	std::string key;
-	in >> key; in >> lattice_size_y; // ncols //NOTE: Pelltier's code was originally written for [x][y] indexing; Saga uses [y][x].
-	in >> key; in >> lattice_size_x; // nrows
-	in >> key; in >> xllcorner;
-	in >> key; in >> yllcorner;
-	in >> key; in >> deltax;
-	in >> key; in >> nodata;
-
-	raster = std::vector<std::vector<real_type>>(lattice_size_x, std::vector<real_type>(lattice_size_y));
-
-	// read data
-	for (int x = 0; x < lattice_size_x; x++)
-	{
-		for (int y = 0; y < lattice_size_y; y++)
-		{
-			in >> raster[x][y];
-		}
-	}
-
-	Util::Info("Done reading raster");
-
-	return raster;
 }
 
 StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny)

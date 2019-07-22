@@ -82,7 +82,6 @@ public:
 	~StreamPower();
 
 	std::vector<std::vector<real_type>> CreateRandomField();
-	std::vector<std::vector<real_type>> ReadArcInfoASCIIGrid(const char* fname);
 	Raster GetTopo();
 
 
