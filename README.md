@@ -25,3 +25,11 @@ build directory.
 
 The `ThawScape.ini` input file must be present in the directory you run the
 executable from.
+
+The default is to build a single precision version of ThawScape. If you would
+like to use double precision then replace the `cmake ..` command above with the
+following:
+
+```
+cmake .. -DDOUBLE_PRECISION=ON
+```

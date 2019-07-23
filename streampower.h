@@ -5,8 +5,10 @@
 #include <random>
 #include <numeric>
 #include <algorithm>
+#include "global_defs.h"
 #include "Array2D.hpp"
-#include "indexx.hpp"
+#include "model_time.h"
+#include "raster.h"
 
 #define NR_END 1
 #define FREE_ARG char*
@@ -28,28 +30,16 @@
 #define fillincrement 0.01f
 
 
-class time_fcn {
-public:
-	int year;
-	int day;           // Everything works on 365 Julian Day system for now
-	int hour;          // 24 hr clock
-	int minute;
-	int LocalTime;     // Decimal Hour
-	int UT;
-
-	int end_year;      // Model end year
-};
-
 class solar_geom {
 public:
-	float lattitude;
-	float longitude;
-	float stdmed;          // LSTM = (UTC - 7H * 15 deg)
-	float declination;     // Declination of sun from equatorial plane
-	float altitude;        // Sun altitude in the sky
-	float azimuth;         // Compass angle of sun
-	float incidence;       // Angle of sun's incidence
-	float SHA;             // Solar Hour Angle is 0° at solar noon.  Since the Earth rotates 15° per hour,
+	real_type lattitude;
+	real_type longitude;
+	real_type stdmed;          // LSTM = (UTC - 7H * 15 deg)
+	real_type declination;     // Declination of sun from equatorial plane
+	real_type altitude;        // Sun altitude in the sky
+	real_type azimuth;         // Compass angle of sun
+	real_type incidence;       // Angle of sun's incidence
+	real_type SHA;             // Solar Hour Angle is 0° at solar noon.  Since the Earth rotates 15° per hour,
 		            // each hour away from solar noon corresponds to an angular motion of the sun in the sky of 15°.
 		            // In the morning the hour angle is negative, in the afternoon the hour angle is positive.
 };
@@ -59,48 +49,45 @@ class StreamPower
 public:
 
 	int lattice_size_x, lattice_size_y, duration, printinterval, printstep;
-	float U, K, D, melt, timestep, ann_timestep, deltax, deltax2, thresh, thresh_diag, thresholdarea;
-	float init_exposure_age, init_sed_track, init_veg;
+	real_type U, K, D, melt, timestep, ann_timestep, deltax, deltax2, thresh, thresh_diag, thresholdarea;
+	real_type init_exposure_age, init_sed_track, init_veg;
 
 	// new vars
-	float xllcorner, yllcorner, nodata;
+	real_type xllcorner, yllcorner, nodata;
 	std::vector<int> iup, idown, jup, jdown;
-	std::vector<float> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;
-    Indexx<float> topo_indexx, sed_indexx;
-	std::vector<std::vector<float>> topo, topoold, topo2, slope, aspect, flow, flow1, flow2, flow3, 
-		flow4, flow5, flow6, flow7, flow8, FA, FA_Bounds, veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
-	std::vector<std::vector<float>> solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
-	std::vector<std::vector<std::vector<float>>> Ip_D8;     // Map of incoming solar flux, 8 directions
-	Array2D<float> elevation;
+	std::vector<real_type> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;
+    Raster topo, topoold, slope, aspect;
+    Raster flow, flow1, flow2, flow3, flow4, flow5, flow6, flow7, flow8, FA_Bounds;
+	Raster veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
+	Raster solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
+	Raster Ip_D8;     // Map of incoming solar flux, 8 directions
+	Array2D<real_type> elevation;
 
-	time_fcn ct;             // Current model time
+	ModelTime ct;             // Current model time
 	solar_geom r;
 
-	static std::vector<float> Vector(int nl, int nh);
+	static std::vector<real_type> Vector(int nl, int nh);
 	static std::vector<int> IVector(int nl, int nh);
-	static std::vector<std::vector<float>> Matrix(int nrl, int nrh, int ncl, int nch);			
+	static std::vector<std::vector<real_type>> Matrix(int nrl, int nrh, int ncl, int nch);			
 	static std::vector<std::vector<int>> IMatrix(int nrl, int nrh, int ncl, int nch);	
 
-	static float Ran3(std::default_random_engine& generator, std::uniform_real_distribution<float>& distribution);
-	static float Gasdev(std::default_random_engine& generator, std::normal_distribution<float>& distribution);
+    bool fix_random_seed;
+	static real_type Ran3(std::default_random_engine& generator, std::uniform_real_distribution<real_type>& distribution);
+	static real_type Gasdev(std::default_random_engine& generator, std::normal_distribution<real_type>& distribution);
 
-//	static void Indexx(int n, float* arr, int* indx);	// interface from old to new implementation
-//	static std::vector<int> Indexx(std::vector<float>& arr);	// new implementation
-
-	static void Tridag(float a[], float b[], float c[], float r[], float u[], unsigned long n); // interface from old to new implementation
-	static void Tridag(std::vector<float>& a, std::vector<float>& b, std::vector<float>& c, std::vector<float>& r, std::vector<float>& u, int n); // new implementation
+	static void Tridag(real_type a[], real_type b[], real_type c[], real_type r[], real_type u[], unsigned long n); // interface from old to new implementation
+	static void Tridag(std::vector<real_type>& a, std::vector<real_type>& b, std::vector<real_type>& c, std::vector<real_type>& r, std::vector<real_type>& u, int n); // new implementation
 
 	StreamPower(int nx, int ny);
 	~StreamPower();
 
-	std::vector<std::vector<float>> CreateRandomField();
-	std::vector<std::vector<float>> ReadArcInfoASCIIGrid(const char* fname);
-	std::vector<std::vector<float>> GetTopo();
+	std::vector<std::vector<real_type>> CreateRandomField();
+	Raster GetTopo();
 
 
 	void SetupGridNeighbors();
-	void SetTopo(std::vector<std::vector<float>> t);
-	void SetFA(std::vector<std::vector<float>> f);     // Set flow accumulation raster
+	void SetTopo();
+	void SetFA();
 	void Flood(); // Barnes pit filling
 	void MFDFlowRoute(int i, int j); //new implementation
 	void InitDiffusion();
@@ -114,7 +101,6 @@ public:
 	void Init(std::string parameter_file); // using new vars
     void LoadInputs();
 	void Start();
-	void PrintState(char* fname);
 
     std::string topo_file, fa_file, sed_file;
 };
