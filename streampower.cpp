@@ -226,7 +226,7 @@ void StreamPower::Flood()
 
 void StreamPower::MFDFlowRoute(int i, int j)
 {
-	float tot;
+	real_type tot;
 
     // Note that deltax is not used in this computation, so the flow raster represents simply the number of contributing unit cells upstream.
     tot = 0;
