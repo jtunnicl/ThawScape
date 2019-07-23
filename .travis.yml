@@ -26,4 +26,4 @@ install:
     - make
 
 script:
-    - ctest --output-on-failure
+    - ctest --output-on-failure -E FullRun
