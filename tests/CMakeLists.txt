@@ -2,12 +2,7 @@
 include("${CMAKE_CURRENT_SOURCE_DIR}/catch2/cmake/Catch.cmake")
 
 # test ThawScape
-set(TEST_SRC
-    tests.cpp
-    test_streampower.cpp
-    test_model_time.cpp
-    test_raster.cpp
-)
+file(GLOB TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 add_executable(ThawScapeTests ${TEST_SRC})
 target_link_libraries(ThawScapeTests ThawScapeLib)
 catch_discover_tests(ThawScapeTests)

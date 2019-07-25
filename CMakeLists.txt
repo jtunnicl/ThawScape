@@ -46,21 +46,10 @@ if (ENABLE_PROFILING)
 endif()
 
 # list of source files
-set(ThawScapeSrc
-    global_defs.h
-    timer.hpp
-    raster.h
-    raster.cpp
-    data_structures.h
-    model_time.h
-    model_time.cpp
-    streampower.h
-    streampower.cpp
-    utility.h
-    utility.cpp
-    priority_flood.hpp
-    Array2D.hpp
-)
+file(GLOB cpp_src ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB h_src ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+file(GLOB hpp_src ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+set(ThawScapeSrc ${cpp_src} ${h_src} ${hpp_src})
 
 # add the library
 add_library(ThawScapeLib ${ThawScapeSrc})
