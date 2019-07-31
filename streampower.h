@@ -10,6 +10,7 @@
 #include "model_time.h"
 #include "raster.h"
 #include "mfd_flow_router.h"
+#include "grid_neighbours.h"
 
 #define NR_END 1
 #define FREE_ARG char*
@@ -63,6 +64,7 @@ public:
 	Raster Ip_D8;     // Map of incoming solar flux, 8 directions
 	Array2D<real_type> elevation;
     MFDFlowRouter mfd_flow_router;
+    GridNeighbours nebs;
 
 	ModelTime ct;             // Current model time
 	solar_geom r;

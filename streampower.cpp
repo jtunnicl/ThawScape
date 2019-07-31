@@ -19,6 +19,7 @@
 #include "timer.hpp"
 #include "raster.h"
 #include "mfd_flow_router.h"
+#include "grid_neighbours.h"
 
 
 /* allocate a real_type vector with subscript range v[nl..nh] */
@@ -155,6 +156,7 @@ void StreamPower::SetTopo()
 	elevation = Array2D<real_type>(lattice_size_x, lattice_size_y, -9999.0);
 
 	SetupGridNeighbors();
+    nebs.setup(lattice_size_x, lattice_size_y);
 
 	for (int i = 0; i < lattice_size_x; i++)     // Populate model grids
 	{
@@ -845,7 +847,7 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 	return mat;
 }
 
-StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny), mfd_flow_router(topo, flow, iup, idown, jup, jdown)
+StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny), mfd_flow_router(topo, flow, nebs)
 {
 
 }
