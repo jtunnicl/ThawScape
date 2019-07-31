@@ -890,7 +890,7 @@ void StreamPower::Start()
 		tstep += timestep;
 		if (tstep >= printinterval) {
 			char fname[100];
-			sprintf(fname, "erosion_%i_%i_%.3f.asc", ct.get_day(), ct.get_hour(), r.altitude );
+			sprintf(fname, "erosion_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), r.altitude );
             topo.save(fname);
 			tstep = 0;
 		}
