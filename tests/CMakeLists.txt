@@ -2,10 +2,14 @@
 include("${CMAKE_CURRENT_SOURCE_DIR}/catch2/cmake/Catch.cmake")
 
 # test ThawScape
-file(GLOB TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/test*.cpp)
 add_executable(ThawScapeTests ${TEST_SRC})
 target_link_libraries(ThawScapeTests ThawScapeLib)
 catch_discover_tests(ThawScapeTests)
+
+# standalone apps for testing
+add_executable(run_mfd run_mfd.cpp)
+target_link_libraries(run_mfd ThawScapeLib)
 
 # copy test input files
 configure_file(ThawScapeTestInit.ini ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
