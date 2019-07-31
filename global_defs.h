@@ -7,4 +7,6 @@ typedef double real_type;
 typedef float real_type;
 #endif
 
+#define oneoversqrt2 0.707106781186f
+
 #endif

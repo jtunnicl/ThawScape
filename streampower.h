@@ -9,6 +9,7 @@
 #include "Array2D.hpp"
 #include "model_time.h"
 #include "raster.h"
+#include "mfd_flow_router.h"
 
 #define NR_END 1
 #define FREE_ARG char*
@@ -23,7 +24,6 @@
 #define NSTACK 100000
 
 #define sqrt2 1.414213562373f
-#define oneoversqrt2 0.707106781186f
 #define degrad 0.01745329251994330   // Convert degrees to radians; e.g. 180 * degrad = 3.14159..
 #define PI 3.14159265358979
 #define HALFPI = PI/2
@@ -62,6 +62,7 @@ public:
 	Raster solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
 	Raster Ip_D8;     // Map of incoming solar flux, 8 directions
 	Array2D<real_type> elevation;
+    MFDFlowRouter mfd_flow_router;
 
 	ModelTime ct;             // Current model time
 	solar_geom r;

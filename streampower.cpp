@@ -18,6 +18,7 @@
 #include "model_time.h"
 #include "timer.hpp"
 #include "raster.h"
+#include "mfd_flow_router.h"
 
 
 /* allocate a real_type vector with subscript range v[nl..nh] */
@@ -197,6 +198,9 @@ void StreamPower::SetFA()
         FA_Bounds(0, j) = flow(0, j);
         FA_Bounds(lattice_size_x - 1, j) = flow(lattice_size_x - 1, j);
     }
+
+    mfd_flow_router = MFDFlowRouter();
+    mfd_flow_router.initialise(flow);
 }
 
 void StreamPower::Flood()
@@ -793,6 +797,7 @@ void StreamPower::Start()
             topo.get_sorted_ij(t, i, j);
             if ( ( i > 3 ) && ( i < (lattice_size_x - 3) ) && ( j > 3 ) && ( j < (lattice_size_y - 3) ) )  MFDFlowRoute(i, j);// Do not alter boundary elements
 		}
+//        mfd_flow_router.run(topo, flow, iup, idown, jup, jdown);
         timers["MFDFlowRoute"].stop();
 
 
@@ -897,7 +902,7 @@ void StreamPower::Start()
 	}
     total_time.stop();
 
-    // summarise timings (TODO: make this optional?)
+    // summarise timings
     std::cout << std::endl << "Post run diagnostics..." << std::endl;
     double total_time_secs = total_time.get_total_time() / 1000.0;
     std::cout << "  Total time (excluding input): " << total_time_secs << " s" << std::endl;
