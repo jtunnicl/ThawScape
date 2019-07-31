@@ -57,7 +57,7 @@ public:
 	std::vector<int> iup, idown, jup, jdown;
 	std::vector<real_type> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;
     Raster topo, topoold, slope, aspect;
-    Raster flow, flow1, flow2, flow3, flow4, flow5, flow6, flow7, flow8, FA_Bounds;
+    Raster flow;
 	Raster veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
 	Raster solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
 	Raster Ip_D8;     // Map of incoming solar flux, 8 directions
@@ -90,7 +90,6 @@ public:
 	void SetTopo();
 	void SetFA();
 	void Flood(); // Barnes pit filling
-	void MFDFlowRoute(int i, int j); //new implementation
 	void InitDiffusion();
 	void HillSlopeDiffusion();
 	void Avalanche(int i, int j);

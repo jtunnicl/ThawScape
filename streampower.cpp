@@ -176,31 +176,6 @@ void StreamPower::SetFA()
     deltax = flow.get_deltax();
     deltax2 = deltax * deltax;
     nodata = flow.get_nodata();
-
-    flow1 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow2 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow3 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow4 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow5 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow6 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow7 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow8 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    FA_Bounds = Raster(lattice_size_x, lattice_size_y, 0.0);
-
-    // FA boundary values; zero otherwise
-	for (int i = 0; i < lattice_size_x; i++)
-	{
-        FA_Bounds(i, 0) = flow(i, 0);
-        FA_Bounds(i, lattice_size_y - 1) = flow(i, lattice_size_y - 1);
-	}
-    for (int j = 0; j < lattice_size_y; j++)
-    {
-        FA_Bounds(0, j) = flow(0, j);
-        FA_Bounds(lattice_size_x - 1, j) = flow(lattice_size_x - 1, j);
-    }
-
-    mfd_flow_router = MFDFlowRouter();
-    mfd_flow_router.initialise(flow);
 }
 
 void StreamPower::Flood()
@@ -226,64 +201,6 @@ void StreamPower::Flood()
 		}
 	}
 
-}
-
-void StreamPower::MFDFlowRoute(int i, int j)
-{
-	real_type tot;
-
-    // Note that deltax is not used in this computation, so the flow raster represents simply the number of contributing unit cells upstream.
-    tot = 0;
-    if (topo(i, j) > topo(iup[i], j))
-        tot += pow(topo(i, j) - topo(iup[i], j), 1.1);
-    if (topo(i, j) > topo(idown[i], j))
-        tot += pow(topo(i, j) - topo(idown[i], j), 1.1);
-    if (topo(i, j) > topo(i, jup[j]))
-        tot += pow(topo(i, j) - topo(i, jup[j]), 1.1);
-    if (topo(i, j) > topo(i, jdown[j]))
-        tot += pow(topo(i, j) - topo(i, jdown[j]), 1.1);
-    if (topo(i, j) > topo(iup[i], jup[j]))
-        tot += pow((topo(i, j) - topo(iup[i], jup[j]))*oneoversqrt2, 1.1);
-    if (topo(i, j) > topo(iup[i], jdown[j]))
-        tot += pow((topo(i, j) - topo(iup[i], jdown[j]))*oneoversqrt2, 1.1);
-    if (topo(i, j) > topo(idown[i], jup[j]))
-        tot += pow((topo(i, j) - topo(idown[i], jup[j]))*oneoversqrt2, 1.1);
-    if (topo(i, j) > topo(idown[i], jdown[j]))
-        tot += pow((topo(i, j) - topo(idown[i], jdown[j]))*oneoversqrt2, 1.1);
-
-    if (topo(i, j) > topo(iup[i], j))
-        flow1(i, j) = pow(topo(i, j) - topo(iup[i], j), 1.1) / tot;
-    else flow1(i, j) = 0;
-    if (topo(i, j) > topo(idown[i], j))
-        flow2(i, j) = pow(topo(i, j) - topo(idown[i], j), 1.1) / tot;
-    else flow2(i, j) = 0;
-    if (topo(i, j) > topo(i, jup[j]))
-        flow3(i, j) = pow(topo(i, j) - topo(i, jup[j]), 1.1) / tot;
-    else flow3(i, j) = 0;
-    if (topo(i, j) > topo(i, jdown[j]))
-        flow4(i, j) = pow(topo(i, j) - topo(i, jdown[j]), 1.1) / tot;
-    else flow4(i, j) = 0;
-    if (topo(i, j) > topo(iup[i], jup[j]))
-        flow5(i, j) = pow((topo(i, j) - topo(iup[i], jup[j]))*oneoversqrt2, 1.1) / tot;
-    else flow5(i, j) = 0;
-    if (topo(i, j) > topo(iup[i], jdown[j]))
-        flow6(i, j) = pow((topo(i, j) - topo(iup[i], jdown[j]))*oneoversqrt2, 1.1) / tot;
-    else flow6(i, j) = 0;
-    if (topo(i, j) > topo(idown[i], jup[j]))
-        flow7(i, j) = pow((topo(i, j) - topo(idown[i], jup[j]))*oneoversqrt2, 1.1) / tot;
-    else flow7(i, j) = 0;
-    if (topo(i, j) > topo(idown[i], jdown[j]))
-        flow8(i, j) = pow((topo(i, j) - topo(idown[i], jdown[j]))*oneoversqrt2, 1.1) / tot;
-    else flow8(i, j) = 0;
-
-    flow(iup[i], j) += flow(i, j) * flow1(i, j) + FA_Bounds(i, j);     // final FA_Bounds(i, j) applies only to edges; zero otherwise
-    flow(idown[i], j) += flow(i, j) * flow2(i, j) + FA_Bounds(i, j);
-    flow(i, jup[j]) += flow(i, j) * flow3(i, j) + FA_Bounds(i, j);
-    flow(i, jdown[j]) += flow(i, j) * flow4(i, j) + FA_Bounds(i, j);
-    flow(iup[i], jup[j]) += flow(i, j) * flow5(i, j) + FA_Bounds(i, j);
-    flow(iup[i], jdown[j]) += flow(i, j) * flow6(i, j) + FA_Bounds(i, j);
-    flow(idown[i], jup[j]) += flow(i, j) * flow7(i, j) + FA_Bounds(i, j);
-    flow(idown[i], jdown[j]) += flow(i, j) * flow8(i, j) + FA_Bounds(i, j);
 }
 
 void StreamPower::InitDiffusion()
@@ -729,6 +646,7 @@ void StreamPower::LoadInputs()
 {
 	SetFA();
 	SetTopo();
+    mfd_flow_router.initialise();  // initialise after all inputs are loaded
 }
 
 void StreamPower::Start()
@@ -790,14 +708,7 @@ void StreamPower::Start()
 
 
         timers["MFDFlowRoute"].start();
-		t = lattice_size_x * lattice_size_y;
-		while (t > 0)
-		{
-			t--;
-            topo.get_sorted_ij(t, i, j);
-            if ( ( i > 3 ) && ( i < (lattice_size_x - 3) ) && ( j > 3 ) && ( j < (lattice_size_y - 3) ) )  MFDFlowRoute(i, j);// Do not alter boundary elements
-		}
-//        mfd_flow_router.run(topo, flow, iup, idown, jup, jdown);
+        mfd_flow_router.run();
         timers["MFDFlowRoute"].stop();
 
 
@@ -934,7 +845,7 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 	return mat;
 }
 
-StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny)
+StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny), mfd_flow_router(topo, flow, iup, idown, jup, jdown)
 {
 
 }

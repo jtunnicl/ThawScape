@@ -3,16 +3,22 @@
 #include "raster.h"
 #include "mfd_flow_router.h"
 
-MFDFlowRouter::MFDFlowRouter() : size_x(0), size_y(0) {
 
+/// References to the input Rasters and vectors are stored since they are expected to be
+/// managed elsewhere. One must call the inititialse function before running the flow
+/// routing.
+MFDFlowRouter::MFDFlowRouter(Raster& topo_, Raster& flow_, std::vector<int>& iup_,
+        std::vector<int>& idown_, std::vector<int>& jup_, std::vector<int>& jdown_) :
+        topo(topo_), flow(flow_), iup(iup_), idown(idown_), jup(jup_), jdown(jdown_) {
+    size_x = topo.get_size_x();
+    size_y = topo.get_size_y();
 }
 
+void MFDFlowRouter::initialise() {
+    size_x = topo.get_size_x();
+    size_y = topo.get_size_y();
 
-void MFDFlowRouter::initialise(Raster& initial_flow) {
-    size_x = initial_flow.get_size_x();
-    size_y = initial_flow.get_size_y();
-
-    // flow Rasters
+    // flow Rasters (TODO: don't need these)
     flow1 = Raster(size_x, size_y);
     flow2 = Raster(size_x, size_y);
     flow3 = Raster(size_x, size_y);
@@ -24,23 +30,24 @@ void MFDFlowRouter::initialise(Raster& initial_flow) {
 
     // FA boundary values; zero otherwise
     fa_bounds = Raster(size_x, size_y, 0.0);
+    #pragma omp parallel for
 	for (int i = 0; i < size_x; i++)
 	{
-        fa_bounds(i, 0) = initial_flow(i, 0);
-        fa_bounds(i, size_y - 1) = initial_flow(i, size_y - 1);
+        fa_bounds(i, 0) = flow(i, 0);
+        fa_bounds(i, size_y - 1) = flow(i, size_y - 1);
 	}
+    #pragma omp parallel for
     for (int j = 0; j < size_y; j++)
     {
-        fa_bounds(0, j) = initial_flow(0, j);
-        fa_bounds(size_x - 1, j) = initial_flow(size_x - 1, j);
+        fa_bounds(0, j) = flow(0, j);
+        fa_bounds(size_x - 1, j) = flow(size_x - 1, j);
     }
 }
 
 
 // interface will change...
-void MFDFlowRouter::run(Raster& topo, Raster& flow, std::vector<int>& iup, std::vector<int>& idown,
-        std::vector<int>& jup, std::vector<int>& jdown) {
-    // assumes topo has been sorted already
+void MFDFlowRouter::run() {
+    // NOTE: assumes topo has been sorted already (i.e. topo.sort_data())
 
     int t = size_x * size_y;
     while (t > 0)
