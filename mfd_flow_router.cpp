@@ -48,6 +48,7 @@ void MFDFlowRouter::initialise() {
 void MFDFlowRouter::run() {
     // NOTE: assumes topo has been sorted already (i.e. topo.sort_data())
 
+    // loop over points starting from highest elevation to lowest
     int t = size_x * size_y;
     while (t > 0)
     {
