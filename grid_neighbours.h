@@ -17,8 +17,8 @@ class GridNeighbours {
         GridNeighbours();
 
         /// \brief Initialise GridNeighbours for a given size grid
-        /// \brief size_x Number of cells in x direction
-        /// \brief size_y Number of cells in y direction
+        /// \param size_x Number of cells in x direction
+        /// \param size_y Number of cells in y direction
         void setup(int size_x, int size_y);
 
         /// \brief Get index of up neighbour in x direction for given cell i
