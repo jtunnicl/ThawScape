@@ -158,13 +158,6 @@ void StreamPower::SetTopo()
 	SetupGridNeighbors();
     nebs.setup(lattice_size_x, lattice_size_y);
 
-	for (int i = 0; i < lattice_size_x; i++)     // Populate model grids
-	{
-		for (int j = 0; j < lattice_size_y; j++)
-		{
-			topoold(i, j) = topo(i, j);
-		}
-	}
 	InitDiffusion();
 }
 
@@ -216,7 +209,6 @@ void StreamPower::InitDiffusion()
 			for (int j = 1; j <= lattice_size_y - 2; j++)
 			{
 				topo(i, j) += 0.1;
-				topoold(i, j) += 0.1;
 			}
 		}
 	}
@@ -689,13 +681,6 @@ void StreamPower::Start()
 			Avalanche( i , j );
 			t++;
 		}
-		for (j = 0; j < lattice_size_y; j++)
-		{
-			for (i = 0; i < lattice_size_x; i++)
-			{
-				topoold(i, j) = topo(i, j);
-			}
-		}
         timers["Avalanche"].stop();
 
 		// Pit filling
@@ -709,6 +694,7 @@ void StreamPower::Start()
         timers["Indexx"].stop();
 
 
+        // flow routing
         timers["MFDFlowRoute"].start();
         mfd_flow_router.run();
         timers["MFDFlowRoute"].stop();
@@ -726,7 +712,6 @@ void StreamPower::Start()
 			for (j = 1; j <= lattice_size_y - 2; j++)
 			{
 				topo(i, j) += U * ann_timestep;
-				topoold(i, j) += U * ann_timestep;
 			}
 		}
         timers["Uplift"].stop();
