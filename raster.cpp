@@ -10,7 +10,7 @@
 
 
 // create empty Raster
-Raster::Raster() : size_x(0), size_y(0), data(), xllcorner(0), yllcorner(0), deltax(1), nodata(-99999) {}
+Raster::Raster() : size_x(0), size_y(0), data(), xllcorner(0), yllcorner(0), deltax(1), nodata(-99999), save_prec(-1) {}
 
 // create Raster of given size with no data
 Raster::Raster(int size_x_, int size_y_) : Raster() {
@@ -23,7 +23,7 @@ Raster::Raster(int size_x_, int size_y_, real_type value) : Raster(size_x_, size
 }
 
 // create Raster by loading from file
-Raster::Raster(const std::string &filename) {
+Raster::Raster(const std::string &filename) : Raster() {
     load(filename);
 }
 
@@ -94,9 +94,6 @@ void Raster::save(const std::string &filename) {
         Util::Error("Error opening file to save raster: " + filename, 1);
     }
 
-    // setting precision of output
-//    fout << std::fixed << std::setprecision(12);
-
     // write arcgrid format
     fout << "ncols " << size_y << std::endl;
     fout << "nrows " << size_x << std::endl;
@@ -104,6 +101,11 @@ void Raster::save(const std::string &filename) {
     fout << "yllcorner " << yllcorner << std::endl;
     fout << "cellsize " << deltax << std::endl;
     fout << "NODATA_value " << nodata << std::endl;
+
+    // setting precision of output
+    if (save_prec > 0) {
+        fout << std::fixed << std::setprecision(save_prec);
+    }
 
     // write the data
     for (int i = 0; i < size_x; i++)
@@ -156,4 +158,8 @@ void Raster::get_sorted_ij(int t, int &i, int &j) {
         i = index / size_y;
         j = index % size_y;
     }
+}
+
+void Raster::set_save_precision(int prec) {
+    save_prec = prec;
 }
