@@ -38,5 +38,5 @@ deploy:
     local_dir: build/html
     github_token: $GH_REPO_TOKEN
     on:
-        branch: travis-doc
+        branch: components
         condition: $TRAVIS_OS_NAME = linux
