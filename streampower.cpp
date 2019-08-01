@@ -664,7 +664,7 @@ void StreamPower::Start()
     // set up some timers
     AccumulateTimer<std::chrono::milliseconds> total_time;
     std::vector<std::string> timer_names {"Avalanche", "Flood", "Indexx", "MFDFlowRoute",
-        "HillSlopeDiffusion", "UpliftAndSlopeAspect", "SolarCharacteristics", "Melt",
+        "HillSlopeDiffusion", "Uplift", "SlopeAspect", "SolarCharacteristics", "Melt",
         "ChannelErosion"};
     std::map<std::string, AccumulateTimer<std::chrono::milliseconds> > timers;
     for (auto timer_name : timer_names) {
@@ -719,18 +719,28 @@ void StreamPower::Start()
 		HillSlopeDiffusion();
         timers["HillSlopeDiffusion"].stop();
 
-		// Uplift and Slope/Aspect Calcs
-        timers["UpliftAndSlopeAspect"].start();
+		// Uplift
+        timers["Uplift"].start();
 		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
 			{
 				topo(i, j) += U * ann_timestep;
 				topoold(i, j) += U * ann_timestep;
+			}
+		}
+        timers["Uplift"].stop();
+
+        // Slope/Aspect
+        timers["SlopeAspect"].start();
+		for (i = 1; i <= lattice_size_x - 2; i++)
+		{
+			for (j = 1; j <= lattice_size_y - 2; j++)
+			{
                 SlopeAspect(i, j);
 			}
 		}
-        timers["UpliftAndSlopeAspect"].stop();
+        timers["SlopeAspect"].stop();
 
 		// Update solar characteristics
         timers["SolarCharacteristics"].start();
