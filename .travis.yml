@@ -10,6 +10,7 @@ matrix:
                   packages:
                       - g++-8
                       - cmake
+                      - doxygen
           env:
               - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
         - os: osx
@@ -24,6 +25,17 @@ install:
     - mkdir build && cd build
     - cmake -DDOUBLE_PRECISION=ON -DCMAKE_BUILD_TYPE=RELWITHDEBINFO ..
     - make
+    - if ["${TRAVIS_OS_NAME}" == "linux"]; then make doc; fi
 
 script:
     - ctest --output-on-failure -E FullRun
+
+deploy:
+    provider: pages
+    skip_cleanup: true
+    local_dir: html
+    github_token: $GH_REPO_TOKEN
+    on:
+        branch: travis-doc
+        on:
+            condition: $TRAVIS_OS_NAME = linux
