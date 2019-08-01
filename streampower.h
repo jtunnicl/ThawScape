@@ -24,11 +24,10 @@
 //#define M 7
 #define NSTACK 100000
 
-#define sqrt2 1.414213562373f
 #define degrad 0.01745329251994330   // Convert degrees to radians; e.g. 180 * degrad = 3.14159..
 #define PI 3.14159265358979
 #define HALFPI = PI/2
-#define fillincrement 0.01f
+#define fillincrement 0.01
 
 
 class solar_geom {
