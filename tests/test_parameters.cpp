@@ -4,7 +4,7 @@
 #include "parameters.h"
 
 
-TEST_CASE("Parameters", "[parameters]") {
+TEST_CASE("Parameters class", "[parameters]") {
 	Parameters p("ThawScapeTestInit.ini");
 
     // check parameters are correct
