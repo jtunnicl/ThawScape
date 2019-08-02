@@ -85,7 +85,7 @@ void HillSlopeDiffusion::run() {
 		{
 			for (int i = 0; i < lattice_size_x; i++)
 			{
-				real_type term1 = D * params.get_timestep() / ( deltax2 );
+				real_type term1 = D * params.get_ann_timestep() / ( deltax2 );
 				if (flow(i, j) < params.get_thresholdarea())
 				{
 					ax[i] = -term1;
