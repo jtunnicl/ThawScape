@@ -11,6 +11,7 @@
 #include "raster.h"
 #include "mfd_flow_router.h"
 #include "grid_neighbours.h"
+#include "parameters.h"
 
 #define NR_END 1
 #define FREE_ARG char*
@@ -48,11 +49,11 @@ class StreamPower
 {
 public:
 
-	int lattice_size_x, lattice_size_y, duration, printinterval, printstep;
-	real_type U, K, D, melt, timestep, ann_timestep, deltax, deltax2, thresh, thresh_diag, thresholdarea;
-	real_type init_exposure_age, init_sed_track, init_veg;
+	int lattice_size_x, lattice_size_y, printstep;
+	real_type deltax, deltax2, thresh, thresh_diag;
 
 	// new vars
+    Parameters params;
 	real_type xllcorner, yllcorner, nodata;
 	std::vector<int> iup, idown, jup, jdown;
 	std::vector<real_type> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;

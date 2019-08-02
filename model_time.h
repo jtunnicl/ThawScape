@@ -4,6 +4,7 @@
 #define FIRST_DAY 144  // May 25th
 #define LAST_DAY 282   // Oct 10th, freezeup and minimum change after that
 
+#include "parameters.h"
 
 /// \brief Class for tracking simulation time
 class ModelTime {
@@ -16,6 +17,10 @@ class ModelTime {
         /// \param end_year The final year
         /// \param end_day The final day
         ModelTime(int year = 0, int day = 0, int hour = 0, int minute = 0, int end_year = 0, int end_day = 0);
+
+        /// \brief Create a ModelTime object from Parameters object
+        /// \param params Input Parameters object
+        ModelTime(const Parameters& params);
 
         /// \brief Determine whether to keep going (if we haven't reached the end yet)
         bool keep_going();

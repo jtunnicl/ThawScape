@@ -14,12 +14,12 @@
 #include "streampower.h"
 #include "utility.h"
 #include "priority_flood.hpp"
-#include "inih/INIReader.h"
 #include "model_time.h"
 #include "timer.hpp"
 #include "raster.h"
 #include "mfd_flow_router.h"
 #include "grid_neighbours.h"
+#include "parameters.h"
 
 
 /* allocate a real_type vector with subscript range v[nl..nh] */
@@ -118,7 +118,7 @@ void StreamPower::SetupGridNeighbors()
 
 void StreamPower::SetTopo()
 {
-	topo = Raster(topo_file);
+	topo = Raster(params.get_topo_file());
     lattice_size_x = topo.get_size_x();
     lattice_size_y = topo.get_size_y();
     xllcorner = topo.get_xllcorner();
@@ -147,10 +147,10 @@ void StreamPower::SetTopo()
 	NW_Ip = Raster(lattice_size_x, lattice_size_y);
 
 	// Landscape Elements
-	veg = Raster(lattice_size_x, lattice_size_y, init_veg);
+	veg = Raster(lattice_size_x, lattice_size_y, params.get_init_veg());
 	veg_old = Raster(lattice_size_x, lattice_size_y);
-	Sed_Track = Raster(lattice_size_x, lattice_size_y, init_sed_track); // 2m of overburden to begin
-	ExposureAge = Raster(lattice_size_x, lattice_size_y, init_exposure_age);  // Once over 20, ice is primed for melt
+	Sed_Track = Raster(lattice_size_x, lattice_size_y, params.get_init_sed_track()); // 2m of overburden to begin
+	ExposureAge = Raster(lattice_size_x, lattice_size_y, params.get_init_exposure_age());  // Once over 20, ice is primed for melt
 	ExposureAge_old = Raster(lattice_size_x, lattice_size_y);
 
 	elevation = Array2D<real_type>(lattice_size_x, lattice_size_y, -9999.0);
@@ -163,7 +163,7 @@ void StreamPower::SetTopo()
 
 void StreamPower::SetFA()
 {
-    flow = Raster(fa_file);
+    flow = Raster(params.get_fa_file());
     lattice_size_x = flow.get_size_x();
     lattice_size_y = flow.get_size_y();
     xllcorner = flow.get_xllcorner();
@@ -232,6 +232,7 @@ void StreamPower::HillSlopeDiffusion()
 
 	count = 0;
 
+    real_type D = params.get_D();
 	while (count < 5)
 	{
 		count++;
@@ -242,8 +243,8 @@ void StreamPower::HillSlopeDiffusion()
 		{
 			for (j = 0; j < lattice_size_y; j++)
 			{
-				term1 = D * ann_timestep / (deltax2);
-				if (flow(i, j) < thresholdarea)
+				term1 = D * params.get_ann_timestep() / (deltax2);
+				if (flow(i, j) < params.get_thresholdarea())
 				{
 					ay[j] = -term1;
 					cy[j] = -term1;
@@ -281,8 +282,8 @@ void StreamPower::HillSlopeDiffusion()
 		{
 			for (i = 0; i < lattice_size_x; i++)
 			{
-				term1 = D * timestep / ( deltax2 );
-				if (flow(i, j) < thresholdarea)
+				term1 = D * params.get_timestep() / ( deltax2 );
+				if (flow(i, j) < params.get_thresholdarea())
 				{
 					ax[i] = -term1;
 					cx[i] = -term1;
@@ -566,7 +567,7 @@ void StreamPower::MeltExposedIce(int i, int j) {
 			if (topo(i, j) - neighb[m] > 0) accommodation += deltax2 * (topo(i, j) - neighb[m]);   // sum up all the volume available on pixels below the central pixel
 		}
 
-		elev_drop = incoming / melt / deltax2;
+		elev_drop = incoming / params.get_melt() / deltax2;
 		if (elev_drop * deltax < accommodation)           // i.e. There is room to accommodate the failed mass in neighbouring cells
 			topo(i, j) -= elev_drop;
 		else
@@ -579,61 +580,24 @@ void StreamPower::MeltExposedIce(int i, int j) {
 
 void StreamPower::Init(std::string parameter_file)
 {
-    // load parameter file if it exists
-    std::cout << "Loading parameter file: " << parameter_file << std::endl;
-    INIReader reader(parameter_file);
-    if (reader.ParseError() != 0) {
-        Util::Error(std::string("Cannot load parameter file: ") + parameter_file, 1);
-    }
+    // load parameters
+    params = Parameters(parameter_file);
 
 	// Setup Key Model Variables
-
-	U = reader.GetReal("model", "U", 0.010);        // 'Uplift', m yr^-1
-	K = reader.GetReal("model", "K", 0.001);        // Stream Power, yr^-1
-	D = reader.GetReal("model", "D", 1.500);        // Diffusion, yr^-1
-	melt = reader.GetReal("model", "melt", 250);    // Reciprocal melt rate, for a given radiation input
-
-	deltax = reader.GetReal("model", "deltax", 10.0);   // m; This gets reset after reading ASCII file
+	deltax = 10;   // m; This gets reset after reading ASCII file
 	deltax2 = deltax * deltax;                      // m2; Area of a pixel
-	nodata = reader.GetReal("model", "nodata", -9999.0);
-	xllcorner = reader.GetReal("model", "xllcorner", 0);
-	yllcorner = reader.GetReal("model", "yllcorner", 0);
-
-	timestep = reader.GetReal("time", "timestep", 1);   // Time step in hours
-	printinterval = reader.GetInteger("time", "printinterval", 1); // Output timestep, in hours
-	ann_timestep = timestep / 8760;    //  Used in formula based on annual rates (e.g. 2 hrs, over 8760 hrs in 365 days)
-
 	thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
 	thresh_diag = thresh * sqrt2;
-	thresholdarea = reader.GetReal("model", "thresholdarea", 1e35);  // Threshold for diffusion domain - to prevent diffusion in channels, etc. (m2)
 
-	init_exposure_age = reader.GetReal("model", "init_exposure_age", 0);    // Variables used to initiate exposure time, sed depth and veg age rasters
-	init_sed_track = reader.GetReal("model", "init_sed_track", 2);
-	init_veg = reader.GetReal("model", "init_veg", 8);
+    // create model time object
+    ct = ModelTime(params);
 
-	int year = reader.GetInteger("time", "year", 2010);
-	int day = reader.GetInteger("time", "day", 145);  // 144;              // May 25th is the start of melt/rain season
-	int hour = reader.GetInteger("time", "hour", 12);    // 24-hr clock
-	int minute = reader.GetInteger("time", "hour", 0);   // 0 in most cases
-	int end_year = reader.GetInteger("time", "end_year", 2015);  // Model execution ends on the first day of this year
-    int end_day = reader.GetInteger("time", "end_day", 1);
-    ct = ModelTime(year, day, hour, minute, end_year, end_day);
-	duration = end_year - year;   // Model execution time, in years, keeping in mind melt season is 138 days
-
-	r.lattitude = reader.GetReal("solar_geom", "lattitude", 0); // 67.3;
-	r.longitude = reader.GetReal("solar_geom", "longitude", 0); // 134.9;         // Dempster Coordinates
-	r.stdmed = reader.GetReal("solar_geom", "stdmed", 0); //9 * 15;         // Standard meridian of nearest time zone. LSTM = (UTC - 9H * 15 deg) n.b. Alaska Time Meridian = 135 deg W
-	r.declination = reader.GetReal("solar_geom", "declination", 0.0);
-	r.altitude = reader.GetReal("solar_geom", "altitude", 0.0);
-	r.azimuth = reader.GetReal("solar_geom", "azimuth", 0.0);
-
-    // input file names
-    topo_file = reader.Get("input", "topo", "topo.asc");
-    fa_file = reader.Get("input", "FA", "FA.asc");
-    sed_file = reader.Get("input", "sed", "SedThickness.asc");
-
-    // should we fix the random number seed (for testing)
-    fix_random_seed = reader.GetBoolean("random", "fix_seed", false);
+	r.lattitude = params.get_lattitude();
+	r.longitude = params.get_longitude();
+	r.stdmed = params.get_stdmed();
+	r.declination = params.get_declination();
+	r.altitude = params.get_altitude();
+	r.azimuth = params.get_azimuth();
 }
 
 void StreamPower::LoadInputs()
@@ -651,7 +615,7 @@ void StreamPower::Start()
 	sprintf(fname, "erosion_%d.asc", 0);
     topo.save(fname);
 	int tstep = 0;    // Counter for printing results to file
-	std::cout << "U: " << U << "; K: " << K << "; D: " << D << std::endl;
+	std::cout << "U: " << params.get_U() << "; K: " << params.get_K() << "; D: " << params.get_D() << std::endl;
 
     // set up some timers
     AccumulateTimer<std::chrono::milliseconds> total_time;
@@ -707,11 +671,12 @@ void StreamPower::Start()
 
 		// Uplift
         timers["Uplift"].start();
+        real_type U = params.get_U();
 		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
 			{
-				topo(i, j) += U * ann_timestep;
+				topo(i, j) += U * params.get_ann_timestep();
 			}
 		}
         timers["Uplift"].stop();
@@ -749,11 +714,13 @@ void StreamPower::Start()
 
 		//Channel erosion
         timers["ChannelErosion"].start();
+        real_type K = params.get_K();
 		max = 0;
 		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
-			{				deltah = ann_timestep * K * sqrt( flow(i, j)/1e6 ) * deltax * slope(i, j);     // Fluvial erosion law;
+			{
+                deltah = params.get_ann_timestep() * K * sqrt( flow(i, j)/1e6 ) * deltax * slope(i, j);     // Fluvial erosion law;
 				topo(i, j) -= deltah;
 				//std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow(i, j) / 1e6 << ", slope: " << slope(i, j) << std::endl;
 
@@ -764,7 +731,7 @@ void StreamPower::Start()
         timers["ChannelErosion"].stop();
 
 		// Update current time
-        ct.increment(timestep);
+        ct.increment(params.get_timestep());
 
 /*         // Rate adjustment, based on deltax
 		if (max > 0.3*deltax / timestep)
@@ -800,8 +767,8 @@ void StreamPower::Start()
         ct.print();
 
 		// Write to file at intervals
-		tstep += timestep;
-		if (tstep >= printinterval) {
+		tstep += params.get_timestep();
+		if (tstep >= params.get_printinterval()) {
 			char fname[100];
 			sprintf(fname, "erosion_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), r.altitude );
             topo.save(fname);
@@ -827,7 +794,7 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 {
 	std::vector<std::vector<real_type>> mat = std::vector<std::vector<real_type>>(lattice_size_x, std::vector<real_type>(lattice_size_y));
 	std::default_random_engine generator;
-    if (fix_random_seed) {
+    if (params.get_fix_random_seed()) {
         Util::Warning("Fixing random seed - this should only be used for testing/debugging!");
         generator.seed(12345);
     }

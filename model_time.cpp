@@ -1,5 +1,6 @@
 #include <iostream>
 #include "utility.h"
+#include "parameters.h"
 #include "model_time.h"
 
 
@@ -12,6 +13,15 @@ ModelTime::ModelTime(int year_, int day_, int hour_, int minute_, int end_year_,
     UT = 0;
     end_year = end_year_;
     end_day = end_day_;
+}
+
+ModelTime::ModelTime(const Parameters& params) : ModelTime() {
+    year = params.get_year();
+    day = params.get_day();
+    hour = params.get_hour();
+    minute = params.get_minute();
+    end_year = params.get_end_year();
+    end_day = params.get_end_day();
 }
 
 int ModelTime::get_year() {
