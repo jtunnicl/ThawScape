@@ -71,26 +71,6 @@ real_type StreamPower::Gasdev(std::default_random_engine& generator, std::normal
 
 }
 
-void StreamPower::Tridag(std::vector<real_type>& a, std::vector<real_type>& b, std::vector<real_type>& c, std::vector<real_type>& r, std::vector<real_type>& u, int n)
-{
-	unsigned long j;
-	real_type bet;
-	std::vector<real_type> gam;
-
-	gam = std::vector<real_type>(n);
-	u[0] = r[0] / (bet = b[0]);
-	for (j = 1; j < n; j++)
-	{
-		gam[j] = c[j - 1] / bet;
-		bet = b[j] - a[j] * gam[j];
-		u[j] = (r[j] - a[j] * u[j - 1]) / bet;
-	}
-	for (j = (n-2); j > 1; j--)
-	{
-		u[j] -= gam[j + 1] * u[j + 1];
-	}
-}
-
 void StreamPower::SetupGridNeighbors()
 {
 	int i, j;
@@ -127,7 +107,6 @@ void StreamPower::SetTopo()
     deltax2 = deltax * deltax;
     nodata = topo.get_nodata();
 
-    topoold = Raster(lattice_size_x, lattice_size_y);
     slope = Raster(lattice_size_x, lattice_size_y, 0.0);
     aspect = Raster(lattice_size_x, lattice_size_y, 0.0);
 
@@ -203,116 +182,13 @@ void StreamPower::InitDiffusion()
 	//construct diffusional landscape for initial flow routing
 	for (int step = 1; step <= 10; step++)
 	{
-		HillSlopeDiffusion();
+        hillslope_diffusion.run();
 		for (int i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (int j = 1; j <= lattice_size_y - 2; j++)
 			{
 				topo(i, j) += 0.1;
 			}
-		}
-	}
-}
-
-void StreamPower::HillSlopeDiffusion()
-{
-	int i, j, count;
-	real_type term1;
-
-	ax = std::vector<real_type>(lattice_size_x);
-	ay = std::vector<real_type>(lattice_size_y);
-	bx = std::vector<real_type>(lattice_size_x);
-	by = std::vector<real_type>(lattice_size_y);
-	cx = std::vector<real_type>(lattice_size_x);
-	cy = std::vector<real_type>(lattice_size_y);
-	ux = std::vector<real_type>(lattice_size_x);
-	uy = std::vector<real_type>(lattice_size_y);
-	rx = std::vector<real_type>(lattice_size_x);
-	ry = std::vector<real_type>(lattice_size_y);
-
-	count = 0;
-
-    real_type D = params.get_D();
-	while (count < 5)
-	{
-		count++;
-		for (i = 0; i < lattice_size_x; i++)
-			for (j = 0; j < lattice_size_y; j++)
-				topoold(i, j) = topo(i, j);
-		for (i = 0; i < lattice_size_x; i++)
-		{
-			for (j = 0; j < lattice_size_y; j++)
-			{
-				term1 = D * params.get_ann_timestep() / (deltax2);
-				if (flow(i, j) < params.get_thresholdarea())
-				{
-					ay[j] = -term1;
-					cy[j] = -term1;
-					by[j] = 4 * term1 + 1;
-					ry[j] = term1 * ( topo(iup[i], j) + topo(idown[i], j) ) + topoold(i, j);
-				}
-				else
-				{
-					by[j] = 1;
-					ay[j] = 0;
-					cy[j] = 0;
-					ry[j] = topoold(i, j);
-				}
-				if (j == 0)
-				{
-					by[j] = 1;
-					cy[j] = 0;
-					ry[j] = topoold(i, j);
-				}
-				if (j == lattice_size_y-1)
-				{
-					by[j] = 1;
-					ay[j] = 0;
-					ry[j] = topoold(i, j);
-				}
-			}
-			Tridag(ay, by, cy, ry, uy, lattice_size_y);
-			for (j = 0; j < lattice_size_y; j++)
-				topo(i, j) = uy[j];
-		}
-		for (i = 0; i < lattice_size_x; i++)
-			for (j = 0; j < lattice_size_y; j++)
-				topoold(i, j) = topo(i, j);
-		for (j = 0; j < lattice_size_y; j++)
-		{
-			for (i = 0; i < lattice_size_x; i++)
-			{
-				term1 = D * params.get_timestep() / ( deltax2 );
-				if (flow(i, j) < params.get_thresholdarea())
-				{
-					ax[i] = -term1;
-					cx[i] = -term1;
-					bx[i] = 4 * term1 + 1;
-					rx[i] = term1 * ( topo(i, jup[j]) + topo(i, jdown[j]) ) + topoold(i, j);
-				}
-				else
-				{
-					bx[i] = 1;
-					ax[i] = 0;
-					cx[i] = 0;
-					rx[i] = topoold(i, j);
-				}
-				if (i == 0)
-				{
-					bx[i] = 1;
-					cx[i] = 0;
-					rx[i] = topoold(i, j);
-				}
-				if (i == lattice_size_x-1)
-				{
-					bx[i] = 1;
-					ax[i] = 0;
-					rx[i] = topoold(i, j);
-				}
-			}
-			Tridag(ax, bx, cx, rx, ux, lattice_size_x);
-			for (i = 0; i < lattice_size_x; i++)
-				topo(i, j) = ux[i];
 		}
 	}
 }
@@ -663,7 +539,7 @@ void StreamPower::Start()
 
 		// Diffusive hillslope erosion
         timers["HillSlopeDiffusion"].start();
-		HillSlopeDiffusion();
+        hillslope_diffusion.run();
         timers["HillSlopeDiffusion"].stop();
 
 		// Uplift
@@ -806,7 +682,8 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 	return mat;
 }
 
-StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny), mfd_flow_router(topo, flow, nebs)
+StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny), mfd_flow_router(topo, flow, nebs),
+        hillslope_diffusion(topo, flow, nebs, params)
 {
 
 }

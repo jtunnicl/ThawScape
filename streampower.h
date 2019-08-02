@@ -12,6 +12,7 @@
 #include "mfd_flow_router.h"
 #include "grid_neighbours.h"
 #include "parameters.h"
+#include "hillslope_diffusion.h"
 
 #define NR_END 1
 #define FREE_ARG char*
@@ -56,8 +57,7 @@ public:
     Parameters params;
 	real_type xllcorner, yllcorner, nodata;
 	std::vector<int> iup, idown, jup, jdown;
-	std::vector<real_type> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;
-    Raster topo, topoold, slope, aspect;
+    Raster topo, slope, aspect;
     Raster flow;
 	Raster veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
 	Raster solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
@@ -65,6 +65,7 @@ public:
 	Array2D<real_type> elevation;
     MFDFlowRouter mfd_flow_router;
     GridNeighbours nebs;
+    HillSlopeDiffusion hillslope_diffusion;
 
 	ModelTime ct;             // Current model time
 	solar_geom r;
@@ -78,9 +79,6 @@ public:
 	static real_type Ran3(std::default_random_engine& generator, std::uniform_real_distribution<real_type>& distribution);
 	static real_type Gasdev(std::default_random_engine& generator, std::normal_distribution<real_type>& distribution);
 
-	static void Tridag(real_type a[], real_type b[], real_type c[], real_type r[], real_type u[], unsigned long n); // interface from old to new implementation
-	static void Tridag(std::vector<real_type>& a, std::vector<real_type>& b, std::vector<real_type>& c, std::vector<real_type>& r, std::vector<real_type>& u, int n); // new implementation
-
 	StreamPower(int nx, int ny);
 	~StreamPower();
 
@@ -93,7 +91,6 @@ public:
 	void SetFA();
 	void Flood(); // Barnes pit filling
 	void InitDiffusion();
-	void HillSlopeDiffusion();
 	void Avalanche(int i, int j);
 	void SlopeAspect(int i, int j);
 	void SunPosition();

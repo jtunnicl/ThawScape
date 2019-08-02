@@ -46,10 +46,12 @@ real_type& Raster::operator()(int i, int j) {
 
 // destructively resize the data
 void Raster::resize(int size_x_, int size_y_) {
-    size_x = size_x_;
-    size_y = size_y_;
-    data = std::vector<real_type>(size_x * size_y);
-    idx = std::vector<int>();
+    if (size_x_ != size_x || size_y_ != size_y) {
+        size_x = size_x_;
+        size_y = size_y_;
+        data = std::vector<real_type>(size_x * size_y);
+        idx = std::vector<int>();
+    }
 }
 
 // load Raster from file
