@@ -50,7 +50,7 @@ class StreamPower
 public:
 
 	int lattice_size_x, lattice_size_y, printstep;
-	real_type deltax, deltax2, thresh, thresh_diag;
+	real_type deltax, deltax2;
 
 	// new vars
     Parameters params;
@@ -101,7 +101,6 @@ public:
 	void MeltExposedIce(int i, int j);
 
 	void Init(std::string parameter_file); // using new vars
-    void LoadInputs();
 	void Start();
 
     std::string topo_file, fa_file, sed_file;

@@ -319,6 +319,8 @@ void StreamPower::HillSlopeDiffusion()
 
 void StreamPower::Avalanche(int i, int j)
 {
+	real_type thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
+	real_type thresh_diag = thresh * sqrt2;
 
 	// Code in Init subroutine:
 	//	thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
@@ -583,28 +585,23 @@ void StreamPower::Init(std::string parameter_file)
     // load parameters
     params = Parameters(parameter_file);
 
-	// Setup Key Model Variables
-	deltax = 10;   // m; This gets reset after reading ASCII file
-	deltax2 = deltax * deltax;                      // m2; Area of a pixel
-	thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
-	thresh_diag = thresh * sqrt2;
-
     // create model time object
     ct = ModelTime(params);
 
+    // solar geometry object
 	r.lattitude = params.get_lattitude();
 	r.longitude = params.get_longitude();
 	r.stdmed = params.get_stdmed();
 	r.declination = params.get_declination();
 	r.altitude = params.get_altitude();
 	r.azimuth = params.get_azimuth();
-}
 
-void StreamPower::LoadInputs()
-{
+    // load input data
 	SetFA();
 	SetTopo();
-    mfd_flow_router.initialise();  // initialise after all inputs are loaded
+
+    // initialise flow router after all data loaded
+    mfd_flow_router.initialise();
 }
 
 void StreamPower::Start()
