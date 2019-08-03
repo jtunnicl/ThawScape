@@ -15,7 +15,6 @@ int main(int argc, char** argv)
 	sp.Init(parameter_file);
 	//std::vector<std::vector<float>> topo = sp.CreateRandomField();
 	//char* fname = argv[1];
-    sp.LoadInputs();
 	sp.Start();
 
 }

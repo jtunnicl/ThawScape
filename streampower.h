@@ -9,6 +9,10 @@
 #include "Array2D.hpp"
 #include "model_time.h"
 #include "raster.h"
+#include "mfd_flow_router.h"
+#include "grid_neighbours.h"
+#include "parameters.h"
+#include "hillslope_diffusion.h"
 
 #define NR_END 1
 #define FREE_ARG char*
@@ -22,12 +26,10 @@
 //#define M 7
 #define NSTACK 100000
 
-#define sqrt2 1.414213562373f
-#define oneoversqrt2 0.707106781186f
 #define degrad 0.01745329251994330   // Convert degrees to radians; e.g. 180 * degrad = 3.14159..
 #define PI 3.14159265358979
 #define HALFPI = PI/2
-#define fillincrement 0.01f
+#define fillincrement 0.01
 
 
 class solar_geom {
@@ -48,20 +50,22 @@ class StreamPower
 {
 public:
 
-	int lattice_size_x, lattice_size_y, duration, printinterval, printstep;
-	real_type U, K, D, melt, timestep, ann_timestep, deltax, deltax2, thresh, thresh_diag, thresholdarea;
-	real_type init_exposure_age, init_sed_track, init_veg;
+	int lattice_size_x, lattice_size_y, printstep;
+	real_type deltax, deltax2;
 
 	// new vars
+    Parameters params;
 	real_type xllcorner, yllcorner, nodata;
 	std::vector<int> iup, idown, jup, jdown;
-	std::vector<real_type> ax, ay, bx, by, cx, cy, ux, uy, rx, ry;
-    Raster topo, topoold, slope, aspect;
-    Raster flow, flow1, flow2, flow3, flow4, flow5, flow6, flow7, flow8, FA_Bounds;
+    Raster topo, slope, aspect;
+    Raster flow;
 	Raster veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
 	Raster solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
 	Raster Ip_D8;     // Map of incoming solar flux, 8 directions
 	Array2D<real_type> elevation;
+    MFDFlowRouter mfd_flow_router;
+    GridNeighbours nebs;
+    HillSlopeDiffusion hillslope_diffusion;
 
 	ModelTime ct;             // Current model time
 	solar_geom r;
@@ -75,9 +79,6 @@ public:
 	static real_type Ran3(std::default_random_engine& generator, std::uniform_real_distribution<real_type>& distribution);
 	static real_type Gasdev(std::default_random_engine& generator, std::normal_distribution<real_type>& distribution);
 
-	static void Tridag(real_type a[], real_type b[], real_type c[], real_type r[], real_type u[], unsigned long n); // interface from old to new implementation
-	static void Tridag(std::vector<real_type>& a, std::vector<real_type>& b, std::vector<real_type>& c, std::vector<real_type>& r, std::vector<real_type>& u, int n); // new implementation
-
 	StreamPower(int nx, int ny);
 	~StreamPower();
 
@@ -89,9 +90,7 @@ public:
 	void SetTopo();
 	void SetFA();
 	void Flood(); // Barnes pit filling
-	void MFDFlowRoute(int i, int j); //new implementation
 	void InitDiffusion();
-	void HillSlopeDiffusion();
 	void Avalanche(int i, int j);
 	void SlopeAspect(int i, int j);
 	void SunPosition();
@@ -99,7 +98,6 @@ public:
 	void MeltExposedIce(int i, int j);
 
 	void Init(std::string parameter_file); // using new vars
-    void LoadInputs();
 	void Start();
 
     std::string topo_file, fa_file, sed_file;

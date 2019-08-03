@@ -17,6 +17,7 @@ class Raster {
         real_type deltax;  ///< Grid resolution
         real_type nodata;  ///< The value that represents nodata
         std::vector<int> idx;  ///< Vector of indexes, used for sorting raster data by value
+        int save_prec;  ///< Decimal precision for saving to file
 
     public:
         /// \brief Create an empty Raster object
@@ -100,6 +101,10 @@ class Raster {
 
         /// \brief Get the nodata value
         real_type get_nodata() { return nodata; }
+
+        /// \brief Set the precision for writing data to file
+        /// \param prec The decimal precision (passed to std::setprecision)
+        void set_save_precision(int prec);
 };
 
 #endif

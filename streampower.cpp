@@ -14,10 +14,12 @@
 #include "streampower.h"
 #include "utility.h"
 #include "priority_flood.hpp"
-#include "inih/INIReader.h"
 #include "model_time.h"
 #include "timer.hpp"
 #include "raster.h"
+#include "mfd_flow_router.h"
+#include "grid_neighbours.h"
+#include "parameters.h"
 
 
 /* allocate a real_type vector with subscript range v[nl..nh] */
@@ -69,26 +71,6 @@ real_type StreamPower::Gasdev(std::default_random_engine& generator, std::normal
 
 }
 
-void StreamPower::Tridag(std::vector<real_type>& a, std::vector<real_type>& b, std::vector<real_type>& c, std::vector<real_type>& r, std::vector<real_type>& u, int n)
-{
-	unsigned long j;
-	real_type bet;
-	std::vector<real_type> gam;
-
-	gam = std::vector<real_type>(n);
-	u[0] = r[0] / (bet = b[0]);
-	for (j = 1; j < n; j++)
-	{
-		gam[j] = c[j - 1] / bet;
-		bet = b[j] - a[j] * gam[j];
-		u[j] = (r[j] - a[j] * u[j - 1]) / bet;
-	}
-	for (j = (n-2); j > 1; j--)
-	{
-		u[j] -= gam[j + 1] * u[j + 1];
-	}
-}
-
 void StreamPower::SetupGridNeighbors()
 {
 	int i, j;
@@ -116,7 +98,7 @@ void StreamPower::SetupGridNeighbors()
 
 void StreamPower::SetTopo()
 {
-	topo = Raster(topo_file);
+	topo = Raster(params.get_topo_file());
     lattice_size_x = topo.get_size_x();
     lattice_size_y = topo.get_size_y();
     xllcorner = topo.get_xllcorner();
@@ -125,7 +107,6 @@ void StreamPower::SetTopo()
     deltax2 = deltax * deltax;
     nodata = topo.get_nodata();
 
-    topoold = Raster(lattice_size_x, lattice_size_y);
     slope = Raster(lattice_size_x, lattice_size_y, 0.0);
     aspect = Raster(lattice_size_x, lattice_size_y, 0.0);
 
@@ -145,29 +126,23 @@ void StreamPower::SetTopo()
 	NW_Ip = Raster(lattice_size_x, lattice_size_y);
 
 	// Landscape Elements
-	veg = Raster(lattice_size_x, lattice_size_y, init_veg);
+	veg = Raster(lattice_size_x, lattice_size_y, params.get_init_veg());
 	veg_old = Raster(lattice_size_x, lattice_size_y);
-	Sed_Track = Raster(lattice_size_x, lattice_size_y, init_sed_track); // 2m of overburden to begin
-	ExposureAge = Raster(lattice_size_x, lattice_size_y, init_exposure_age);  // Once over 20, ice is primed for melt
+	Sed_Track = Raster(lattice_size_x, lattice_size_y, params.get_init_sed_track()); // 2m of overburden to begin
+	ExposureAge = Raster(lattice_size_x, lattice_size_y, params.get_init_exposure_age());  // Once over 20, ice is primed for melt
 	ExposureAge_old = Raster(lattice_size_x, lattice_size_y);
 
 	elevation = Array2D<real_type>(lattice_size_x, lattice_size_y, -9999.0);
 
 	SetupGridNeighbors();
+    nebs.setup(lattice_size_x, lattice_size_y);
 
-	for (int i = 0; i < lattice_size_x; i++)     // Populate model grids
-	{
-		for (int j = 0; j < lattice_size_y; j++)
-		{
-			topoold(i, j) = topo(i, j);
-		}
-	}
 	InitDiffusion();
 }
 
 void StreamPower::SetFA()
 {
-    flow = Raster(fa_file);
+    flow = Raster(params.get_fa_file());
     lattice_size_x = flow.get_size_x();
     lattice_size_y = flow.get_size_y();
     xllcorner = flow.get_xllcorner();
@@ -175,28 +150,6 @@ void StreamPower::SetFA()
     deltax = flow.get_deltax();
     deltax2 = deltax * deltax;
     nodata = flow.get_nodata();
-
-    flow1 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow2 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow3 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow4 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow5 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow6 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow7 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    flow8 = Raster(lattice_size_x, lattice_size_y, 1.0);
-    FA_Bounds = Raster(lattice_size_x, lattice_size_y, 0.0);
-
-    // FA boundary values; zero otherwise
-	for (int i = 0; i < lattice_size_x; i++)
-	{
-        FA_Bounds(i, 0) = flow(i, 0);
-        FA_Bounds(i, lattice_size_y - 1) = flow(i, lattice_size_y - 1);
-	}
-    for (int j = 0; j < lattice_size_y; j++)
-    {
-        FA_Bounds(0, j) = flow(0, j);
-        FA_Bounds(lattice_size_x - 1, j) = flow(lattice_size_x - 1, j);
-    }
 }
 
 void StreamPower::Flood()
@@ -224,185 +177,26 @@ void StreamPower::Flood()
 
 }
 
-void StreamPower::MFDFlowRoute(int i, int j)
-{
-	float tot;
-
-    // Note that deltax is not used in this computation, so the flow raster represents simply the number of contributing unit cells upstream.
-    tot = 0;
-    if (topo(i, j) > topo(iup[i], j))
-        tot += pow(topo(i, j) - topo(iup[i], j), 1.1);
-    if (topo(i, j) > topo(idown[i], j))
-        tot += pow(topo(i, j) - topo(idown[i], j), 1.1);
-    if (topo(i, j) > topo(i, jup[j]))
-        tot += pow(topo(i, j) - topo(i, jup[j]), 1.1);
-    if (topo(i, j) > topo(i, jdown[j]))
-        tot += pow(topo(i, j) - topo(i, jdown[j]), 1.1);
-    if (topo(i, j) > topo(iup[i], jup[j]))
-        tot += pow((topo(i, j) - topo(iup[i], jup[j]))*oneoversqrt2, 1.1);
-    if (topo(i, j) > topo(iup[i], jdown[j]))
-        tot += pow((topo(i, j) - topo(iup[i], jdown[j]))*oneoversqrt2, 1.1);
-    if (topo(i, j) > topo(idown[i], jup[j]))
-        tot += pow((topo(i, j) - topo(idown[i], jup[j]))*oneoversqrt2, 1.1);
-    if (topo(i, j) > topo(idown[i], jdown[j]))
-        tot += pow((topo(i, j) - topo(idown[i], jdown[j]))*oneoversqrt2, 1.1);
-
-    if (topo(i, j) > topo(iup[i], j))
-        flow1(i, j) = pow(topo(i, j) - topo(iup[i], j), 1.1) / tot;
-    else flow1(i, j) = 0;
-    if (topo(i, j) > topo(idown[i], j))
-        flow2(i, j) = pow(topo(i, j) - topo(idown[i], j), 1.1) / tot;
-    else flow2(i, j) = 0;
-    if (topo(i, j) > topo(i, jup[j]))
-        flow3(i, j) = pow(topo(i, j) - topo(i, jup[j]), 1.1) / tot;
-    else flow3(i, j) = 0;
-    if (topo(i, j) > topo(i, jdown[j]))
-        flow4(i, j) = pow(topo(i, j) - topo(i, jdown[j]), 1.1) / tot;
-    else flow4(i, j) = 0;
-    if (topo(i, j) > topo(iup[i], jup[j]))
-        flow5(i, j) = pow((topo(i, j) - topo(iup[i], jup[j]))*oneoversqrt2, 1.1) / tot;
-    else flow5(i, j) = 0;
-    if (topo(i, j) > topo(iup[i], jdown[j]))
-        flow6(i, j) = pow((topo(i, j) - topo(iup[i], jdown[j]))*oneoversqrt2, 1.1) / tot;
-    else flow6(i, j) = 0;
-    if (topo(i, j) > topo(idown[i], jup[j]))
-        flow7(i, j) = pow((topo(i, j) - topo(idown[i], jup[j]))*oneoversqrt2, 1.1) / tot;
-    else flow7(i, j) = 0;
-    if (topo(i, j) > topo(idown[i], jdown[j]))
-        flow8(i, j) = pow((topo(i, j) - topo(idown[i], jdown[j]))*oneoversqrt2, 1.1) / tot;
-    else flow8(i, j) = 0;
-
-    flow(iup[i], j) += flow(i, j) * flow1(i, j) + FA_Bounds(i, j);     // final FA_Bounds(i, j) applies only to edges; zero otherwise
-    flow(idown[i], j) += flow(i, j) * flow2(i, j) + FA_Bounds(i, j);
-    flow(i, jup[j]) += flow(i, j) * flow3(i, j) + FA_Bounds(i, j);
-    flow(i, jdown[j]) += flow(i, j) * flow4(i, j) + FA_Bounds(i, j);
-    flow(iup[i], jup[j]) += flow(i, j) * flow5(i, j) + FA_Bounds(i, j);
-    flow(iup[i], jdown[j]) += flow(i, j) * flow6(i, j) + FA_Bounds(i, j);
-    flow(idown[i], jup[j]) += flow(i, j) * flow7(i, j) + FA_Bounds(i, j);
-    flow(idown[i], jdown[j]) += flow(i, j) * flow8(i, j) + FA_Bounds(i, j);
-}
-
 void StreamPower::InitDiffusion()
 {
 	//construct diffusional landscape for initial flow routing
 	for (int step = 1; step <= 10; step++)
 	{
-		HillSlopeDiffusion();
+        hillslope_diffusion.run();
 		for (int i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (int j = 1; j <= lattice_size_y - 2; j++)
 			{
 				topo(i, j) += 0.1;
-				topoold(i, j) += 0.1;
 			}
-		}
-	}
-}
-
-void StreamPower::HillSlopeDiffusion()
-{
-	int i, j, count;
-	real_type term1;
-
-	ax = std::vector<real_type>(lattice_size_x);
-	ay = std::vector<real_type>(lattice_size_y);
-	bx = std::vector<real_type>(lattice_size_x);
-	by = std::vector<real_type>(lattice_size_y);
-	cx = std::vector<real_type>(lattice_size_x);
-	cy = std::vector<real_type>(lattice_size_y);
-	ux = std::vector<real_type>(lattice_size_x);
-	uy = std::vector<real_type>(lattice_size_y);
-	rx = std::vector<real_type>(lattice_size_x);
-	ry = std::vector<real_type>(lattice_size_y);
-
-	count = 0;
-
-	while (count < 5)
-	{
-		count++;
-		for (i = 0; i < lattice_size_x; i++)
-			for (j = 0; j < lattice_size_y; j++)
-				topoold(i, j) = topo(i, j);
-		for (i = 0; i < lattice_size_x; i++)
-		{
-			for (j = 0; j < lattice_size_y; j++)
-			{
-				term1 = D * ann_timestep / (deltax2);
-				if (flow(i, j) < thresholdarea)
-				{
-					ay[j] = -term1;
-					cy[j] = -term1;
-					by[j] = 4 * term1 + 1;
-					ry[j] = term1 * ( topo(iup[i], j) + topo(idown[i], j) ) + topoold(i, j);
-				}
-				else
-				{
-					by[j] = 1;
-					ay[j] = 0;
-					cy[j] = 0;
-					ry[j] = topoold(i, j);
-				}
-				if (j == 0)
-				{
-					by[j] = 1;
-					cy[j] = 0;
-					ry[j] = topoold(i, j);
-				}
-				if (j == lattice_size_y-1)
-				{
-					by[j] = 1;
-					ay[j] = 0;
-					ry[j] = topoold(i, j);
-				}
-			}
-			Tridag(ay, by, cy, ry, uy, lattice_size_y);
-			for (j = 0; j < lattice_size_y; j++)
-				topo(i, j) = uy[j];
-		}
-		for (i = 0; i < lattice_size_x; i++)
-			for (j = 0; j < lattice_size_y; j++)
-				topoold(i, j) = topo(i, j);
-		for (j = 0; j < lattice_size_y; j++)
-		{
-			for (i = 0; i < lattice_size_x; i++)
-			{
-				term1 = D * timestep / ( deltax2 );
-				if (flow(i, j) < thresholdarea)
-				{
-					ax[i] = -term1;
-					cx[i] = -term1;
-					bx[i] = 4 * term1 + 1;
-					rx[i] = term1 * ( topo(i, jup[j]) + topo(i, jdown[j]) ) + topoold(i, j);
-				}
-				else
-				{
-					bx[i] = 1;
-					ax[i] = 0;
-					cx[i] = 0;
-					rx[i] = topoold(i, j);
-				}
-				if (i == 0)
-				{
-					bx[i] = 1;
-					cx[i] = 0;
-					rx[i] = topoold(i, j);
-				}
-				if (i == lattice_size_x-1)
-				{
-					bx[i] = 1;
-					ax[i] = 0;
-					rx[i] = topoold(i, j);
-				}
-			}
-			Tridag(ax, bx, cx, rx, ux, lattice_size_x);
-			for (i = 0; i < lattice_size_x; i++)
-				topo(i, j) = ux[i];
 		}
 	}
 }
 
 void StreamPower::Avalanche(int i, int j)
 {
+	real_type thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
+	real_type thresh_diag = thresh * sqrt2;
 
 	// Code in Init subroutine:
 	//	thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
@@ -651,7 +445,7 @@ void StreamPower::MeltExposedIce(int i, int j) {
 			if (topo(i, j) - neighb[m] > 0) accommodation += deltax2 * (topo(i, j) - neighb[m]);   // sum up all the volume available on pixels below the central pixel
 		}
 
-		elev_drop = incoming / melt / deltax2;
+		elev_drop = incoming / params.get_melt() / deltax2;
 		if (elev_drop * deltax < accommodation)           // i.e. There is room to accommodate the failed mass in neighbouring cells
 			topo(i, j) -= elev_drop;
 		else
@@ -664,67 +458,26 @@ void StreamPower::MeltExposedIce(int i, int j) {
 
 void StreamPower::Init(std::string parameter_file)
 {
-    // load parameter file if it exists
-    std::cout << "Loading parameter file: " << parameter_file << std::endl;
-    INIReader reader(parameter_file);
-    if (reader.ParseError() != 0) {
-        Util::Error(std::string("Cannot load parameter file: ") + parameter_file, 1);
-    }
+    // load parameters
+    params = Parameters(parameter_file);
 
-	// Setup Key Model Variables
+    // create model time object
+    ct = ModelTime(params);
 
-	U = reader.GetReal("model", "U", 0.010);        // 'Uplift', m yr^-1
-	K = reader.GetReal("model", "K", 0.001);        // Stream Power, yr^-1
-	D = reader.GetReal("model", "D", 1.500);        // Diffusion, yr^-1
-	melt = reader.GetReal("model", "melt", 250);    // Reciprocal melt rate, for a given radiation input
+    // solar geometry object
+	r.lattitude = params.get_lattitude();
+	r.longitude = params.get_longitude();
+	r.stdmed = params.get_stdmed();
+	r.declination = params.get_declination();
+	r.altitude = params.get_altitude();
+	r.azimuth = params.get_azimuth();
 
-	deltax = reader.GetReal("model", "deltax", 10.0);   // m; This gets reset after reading ASCII file
-	deltax2 = deltax * deltax;                      // m2; Area of a pixel
-	nodata = reader.GetReal("model", "nodata", -9999.0);
-	xllcorner = reader.GetReal("model", "xllcorner", 0);
-	yllcorner = reader.GetReal("model", "yllcorner", 0);
-
-	timestep = reader.GetReal("time", "timestep", 1);   // Time step in hours
-	printinterval = reader.GetInteger("time", "printinterval", 1); // Output timestep, in hours
-	ann_timestep = timestep / 8760;    //  Used in formula based on annual rates (e.g. 2 hrs, over 8760 hrs in 365 days)
-
-	thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
-	thresh_diag = thresh * sqrt2;
-	thresholdarea = reader.GetReal("model", "thresholdarea", 1e35);  // Threshold for diffusion domain - to prevent diffusion in channels, etc. (m2)
-
-	init_exposure_age = reader.GetReal("model", "init_exposure_age", 0);    // Variables used to initiate exposure time, sed depth and veg age rasters
-	init_sed_track = reader.GetReal("model", "init_sed_track", 2);
-	init_veg = reader.GetReal("model", "init_veg", 8);
-
-	int year = reader.GetInteger("time", "year", 2010);
-	int day = reader.GetInteger("time", "day", 145);  // 144;              // May 25th is the start of melt/rain season
-	int hour = reader.GetInteger("time", "hour", 12);    // 24-hr clock
-	int minute = reader.GetInteger("time", "hour", 0);   // 0 in most cases
-	int end_year = reader.GetInteger("time", "end_year", 2015);  // Model execution ends on the first day of this year
-    int end_day = reader.GetInteger("time", "end_day", 1);
-    ct = ModelTime(year, day, hour, minute, end_year, end_day);
-	duration = end_year - year;   // Model execution time, in years, keeping in mind melt season is 138 days
-
-	r.lattitude = reader.GetReal("solar_geom", "lattitude", 0); // 67.3;
-	r.longitude = reader.GetReal("solar_geom", "longitude", 0); // 134.9;         // Dempster Coordinates
-	r.stdmed = reader.GetReal("solar_geom", "stdmed", 0); //9 * 15;         // Standard meridian of nearest time zone. LSTM = (UTC - 9H * 15 deg) n.b. Alaska Time Meridian = 135 deg W
-	r.declination = reader.GetReal("solar_geom", "declination", 0.0);
-	r.altitude = reader.GetReal("solar_geom", "altitude", 0.0);
-	r.azimuth = reader.GetReal("solar_geom", "azimuth", 0.0);
-
-    // input file names
-    topo_file = reader.Get("input", "topo", "topo.asc");
-    fa_file = reader.Get("input", "FA", "FA.asc");
-    sed_file = reader.Get("input", "sed", "SedThickness.asc");
-
-    // should we fix the random number seed (for testing)
-    fix_random_seed = reader.GetBoolean("random", "fix_seed", false);
-}
-
-void StreamPower::LoadInputs()
-{
+    // load input data
 	SetFA();
 	SetTopo();
+
+    // initialise flow router after all data loaded
+    mfd_flow_router.initialise();
 }
 
 void StreamPower::Start()
@@ -735,12 +488,12 @@ void StreamPower::Start()
 	sprintf(fname, "erosion_%d.asc", 0);
     topo.save(fname);
 	int tstep = 0;    // Counter for printing results to file
-	std::cout << "U: " << U << "; K: " << K << "; D: " << D << std::endl;
+	std::cout << "U: " << params.get_U() << "; K: " << params.get_K() << "; D: " << params.get_D() << std::endl;
 
     // set up some timers
     AccumulateTimer<std::chrono::milliseconds> total_time;
     std::vector<std::string> timer_names {"Avalanche", "Flood", "Indexx", "MFDFlowRoute",
-        "HillSlopeDiffusion", "UpliftAndSlopeAspect", "SolarCharacteristics", "Melt",
+        "HillSlopeDiffusion", "Uplift", "SlopeAspect", "SolarCharacteristics", "Melt",
         "ChannelErosion"};
     std::map<std::string, AccumulateTimer<std::chrono::milliseconds> > timers;
     for (auto timer_name : timer_names) {
@@ -765,13 +518,6 @@ void StreamPower::Start()
 			Avalanche( i , j );
 			t++;
 		}
-		for (j = 0; j < lattice_size_y; j++)
-		{
-			for (i = 0; i < lattice_size_x; i++)
-			{
-				topoold(i, j) = topo(i, j);
-			}
-		}
         timers["Avalanche"].stop();
 
 		// Pit filling
@@ -785,34 +531,39 @@ void StreamPower::Start()
         timers["Indexx"].stop();
 
 
+        // flow routing
         timers["MFDFlowRoute"].start();
-		t = lattice_size_x * lattice_size_y;
-		while (t > 0)
-		{
-			t--;
-            topo.get_sorted_ij(t, i, j);
-            if ( ( i > 3 ) && ( i < (lattice_size_x - 3) ) && ( j > 3 ) && ( j < (lattice_size_y - 3) ) )  MFDFlowRoute(i, j);// Do not alter boundary elements
-		}
+        mfd_flow_router.run();
         timers["MFDFlowRoute"].stop();
 
 
 		// Diffusive hillslope erosion
         timers["HillSlopeDiffusion"].start();
-		HillSlopeDiffusion();
+        hillslope_diffusion.run();
         timers["HillSlopeDiffusion"].stop();
 
-		// Uplift and Slope/Aspect Calcs
-        timers["UpliftAndSlopeAspect"].start();
+		// Uplift
+        timers["Uplift"].start();
+        real_type U = params.get_U();
 		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
 			{
-				topo(i, j) += U * ann_timestep;
-				topoold(i, j) += U * ann_timestep;
+				topo(i, j) += U * params.get_ann_timestep();
+			}
+		}
+        timers["Uplift"].stop();
+
+        // Slope/Aspect
+        timers["SlopeAspect"].start();
+		for (i = 1; i <= lattice_size_x - 2; i++)
+		{
+			for (j = 1; j <= lattice_size_y - 2; j++)
+			{
                 SlopeAspect(i, j);
 			}
 		}
-        timers["UpliftAndSlopeAspect"].stop();
+        timers["SlopeAspect"].stop();
 
 		// Update solar characteristics
         timers["SolarCharacteristics"].start();
@@ -836,11 +587,13 @@ void StreamPower::Start()
 
 		//Channel erosion
         timers["ChannelErosion"].start();
+        real_type K = params.get_K();
 		max = 0;
 		for (i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
-			{				deltah = ann_timestep * K * sqrt( flow(i, j)/1e6 ) * deltax * slope(i, j);     // Fluvial erosion law;
+			{
+                deltah = params.get_ann_timestep() * K * sqrt( flow(i, j)/1e6 ) * deltax * slope(i, j);     // Fluvial erosion law;
 				topo(i, j) -= deltah;
 				//std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow(i, j) / 1e6 << ", slope: " << slope(i, j) << std::endl;
 
@@ -851,7 +604,7 @@ void StreamPower::Start()
         timers["ChannelErosion"].stop();
 
 		// Update current time
-        ct.increment(timestep);
+        ct.increment(params.get_timestep());
 
 /*         // Rate adjustment, based on deltax
 		if (max > 0.3*deltax / timestep)
@@ -887,17 +640,17 @@ void StreamPower::Start()
         ct.print();
 
 		// Write to file at intervals
-		tstep += timestep;
-		if (tstep >= printinterval) {
+		tstep += params.get_timestep();
+		if (tstep >= params.get_printinterval()) {
 			char fname[100];
-			sprintf(fname, "erosion_%i_%i_%.3f.asc", ct.get_day(), ct.get_hour(), r.altitude );
+			sprintf(fname, "erosion_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), r.altitude );
             topo.save(fname);
 			tstep = 0;
 		}
 	}
     total_time.stop();
 
-    // summarise timings (TODO: make this optional?)
+    // summarise timings
     std::cout << std::endl << "Post run diagnostics..." << std::endl;
     double total_time_secs = total_time.get_total_time() / 1000.0;
     std::cout << "  Total time (excluding input): " << total_time_secs << " s" << std::endl;
@@ -914,7 +667,7 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 {
 	std::vector<std::vector<real_type>> mat = std::vector<std::vector<real_type>>(lattice_size_x, std::vector<real_type>(lattice_size_y));
 	std::default_random_engine generator;
-    if (fix_random_seed) {
+    if (params.get_fix_random_seed()) {
         Util::Warning("Fixing random seed - this should only be used for testing/debugging!");
         generator.seed(12345);
     }
@@ -929,7 +682,8 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 	return mat;
 }
 
-StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny)
+StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny), mfd_flow_router(topo, flow, nebs),
+        hillslope_diffusion(topo, flow, nebs, params)
 {
 
 }

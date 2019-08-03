@@ -14,4 +14,4 @@ build_script:
     - cmake --build . --config Release
 
 test_script:
-    - ctest -C Release --output-on-failure
+    - ctest -C Release --output-on-failure -E FullRun

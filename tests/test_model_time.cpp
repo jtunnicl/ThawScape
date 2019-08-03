@@ -3,7 +3,7 @@
 #include "model_time.h"
 
 
-TEST_CASE("time_fcn class", "[time_fcn]") {
+TEST_CASE("ModelTime class", "[model_time]") {
     int year = 2015;
     int day = LAST_DAY - 1;
     int hour = 12;

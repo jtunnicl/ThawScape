@@ -10,12 +10,15 @@ matrix:
                   packages:
                       - g++-8
                       - cmake
+                      - doxygen
           env:
               - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
         - os: osx
           osx_image: xcode10.2
 
 before_install:
+    - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update; fi
+    - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install doxygen; fi
     - eval "${MATRIX_EVAL}"
     - cmake --version
     - ${CXX} --version
@@ -24,6 +27,16 @@ install:
     - mkdir build && cd build
     - cmake -DDOUBLE_PRECISION=ON -DCMAKE_BUILD_TYPE=RELWITHDEBINFO ..
     - make
+    - make doc
 
 script:
-    - ctest --output-on-failure
+    - ctest --output-on-failure -E FullRun
+
+deploy:
+    provider: pages
+    skip_cleanup: true
+    local_dir: build/html
+    github_token: $GH_REPO_TOKEN
+    on:
+        branch: components
+        condition: $TRAVIS_OS_NAME = linux

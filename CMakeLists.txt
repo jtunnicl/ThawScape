@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9.0)
+cmake_minimum_required(VERSION 3.1.0)
 project(ThawScape
         DESCRIPTION "ThawScape is an experimental code to simulate the influence of thermokarst dynamics upon ice-cored terrain"
         LANGUAGES CXX)
@@ -46,21 +46,10 @@ if (ENABLE_PROFILING)
 endif()
 
 # list of source files
-set(ThawScapeSrc
-    global_defs.h
-    timer.hpp
-    raster.h
-    raster.cpp
-    data_structures.h
-    model_time.h
-    model_time.cpp
-    streampower.h
-    streampower.cpp
-    utility.h
-    utility.cpp
-    priority_flood.hpp
-    Array2D.hpp
-)
+file(GLOB cpp_src ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB h_src ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+file(GLOB hpp_src ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+set(ThawScapeSrc ${cpp_src} ${h_src} ${hpp_src})
 
 # add the library
 add_library(ThawScapeLib ${ThawScapeSrc})
@@ -80,10 +69,11 @@ if (BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
-# add documentation directory
-option(BUILD_DOC "Build the documentation" ON)
-if (BUILD_DOC)
-    find_package(Doxygen REQUIRED dot)
+# add documentation (requires Doxygen and CMake 3.9.0 or later)
+if (${CMAKE_VERSION} VERSION_LESS "3.9.0")
+    message(STATUS "Building documentation requires CMake >= 3.9.0")
+else()
+    find_package(Doxygen)
     if (DOXYGEN_FOUND)
         set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
         set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
@@ -94,6 +84,6 @@ if (BUILD_DOC)
             COMMENT "Build Doxygen documentation"
         )
     else()
-        message(WARNING "Doxygen must be installed to build documentation")
+        message(STATUS "Building documentation requires Doxygen")
     endif()
 endif()
