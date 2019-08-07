@@ -17,16 +17,6 @@ void MFDFlowRouter::initialise() {
     size_x = topo.get_size_x();
     size_y = topo.get_size_y();
 
-    // flow Rasters (TODO: don't need these)
-    flow1 = Raster(size_x, size_y);
-    flow2 = Raster(size_x, size_y);
-    flow3 = Raster(size_x, size_y);
-    flow4 = Raster(size_x, size_y);
-    flow5 = Raster(size_x, size_y);
-    flow6 = Raster(size_x, size_y);
-    flow7 = Raster(size_x, size_y);
-    flow8 = Raster(size_x, size_y);
-
     // FA boundary values; zero otherwise
     fa_bounds = Raster(size_x, size_y, 0.0);
     #pragma omp parallel for
@@ -46,7 +36,6 @@ void MFDFlowRouter::initialise() {
 }
 
 
-// interface will change...
 void MFDFlowRouter::run() {
     // NOTE: assumes topo has been sorted already (i.e. topo.sort_data())
 
@@ -63,60 +52,70 @@ void MFDFlowRouter::run() {
         int i, j;
         topo.get_sorted_ij(t, i, j);
         if ( ( i > 3 ) && ( i < (size_x - 3) ) && ( j > 3 ) && ( j < (size_y - 3) ) ) {  // Do not alter boundary elements
-            real_type tot;
+            real_type flow1 = 0;
+            real_type flow2 = 0;
+            real_type flow3 = 0;
+            real_type flow4 = 0;
+            real_type flow5 = 0;
+            real_type flow6 = 0;
+            real_type flow7 = 0;
+            real_type flow8 = 0;
 
             // Note that deltax is not used in this computation, so the flow raster represents simply the number of contributing unit cells upstream.
-            tot = 0;
-            if (topo(i, j) > topo(nebs.iup(i), j))
-                tot += pow(topo(i, j) - topo(nebs.iup(i), j), 1.1);
-            if (topo(i, j) > topo(nebs.idown(i), j))
-                tot += pow(topo(i, j) - topo(nebs.idown(i), j), 1.1);
-            if (topo(i, j) > topo(i, nebs.jup(j)))
-                tot += pow(topo(i, j) - topo(i, nebs.jup(j)), 1.1);
-            if (topo(i, j) > topo(i, nebs.jdown(j)))
-                tot += pow(topo(i, j) - topo(i, nebs.jdown(j)), 1.1);
-            if (topo(i, j) > topo(nebs.iup(i), nebs.jup(j)))
-                tot += pow((topo(i, j) - topo(nebs.iup(i), nebs.jup(j)))*oneoversqrt2, 1.1);
-            if (topo(i, j) > topo(nebs.iup(i), nebs.jdown(j)))
-                tot += pow((topo(i, j) - topo(nebs.iup(i), nebs.jdown(j)))*oneoversqrt2, 1.1);
-            if (topo(i, j) > topo(nebs.idown(i), nebs.jup(j)))
-                tot += pow((topo(i, j) - topo(nebs.idown(i), nebs.jup(j)))*oneoversqrt2, 1.1);
-            if (topo(i, j) > topo(nebs.idown(i), nebs.jdown(j)))
-                tot += pow((topo(i, j) - topo(nebs.idown(i), nebs.jdown(j)))*oneoversqrt2, 1.1);
+            real_type tot = 0;
+            if (topo(i, j) > topo(nebs.iup(i), j)) {
+                flow1 = pow(topo(i, j) - topo(nebs.iup(i), j), 1.1);
+                tot += flow1;
+            }
+            if (topo(i, j) > topo(nebs.idown(i), j)) {
+                flow2 = pow(topo(i, j) - topo(nebs.idown(i), j), 1.1);
+                tot += flow2;
+            }
+            if (topo(i, j) > topo(i, nebs.jup(j))) {
+                flow3 = pow(topo(i, j) - topo(i, nebs.jup(j)), 1.1);
+                tot += flow3;
+            }
+            if (topo(i, j) > topo(i, nebs.jdown(j))) {
+                flow4 = pow(topo(i, j) - topo(i, nebs.jdown(j)), 1.1);
+                tot += flow4;
+            }
+            if (topo(i, j) > topo(nebs.iup(i), nebs.jup(j))) {
+                flow5 = pow((topo(i, j) - topo(nebs.iup(i), nebs.jup(j)))*oneoversqrt2, 1.1);
+                tot += flow5;
+            }
+            if (topo(i, j) > topo(nebs.iup(i), nebs.jdown(j))) {
+                flow6 = pow((topo(i, j) - topo(nebs.iup(i), nebs.jdown(j)))*oneoversqrt2, 1.1);
+                tot += flow6;
+            }
+            if (topo(i, j) > topo(nebs.idown(i), nebs.jup(j))) {
+                flow7 = pow((topo(i, j) - topo(nebs.idown(i), nebs.jup(j)))*oneoversqrt2, 1.1);
+                tot += flow7;
+            }
+            if (topo(i, j) > topo(nebs.idown(i), nebs.jdown(j))) {
+                flow8 = pow((topo(i, j) - topo(nebs.idown(i), nebs.jdown(j)))*oneoversqrt2, 1.1);
+                tot += flow8;
+            }
 
-            if (topo(i, j) > topo(nebs.iup(i), j))
-                flow1(i, j) = pow(topo(i, j) - topo(nebs.iup(i), j), 1.1) / tot;
-            else flow1(i, j) = 0;
-            if (topo(i, j) > topo(nebs.idown(i), j))
-                flow2(i, j) = pow(topo(i, j) - topo(nebs.idown(i), j), 1.1) / tot;
-            else flow2(i, j) = 0;
-            if (topo(i, j) > topo(i, nebs.jup(j)))
-                flow3(i, j) = pow(topo(i, j) - topo(i, nebs.jup(j)), 1.1) / tot;
-            else flow3(i, j) = 0;
-            if (topo(i, j) > topo(i, nebs.jdown(j)))
-                flow4(i, j) = pow(topo(i, j) - topo(i, nebs.jdown(j)), 1.1) / tot;
-            else flow4(i, j) = 0;
-            if (topo(i, j) > topo(nebs.iup(i), nebs.jup(j)))
-                flow5(i, j) = pow((topo(i, j) - topo(nebs.iup(i), nebs.jup(j)))*oneoversqrt2, 1.1) / tot;
-            else flow5(i, j) = 0;
-            if (topo(i, j) > topo(nebs.iup(i), nebs.jdown(j)))
-                flow6(i, j) = pow((topo(i, j) - topo(nebs.iup(i), nebs.jdown(j)))*oneoversqrt2, 1.1) / tot;
-            else flow6(i, j) = 0;
-            if (topo(i, j) > topo(nebs.idown(i), nebs.jup(j)))
-                flow7(i, j) = pow((topo(i, j) - topo(nebs.idown(i), nebs.jup(j)))*oneoversqrt2, 1.1) / tot;
-            else flow7(i, j) = 0;
-            if (topo(i, j) > topo(nebs.idown(i), nebs.jdown(j)))
-                flow8(i, j) = pow((topo(i, j) - topo(nebs.idown(i), nebs.jdown(j)))*oneoversqrt2, 1.1) / tot;
-            else flow8(i, j) = 0;
+            if (tot != 0) {
+                real_type reciptot = 1.0 / tot;
+                flow1 *= reciptot;
+                flow2 *= reciptot;
+                flow3 *= reciptot;
+                flow4 *= reciptot;
+                flow5 *= reciptot;
+                flow6 *= reciptot;
+                flow7 *= reciptot;
+                flow8 *= reciptot;
+            }
 
-            flow(nebs.iup(i), j) += flow(i, j) * flow1(i, j) + fa_bounds(i, j);     // final fa_bounds(i, j) applies only to edges; zero otherwise
-            flow(nebs.idown(i), j) += flow(i, j) * flow2(i, j) + fa_bounds(i, j);
-            flow(i, nebs.jup(j)) += flow(i, j) * flow3(i, j) + fa_bounds(i, j);
-            flow(i, nebs.jdown(j)) += flow(i, j) * flow4(i, j) + fa_bounds(i, j);
-            flow(nebs.iup(i), nebs.jup(j)) += flow(i, j) * flow5(i, j) + fa_bounds(i, j);
-            flow(nebs.iup(i), nebs.jdown(j)) += flow(i, j) * flow6(i, j) + fa_bounds(i, j);
-            flow(nebs.idown(i), nebs.jup(j)) += flow(i, j) * flow7(i, j) + fa_bounds(i, j);
-            flow(nebs.idown(i), nebs.jdown(j)) += flow(i, j) * flow8(i, j) + fa_bounds(i, j);
+            flow(nebs.iup(i), j) += flow(i, j) * flow1 + fa_bounds(i, j);     // final fa_bounds(i, j) applies only to edges; zero otherwise
+            flow(nebs.idown(i), j) += flow(i, j) * flow2 + fa_bounds(i, j);
+            flow(i, nebs.jup(j)) += flow(i, j) * flow3 + fa_bounds(i, j);
+            flow(i, nebs.jdown(j)) += flow(i, j) * flow4 + fa_bounds(i, j);
+            flow(nebs.iup(i), nebs.jup(j)) += flow(i, j) * flow5 + fa_bounds(i, j);
+            flow(nebs.iup(i), nebs.jdown(j)) += flow(i, j) * flow6 + fa_bounds(i, j);
+            flow(nebs.idown(i), nebs.jup(j)) += flow(i, j) * flow7 + fa_bounds(i, j);
+            flow(nebs.idown(i), nebs.jdown(j)) += flow(i, j) * flow8 + fa_bounds(i, j);
         }
     }
 }

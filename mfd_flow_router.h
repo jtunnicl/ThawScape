@@ -14,14 +14,6 @@ class MFDFlowRouter {
         Raster& topo;  ///< Raster of elevations
         Raster& flow;  ///< Flow accumulation Raster
         GridNeighbours& nebs;  ///< Grid neighbour indexing
-        Raster flow1;  // these can probably be removed...
-        Raster flow2;
-        Raster flow3;
-        Raster flow4;
-        Raster flow5;
-        Raster flow6;
-        Raster flow7;
-        Raster flow8;
         Raster fa_bounds;  ///< Raster for flow coming in at the boundaries
         bool initialised;
 
