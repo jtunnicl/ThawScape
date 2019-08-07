@@ -23,6 +23,7 @@ class MFDFlowRouter {
         Raster flow7;
         Raster flow8;
         Raster fa_bounds;  ///< Raster for flow coming in at the boundaries
+        bool initialised;
 
     public:
         /// \brief Create an MFDFlowRouter object and initialise it (this interface may change)

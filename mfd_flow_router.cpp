@@ -8,7 +8,7 @@
 /// managed elsewhere. One must call the inititialse function before running the flow
 /// routing.
 MFDFlowRouter::MFDFlowRouter(Raster& topo_, Raster& flow_, GridNeighbours& nebs_) :
-        topo(topo_), flow(flow_), nebs(nebs_) {
+        topo(topo_), flow(flow_), nebs(nebs_), initialised(false) {
     size_x = topo.get_size_x();
     size_y = topo.get_size_y();
 }
@@ -41,12 +41,19 @@ void MFDFlowRouter::initialise() {
         fa_bounds(0, j) = flow(0, j);
         fa_bounds(size_x - 1, j) = flow(size_x - 1, j);
     }
+
+    initialised = true;
 }
 
 
 // interface will change...
 void MFDFlowRouter::run() {
     // NOTE: assumes topo has been sorted already (i.e. topo.sort_data())
+
+    // make sure initialise was called before proceeding
+    if (!initialised) {
+        initialise();
+    }
 
     // loop over points starting from highest elevation to lowest
     int t = size_x * size_y;

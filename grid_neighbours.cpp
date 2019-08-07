@@ -4,7 +4,11 @@
 
 GridNeighbours::GridNeighbours() {}
 
-void GridNeighbours::setup(int size_x, int size_y) {
+GridNeighbours::GridNeighbours(const int size_x, const int size_y) {
+    setup(size_x, size_y);
+}
+
+void GridNeighbours::setup(const int size_x, const int size_y) {
 	idown_ = std::vector<int>(size_x);
 	iup_ = std::vector<int>(size_x);
 	jup_ = std::vector<int>(size_y);
@@ -29,18 +33,18 @@ void GridNeighbours::setup(int size_x, int size_y) {
 	jup_[size_y - 1] = size_y - 1;
 }
 
-int GridNeighbours::iup(int i) {
+int GridNeighbours::iup(const int i) {
     return iup_[i];
 }
 
-int GridNeighbours::idown(int i) {
+int GridNeighbours::idown(const int i) {
     return idown_[i];
 }
 
-int GridNeighbours::jup(int j) {
+int GridNeighbours::jup(const int j) {
     return jup_[j];
 }
 
-int GridNeighbours::jdown(int j) {
+int GridNeighbours::jdown(const int j) {
     return jdown_[j];
 }
