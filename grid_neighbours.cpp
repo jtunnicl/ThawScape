@@ -33,18 +33,18 @@ void GridNeighbours::setup(const int size_x, const int size_y) {
 	jup_[size_y - 1] = size_y - 1;
 }
 
-int GridNeighbours::iup(const int i) {
+int GridNeighbours::iup(const int i) const {
     return iup_[i];
 }
 
-int GridNeighbours::idown(const int i) {
+int GridNeighbours::idown(const int i) const {
     return idown_[i];
 }
 
-int GridNeighbours::jup(const int j) {
+int GridNeighbours::jup(const int j) const {
     return jup_[j];
 }
 
-int GridNeighbours::jdown(const int j) {
+int GridNeighbours::jdown(const int j) const {
     return jdown_[j];
 }

@@ -20,6 +20,8 @@
 #include "mfd_flow_router.h"
 #include "grid_neighbours.h"
 #include "parameters.h"
+#include "dem.h"
+#include "solar_geometry.h"
 
 
 /* allocate a real_type vector with subscript range v[nl..nh] */
@@ -36,10 +38,6 @@ std::vector<int> StreamPower::IVector(int nl, int nh)
 	return std::vector<int>(size);
 }
 
-real_type getMinInt(std::vector<real_type>& v)
-{
-	return *min_element(v.begin(), v.end());
-}
 
 std::vector<std::vector<int>> StreamPower::IMatrix(int nrl, int nrh, int ncl, int nch)
 {
@@ -98,7 +96,7 @@ void StreamPower::SetupGridNeighbors()
 
 void StreamPower::SetTopo()
 {
-	topo = Raster(params.get_topo_file());
+	topo = DEM(params.get_topo_file());
     lattice_size_x = topo.get_size_x();
     lattice_size_y = topo.get_size_y();
     xllcorner = topo.get_xllcorner();
@@ -106,24 +104,6 @@ void StreamPower::SetTopo()
     deltax = topo.get_deltax();
     deltax2 = deltax * deltax;
     nodata = topo.get_nodata();
-
-    slope = Raster(lattice_size_x, lattice_size_y, 0.0);
-    aspect = Raster(lattice_size_x, lattice_size_y, 0.0);
-
-	// Radiation Model
-	solar_raster = Raster(lattice_size_x, lattice_size_y, 0.0);
-	shade_raster = Raster(lattice_size_x, lattice_size_y);
-	I_D = Raster(lattice_size_x, lattice_size_y);
-	I_R = Raster(lattice_size_x, lattice_size_y);
-	I_P = Raster(lattice_size_x, lattice_size_y);
-	N_Ip = Raster(lattice_size_x, lattice_size_y);
-	E_Ip = Raster(lattice_size_x, lattice_size_y);
-	S_Ip = Raster(lattice_size_x, lattice_size_y);
-	W_Ip = Raster(lattice_size_x, lattice_size_y);
-	NE_Ip = Raster(lattice_size_x, lattice_size_y);
-	SE_Ip = Raster(lattice_size_x, lattice_size_y);
-	SW_Ip = Raster(lattice_size_x, lattice_size_y);
-	NW_Ip = Raster(lattice_size_x, lattice_size_y);
 
 	// Landscape Elements
 	veg = Raster(lattice_size_x, lattice_size_y, params.get_init_veg());
@@ -233,228 +213,7 @@ void StreamPower::Avalanche(int i, int j)
 		topo(idown[i], jdown[j]) = topo(i, j) + thresh_diag;
 }
 
-void StreamPower::SlopeAspect(int i, int j) {
 
-	real_type dzdx = ( ( topo(iup[i], jdown[j]) + 2 * topo(iup[i], j) + topo(iup[i], jup[j]) ) -
-		( topo(idown[i], jdown[j]) + 2 * topo(idown[i], j) + topo(idown[i], jup[j]) ) ) /
-		8 / deltax;
-	real_type dzdy = ( ( topo(idown[i], jup[j]) + 2 * topo(i, jup[j]) + topo(iup[i], jup[j]) ) -
-		( topo(idown[i], jdown[j]) + 2 * topo(i, jdown[j]) + topo(iup[i], jdown[j]) ) ) /
-		8 / deltax;
-	aspect(i, j) = atan2(dzdy, dzdx);                             // n.b. Aspect in Radians
-	slope(i, j) = sqrt(pow(dzdx, 2) + pow(dzdy, 2));              // n.b. Slope in Radians
-}
-
-void StreamPower::SunPosition()
-{
-
-	/*  Documentation for Sun Position and Solar influx come from the following sources:
-	      ME 4131 THERMAL ENVIRONMENTAL ENGINEERING LABORATORY MANUAL, Appendix D
-	      http://www.me.umn.edu/courses/me4131/LabManual/AppDSolarRadiation.pdf
-
-		  Kumar, L., Skidmore, A. and Knowles, E. 1997. Modelling topographic variation
-		  in solar radiation in a GIS environment. Int J. Information Science, 11(5), p.475-497
-
-		  Angus, R., Muneer, T. 1993. Sun position for daylight models: Precise algorithms for
-		  determination. Lighting Research and Technology 25(2) 81-83.
-	*/
-
-	int Year1, Day1;
-	real_type m, n, t1, eps, G, C, L, B, alpha, EOT, GHA, AST, LST;
-    int day = ct.get_day();
-    int hour = ct.get_hour();
-    int minute = ct.get_minute();
-
-	// Solar declination: angle of suns rays relative to equator. Max pos at summer equinox = +23.5
-	r.declination = 23.45 * sin( 360. / 365. * (284. + day) * degrad);
-
-	B = ( 360. / 364. ) * ( day - 81. ) * degrad;              // result in radians
-	EOT = 0.165 * sin(2. * B ) - 0.126 * cos( B ) - 0.025 * sin( B );
-	                           // Equation of Time [hr]
-	LST = hour + ( minute/60 ) + ( r.stdmed - r.longitude ) / 15 + EOT - 0;     //  Last term is Daylight Saving (e.g. +1)
-	                           // Local Solar Time, correcting for distance from nearest time zone meridian
-	r.SHA = 15 * (LST - 12);   // Local Solar Hour  (negative before solar noon, positive after)
-
-	m = sin(r.lattitude * degrad) * sin(r.declination * degrad);
-	n = cos(r.lattitude * degrad) * cos(r.declination * degrad) * cos(r.SHA * degrad);
-	r.altitude = asin(m + n) / degrad;
-
-	m = sin(r.lattitude * degrad) * cos(r.declination * degrad) * cos(r.SHA * degrad);
-	n = cos(r.lattitude * degrad) * sin(r.declination * degrad);
-	r.azimuth = acos ( (m - n) / cos(r.altitude * degrad) ) / degrad - 180;   // in degrees
-
-	if (r.SHA > 0) r.azimuth = -r.azimuth;              // N = 0; E = -90; S = -180/+180; W = +90
-
-}
-
-void StreamPower::SolarInflux(){
-
-// Calculate shading from surrounding terrain
-	int i, j, m;
-	real_type m1, m2, m3, m4, m5, M, asp360, d80;
-	real_type cos_theta, cos_i, I_o, tau_b, I_DN, I_dH;
-	std::vector<real_type> cos_i80, asp_4;
-
-	// Solar position, in radians
-	real_type azm = r.azimuth * degrad;            //  Anything in the 'r' object uses degrees; converted here to radians
-	real_type alt = r.altitude * degrad;           //  Invert cos<>sin to obtain zenith angle. 0 is sun at zenith (flat terrain faces up); 90 sun is at the horizon (vertical terrain)
-	real_type lat = r.lattitude * degrad;
-	real_type dec = r.declination * degrad;
-	real_type sha = r.SHA * degrad;
-	real_type gamma;
-
-	cos_i80 = std::vector<real_type>(8);
-	d80 = (80 * degrad);
-	asp_4 = { 0, 90, 180, 270, 45, 135, 225, 315 };
-
-	I_o = 1367 * (1 + 0.0344 * cos(360 * ct.get_day() / 365 * degrad));
-	M = sqrt(1229. + pow((614. * sin(alt)), 2.)) - 614 * sin(alt);               // Air mass ratio  (Keith and Kreider 1978)
-	tau_b = 0.56 * (exp(-0.65 * M) + exp(-0.095 * M));                               // Atmospheric transmittance for beam radiation
-
-// Solar: Direct and Diffuse
-	for (i = 2; i <= lattice_size_x - 1; i++)
-	{
-		for (j = 2; j <= lattice_size_y - 1; j++)
-		{
-			shade_raster(i, j) = ((sin(alt) * cos(slope(i, j))) + (cos(alt) * sin(slope(i, j)) * cos(azm - aspect(i, j))));
-			if (shade_raster(i, j) < 0) shade_raster(i, j) = 0;
-
-			asp360 = aspect(i, j);                 // Change aspect coordinates for flux estimates:
-			if ( asp360 < PI) asp360 += PI / 2;    // N = 0; E = 1/2 pi; S = pi; W = 1.5 pi
-			if (asp360 < 0) asp360 += 2 * PI;
-
-			// Solar radiation striking a tilted surface
-			m1 = sin(lat) * cos(slope(i, j));
-			m2 = cos(lat) * sin(slope(i, j)) * cos( asp360 );
-			m3 = cos(lat) * cos(slope(i, j));
-			m4 = sin(lat) * cos(slope(i, j)) * cos( asp360 );
-			m5 = cos(dec) * sin(slope(i, j)) * sin( sha );
-			// Incident angle of incoming beam radiation
-
-			cos_i = sin(dec) * (m1 - m2) + cos(dec) * cos(sha) * (m3 + m4) + m5;
-
-			I_P(i, j) = (I_o * tau_b) * cos_i;
-			if (I_P(i, j) < 0) I_P(i, j) = 0;
-			if (shade_raster(i, j) < 0) I_P(i, j) = 0;
-			I_D(i, j) = I_o * ( 0.271 - 0.294 * tau_b ) * pow ( cos(slope(i, j) / 2 ),  2 ) * sin(alt);  // Diffuse insolation
-			I_R(i, j) = 0.2 * I_o * ( 0.271 + 0.706 * tau_b ) * pow ( sin(slope(i, j) / 2 ),  2 ) * sin(alt);  // Reflected insolation
-			if (I_R(i, j) < 0) I_R(i, j) = 0;
-			I_P(i, j) += I_D(i, j);
-
-			//  Maps of incident radiation on near-vertical (>80 deg) slopes in each cardinal direction
-			//  8 Ip values and 'cos_i's; one for each direction
-
-			m1 = sin(lat) * cos(d80);
-			m3 = cos(lat) * cos(d80);
-			m5 = cos(dec) * sin(d80) * sin(sha);
-
-			for (m = 0; m < 8; m++)
-			{
-				m2 = cos(lat) * sin(d80) * cos(asp_4[m] * degrad);
-				m4 = sin(lat) * cos(d80) * cos(asp_4[m] * degrad);
-				cos_i80[m] = sin(dec) * (m1 - m2) + cos(dec) * cos(sha) * (m3 + m4) + m5;
-			}
-
-			N_Ip(i, j) = (I_o * tau_b) * cos_i80[0] * shade_raster(i, j);
-			E_Ip(i, j) = (I_o * tau_b) * cos_i80[1] * shade_raster(i, j);
-			S_Ip(i, j) = (I_o * tau_b) * cos_i80[2] * shade_raster(i, j);
-			W_Ip(i, j) = (I_o * tau_b) * cos_i80[3] * shade_raster(i, j);
-			NE_Ip(i, j) = (I_o * tau_b) * cos_i80[4] * shade_raster(i, j);
-			SE_Ip(i, j) = (I_o * tau_b) * cos_i80[5] * shade_raster(i, j);
-			SW_Ip(i, j) = (I_o * tau_b) * cos_i80[6] * shade_raster(i, j);
-			NW_Ip(i, j) = (I_o * tau_b) * cos_i80[7] * shade_raster(i, j);
-
-		}
-	}
-}
-
-void StreamPower::MeltExposedIce(int i, int j) {
-
-	real_type N, E, S, W, NE, SE, SW, NW;
-	real_type incoming = 0;
-	real_type elev_drop = 0;       // Decrease in elevation at central pixel, following ice melt
-	real_type accommodation = 0;   // Volume available to fill below central pixel, in the immediate neighbourhood
-	real_type lowestpixel;         // Elevation of the lowest pixel in the 9-element neighbourhood.
-	int m = 0;
-
-	std::vector<real_type> neighb{ topo(idown[i], jup[j]), topo(i, jup[j]), topo(iup[i], jup[j]),    // Elevations within 9-element neighbourhood NW-N-NE-W-ctr-E-SW-S-SE
-		topo(idown[i], j), topo(i, j), topo(iup[i], j),
-		topo(idown[i], jdown[j]), topo(i, jdown[j]), topo(iup[i], jdown[j]) };
-
-	lowestpixel = getMinInt(neighb);
-
-	if (topo(i, j) > lowestpixel)      // If any neighbouring pixels are higher than central pixel, then proceed with melt/avalanche algorithm
-	{
-		// Extent (m2) of exposed faces in each of 8 directions
-		N = std::max<real_type>((topo(i, j) - Sed_Track(i, j) - topo(i, jup[j])), 0.0) * deltax * 0.8;  // If ice is exposed, positive value, otherwise zero
-		E = std::max<real_type>((topo(i, j) - Sed_Track(i, j) - topo(iup[i], j)), 0.0) * deltax * 0.8;
-		S = std::max<real_type>((topo(i, j) - Sed_Track(i, j) - topo(i, jdown[j])), 0.0) * deltax * 0.8;
-		W = std::max<real_type>((topo(i, j) - Sed_Track(i, j) - topo(idown[i], j)), 0.0) * deltax * 0.8;
-		NE = std::max<real_type>((topo(i, j) - Sed_Track(i, j) - topo(iup[i], jup[j])), 0.0) * deltax * 0.2;  //  Faces have 0.8 of deltax resolution; corners have 0.2
-		SE = std::max<real_type>((topo(i, j) - Sed_Track(i, j) - topo(iup[i], jdown[j])), 0.0) * deltax * 0.2;
-		SW = std::max<real_type>((topo(i, j) - Sed_Track(i, j) - topo(idown[i], jdown[j])), 0.0) * deltax * 0.2;
-		NW = std::max<real_type>((topo(i, j) - Sed_Track(i, j) - topo(idown[i], jup[j])), 0.0) * deltax * 0.2;
-
-		// Radiative flux (m2 * W·m-2 = W) to ice for each face and corner of the pixel block
-
-		if (N > 0) {
-			incoming = N * I_P(i, j) * N_Ip(i, j);         //  Area exposed (m2) * direct+diffuse (W·m-2) * vertical faces (W·m-2)
-			if ((aspect(i, jup[j]) < -7 * (PI / 8)) || (aspect(i, jup[j]) > 7 * (PI / 8)))
-				incoming += N * I_R(i, jup[j]);
-		}           //  Add reflected radiation component (I_R), if applicable (e.g. pixel to the North is sloping Southward)
-		if (E > 0) {
-			incoming += E * I_P(i, j) * E_Ip(i, j);
-			if ((aspect(iup[i], j) < 7 * (PI / 8)) && (aspect(iup[i], j) > 3 * (PI / 8)))
-				incoming += E * I_R(iup[i], j);
-		}
-		if (S > 0) {
-			incoming += S * I_P(i, j) * S_Ip(i, j);
-			if ((aspect(i, jdown[j]) < (PI / 8)) && (aspect(i, jdown[j]) > -1 * (PI / 8)))
-				incoming += S * I_R(i, jdown[j]);
-		}
-		if (W > 0) {
-			incoming += W * I_P(i, j) * E_Ip(i, j);
-			if ((aspect(idown[i], j) < -5 * (PI / 8)) && (aspect(idown[i], j) > -3 * (PI / 8)))
-				incoming += W * I_R(idown[i], j);
-		}
-		if (NE > 0) {
-			incoming += NE * I_P(i, j) * NE_Ip(i, j);
-			if ((aspect(iup[i], jup[j]) < 7 * (PI / 8)) && (aspect(iup[i], jup[j]) > 5 * (PI / 8)))
-				incoming += NE * I_R(iup[i], jup[j]);
-		}
-		if (SE > 0) {
-			incoming += SE * I_P(i, j) * SE_Ip(i, j);
-			if ((aspect(iup[i], jdown[j]) < 3 * (PI / 8)) && (aspect(iup[i], jdown[j]) > 1 * (PI / 8)))
-				incoming += SE * I_R(iup[i], jdown[j]);
-		}
-		if (SW > 0) {
-			incoming += SW * I_P(i, j) * SW_Ip(i, j);
-			if ((aspect(idown[i], jdown[j]) < -1 * (PI / 8)) && (aspect(idown[i], jdown[j]) > -3 * (PI / 8)))
-				incoming += SW * I_R(idown[i], jdown[j]);
-		}
-		if (NW > 0) {
-			incoming += NW * I_P(i, j) * NW_Ip(i, j);
-			if ((aspect(idown[i], jup[j]) < -5 * (PI / 8)) && (aspect(idown[i], jup[j]) > -7 * (PI / 8)))
-				incoming += NW * I_R(idown[i], jup[j]);
-		}
-
-		// Ice mass lost, based on ablation at each face
-		// incoming watts / meltrate / pixel area
-
-		for (m = 0; m < 8; m++) {
-			if (topo(i, j) - neighb[m] > 0) accommodation += deltax2 * (topo(i, j) - neighb[m]);   // sum up all the volume available on pixels below the central pixel
-		}
-
-		elev_drop = incoming / params.get_melt() / deltax2;
-		if (elev_drop * deltax < accommodation)           // i.e. There is room to accommodate the failed mass in neighbouring cells
-			topo(i, j) -= elev_drop;
-		else
-			topo(i, j) = lowestpixel;
-
-
-		// Water lost in melt flows downstream (add to 'flow' raster)
-	}
-}
 
 void StreamPower::Init(std::string parameter_file)
 {
@@ -464,26 +223,19 @@ void StreamPower::Init(std::string parameter_file)
     // create model time object
     ct = ModelTime(params);
 
-    // solar geometry object
-	r.lattitude = params.get_lattitude();
-	r.longitude = params.get_longitude();
-	r.stdmed = params.get_stdmed();
-	r.declination = params.get_declination();
-	r.altitude = params.get_altitude();
-	r.azimuth = params.get_azimuth();
-
     // load input data
 	SetFA();
 	SetTopo();
 
-    // initialise flow router after all data loaded
+    // initialise some objects all data loaded
     mfd_flow_router.initialise();
+    radiation_model.initialise();
 }
 
 void StreamPower::Start()
 {
 	real_type deltah, max;
-	int idum, i, j, t, step;
+	int i, j, t;
 	char fname[100];
 	sprintf(fname, "erosion_%d.asc", 0);
     topo.save(fname);
@@ -556,33 +308,17 @@ void StreamPower::Start()
 
         // Slope/Aspect
         timers["SlopeAspect"].start();
-		for (i = 1; i <= lattice_size_x - 2; i++)
-		{
-			for (j = 1; j <= lattice_size_y - 2; j++)
-			{
-                SlopeAspect(i, j);
-			}
-		}
+        topo.compute_slope_and_aspect(nebs);
         timers["SlopeAspect"].stop();
 
 		// Update solar characteristics
         timers["SolarCharacteristics"].start();
-		SunPosition();
-		SolarInflux();
+        radiation_model.update_solar_characteristics(ct);
         timers["SolarCharacteristics"].stop();
 
 		// Carry out melt on exposed pixels
         timers["Melt"].start();
-		t = lattice_size_x * lattice_size_y;
-		while (t > 0)
-		{
-			t--;
-            topo.get_sorted_ij(t, i, j);
-			if ((i > 0) && (i < (lattice_size_x - 1)) && (j > 0) && (j < (lattice_size_y - 1)))  // Do not alter boundary elements
-			{
-				MeltExposedIce(i, j);
-			}
-		}
+        radiation_model.melt_exposed_ice();
         timers["Melt"].stop();
 
 		//Channel erosion
@@ -593,7 +329,7 @@ void StreamPower::Start()
 		{
 			for (j = 1; j <= lattice_size_y - 2; j++)
 			{
-                deltah = params.get_ann_timestep() * K * sqrt( flow(i, j)/1e6 ) * deltax * slope(i, j);     // Fluvial erosion law;
+                deltah = params.get_ann_timestep() * K * sqrt( flow(i, j)/1e6 ) * deltax * topo.slope(i, j);     // Fluvial erosion law;
 				topo(i, j) -= deltah;
 				//std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow(i, j) / 1e6 << ", slope: " << slope(i, j) << std::endl;
 
@@ -643,7 +379,7 @@ void StreamPower::Start()
 		tstep += params.get_timestep();
 		if (tstep >= params.get_printinterval()) {
 			char fname[100];
-			sprintf(fname, "erosion_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), r.altitude );
+			sprintf(fname, "erosion_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
             topo.save(fname);
 			tstep = 0;
 		}
@@ -683,14 +419,9 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 }
 
 StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny), mfd_flow_router(topo, flow, nebs),
-        hillslope_diffusion(topo, flow, nebs, params)
+        hillslope_diffusion(topo, flow, nebs, params), radiation_model(topo, Sed_Track, flow, nebs, params)
 {
 
 }
 
 StreamPower::~StreamPower() {}
-
-Raster StreamPower::GetTopo()
-{
-	return topo;
-}

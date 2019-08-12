@@ -1,13 +1,14 @@
 #include <cmath>
 #include <vector>
 #include "raster.h"
+#include "dem.h"
 #include "mfd_flow_router.h"
 
 
 /// References to the input Rasters and vectors are stored since they are expected to be
 /// managed elsewhere. One must call the inititialse function before running the flow
 /// routing.
-MFDFlowRouter::MFDFlowRouter(Raster& topo_, Raster& flow_, GridNeighbours& nebs_) :
+MFDFlowRouter::MFDFlowRouter(DEM& topo_, Raster& flow_, GridNeighbours& nebs_) :
         topo(topo_), flow(flow_), nebs(nebs_), initialised(false) {
     size_x = topo.get_size_x();
     size_y = topo.get_size_y();

@@ -23,25 +23,25 @@ class ModelTime {
         ModelTime(const Parameters& params);
 
         /// \brief Determine whether to keep going (if we haven't reached the end yet)
-        bool keep_going();
+        bool keep_going() const;
 
         /// \brief Get the current year
-        int get_year();
+        int get_year() const;
 
         /// \brief Get the current day
-        int get_day();
+        int get_day() const;
 
         /// \brief Get the current hour
-        int get_hour();
+        int get_hour() const;
 
         /// \brief Get the current minute
-        int get_minute();
+        int get_minute() const;
 
         /// \brief Get the end year
-        int get_end_year();
+        int get_end_year() const;
 
         /// \brief Get the end day
-        int get_end_day();
+        int get_end_day() const;
 
         /// \brief Advance the current time by the specified increment
         /// \param timestep The number of hours to move time forwards by
@@ -50,7 +50,7 @@ class ModelTime {
         void increment(int timestep);
 
         /// \brief Print some information about the current date time
-        void print();
+        void print() const;
 
     private:
         int year;          ///< Current year

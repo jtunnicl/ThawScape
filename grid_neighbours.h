@@ -26,19 +26,19 @@ class GridNeighbours {
 
         /// \brief Get index of up neighbour in x direction for given cell i
         /// \param i Index of cell to get the neighbour of
-        int iup(const int i);
+        int iup(const int i) const;
 
         /// \brief Get index of down neighbour in x direction for given cell i
         /// \param i Index of cell to get the neighbour of
-        int idown(const int i);
+        int idown(const int i) const;
         
         /// \brief Get index of up neighbour in y direction for given cell j
         /// \param j Index of cell to get the neighbour of
-        int jup(const int j);
+        int jup(const int j) const;
         
         /// \brief Get index of down neighbour in y direction for given cell j
         /// \param j Index of cell to get the neighbour of
-        int jdown(const int j);
+        int jdown(const int j) const;
 };
 
 #endif
