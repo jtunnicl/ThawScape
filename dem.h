@@ -15,6 +15,11 @@ class DEM : public Raster {
         /// \brief Create an empty DEM object
         DEM();
 
+        /// \brief Create an empty DEM object with the given dimensions
+        /// \param size_x_ x dimension of the DEM
+        /// \param size_y_ y dimension of the DEM
+        DEM(int size_x_, int size_y_);
+
         /// \brief Create a DEM object with the given dimensions and all elements initialised to the same value
         /// \param size_x_ x dimension of the DEM
         /// \param size_y_ y dimension of the DEM

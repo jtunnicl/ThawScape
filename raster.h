@@ -70,10 +70,10 @@ class Raster {
         /// \param j Second index of the element to check
         bool is_nodata(int i, int j);
 
-        /// \brief Set the given element to nodata
-        /// \param i First index of the element to set
-        /// \param j Second index of the element to set
-        void set_nodata(int i, int j);
+        /// \brief Set the given pixel to nodata
+        /// \param i First index of the pixel to set
+        /// \param j Second index of the pixel to set
+        void set_pixel_nodata(int i, int j);
 
         /// \brief Create a list of indexes of the data sorted by value (low to high)
         void sort_data();
@@ -105,6 +105,10 @@ class Raster {
         /// \brief Set the precision for writing data to file
         /// \param prec The decimal precision (passed to std::setprecision)
         void set_save_precision(int prec);
+
+        /// \brief Set the cell size
+        /// \param deltax_ The new value for the cell size
+        void set_deltax(const real_type deltax_);
 };
 
 #endif

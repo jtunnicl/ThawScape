@@ -7,6 +7,8 @@
 
 DEM::DEM() : Raster(), slope_(), aspect_() {}
 
+DEM::DEM(int size_x_, int size_y_) : Raster(size_x_, size_y_) {}
+
 DEM::DEM(int size_x_, int size_y_, real_type value) : Raster(size_x_, size_y_, value) {}
 
 DEM::DEM(const std::string &filename) : Raster(filename) {}
