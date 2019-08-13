@@ -21,6 +21,7 @@ void DEM::compute_slope_and_aspect(const GridNeighbours& nebs) {
     int size_y = get_size_y();
     slope_.resize(size_x, size_y);
     aspect_.resize(size_x, size_y);
+    #pragma omp parallel for
     for (int i = 0; i < size_x; i++) {
         for (int j = 0; j < size_y; j++) {
             real_type dzdx = ( ( this->operator()(nebs.iup(i), nebs.jdown(j)) +

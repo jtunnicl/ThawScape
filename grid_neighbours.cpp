@@ -34,17 +34,33 @@ void GridNeighbours::setup(const int size_x, const int size_y) {
 }
 
 int GridNeighbours::iup(const int i) const {
+#ifdef NDEBUG
     return iup_[i];
+#else
+    return iup_.at(i);
+#endif
 }
 
 int GridNeighbours::idown(const int i) const {
+#ifdef NDEBUG
     return idown_[i];
+#else
+    return idown_.at(i);
+#endif
 }
 
 int GridNeighbours::jup(const int j) const {
+#ifdef NDEBUG
     return jup_[j];
+#else
+    return jup_.at(j);
+#endif
 }
 
 int GridNeighbours::jdown(const int j) const {
+#ifdef NDEBUG
     return jdown_[j];
+#else
+    return jdown_.at(j);
+#endif
 }
