@@ -131,8 +131,8 @@ bool Raster::is_nodata(int i, int j) {
     return (this->operator()(i, j) == nodata);
 }
 
-// set an element to nodata
-void Raster::set_nodata(int i, int j) {
+// set a pixel to nodata
+void Raster::set_pixel_nodata(int i, int j) {
     this->operator()(i, j) = nodata;
 }
 
@@ -164,4 +164,8 @@ void Raster::get_sorted_ij(int t, int &i, int &j) {
 
 void Raster::set_save_precision(int prec) {
     save_prec = prec;
+}
+
+void Raster::set_deltax(const real_type deltax_) {
+    deltax = deltax_;
 }

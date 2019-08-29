@@ -3,9 +3,10 @@
 #include "grid_neighbours.h"
 #include "parameters.h"
 #include "global_defs.h"
+#include "dem.h"
 #include "hillslope_diffusion.h"
 
-HillSlopeDiffusion::HillSlopeDiffusion(Raster& topo_, Raster& flow_, GridNeighbours& nebs_,
+HillSlopeDiffusion::HillSlopeDiffusion(DEM& topo_, Raster& flow_, GridNeighbours& nebs_,
         Parameters& params_) : topo(topo_), flow(flow_), nebs(nebs_), params(params_) {}
 
 

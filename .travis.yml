@@ -11,6 +11,7 @@ matrix:
                       - g++-8
                       - cmake
                       - doxygen
+                      - graphviz
           env:
               - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
         - os: osx
@@ -38,5 +39,5 @@ deploy:
     local_dir: build/html
     github_token: $GH_REPO_TOKEN
     on:
-        branch: components
+        branch: master
         condition: $TRAVIS_OS_NAME = linux

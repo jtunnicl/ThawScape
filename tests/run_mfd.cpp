@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include "raster.h"
+#include "dem.h"
 #include "mfd_flow_router.h"
 #include "grid_neighbours.h"
 
@@ -35,7 +36,7 @@ int main(int argc, char** argv) {
 
     // load topo
     std::cout << "Topo file = " << topo_file << std::endl;
-    Raster topo(topo_file);
+    DEM topo(topo_file);
 
     // initial flow
     Raster flow;

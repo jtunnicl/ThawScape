@@ -24,31 +24,31 @@ ModelTime::ModelTime(const Parameters& params) : ModelTime() {
     end_day = params.get_end_day();
 }
 
-int ModelTime::get_year() {
+int ModelTime::get_year() const {
     return year;
 }
 
-int ModelTime::get_day() {
+int ModelTime::get_day() const {
     return day;
 }
 
-int ModelTime::get_hour() {
+int ModelTime::get_hour() const {
     return hour;
 }
 
-int ModelTime::get_minute() {
+int ModelTime::get_minute() const {
     return minute;
 }
 
-int ModelTime::get_end_year() {
+int ModelTime::get_end_year() const {
     return end_year;
 }
 
-int ModelTime::get_end_day() {
+int ModelTime::get_end_day() const {
     return end_day;
 }
 
-bool ModelTime::keep_going() {
+bool ModelTime::keep_going() const {
     return (year < end_year || (year == end_year && day < end_day));
 }
 
@@ -72,6 +72,6 @@ void ModelTime::increment(int timestep) {
     }
 }
 
-void ModelTime::print() {
+void ModelTime::print() const {
     std::cout << "Year: " << year << "; Day: " << day << "; Hour: " << hour << std::endl;
 }

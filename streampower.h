@@ -13,6 +13,8 @@
 #include "grid_neighbours.h"
 #include "parameters.h"
 #include "hillslope_diffusion.h"
+#include "dem.h"
+#include "radiation_model.h"
 
 #define NR_END 1
 #define FREE_ARG char*
@@ -26,25 +28,9 @@
 //#define M 7
 #define NSTACK 100000
 
-#define degrad 0.01745329251994330   // Convert degrees to radians; e.g. 180 * degrad = 3.14159..
-#define PI 3.14159265358979
 #define HALFPI = PI/2
 #define fillincrement 0.01
 
-
-class solar_geom {
-public:
-	real_type lattitude;
-	real_type longitude;
-	real_type stdmed;          // LSTM = (UTC - 7H * 15 deg)
-	real_type declination;     // Declination of sun from equatorial plane
-	real_type altitude;        // Sun altitude in the sky
-	real_type azimuth;         // Compass angle of sun
-	real_type incidence;       // Angle of sun's incidence
-	real_type SHA;             // Solar Hour Angle is 0° at solar noon.  Since the Earth rotates 15° per hour,
-		            // each hour away from solar noon corresponds to an angular motion of the sun in the sky of 15°.
-		            // In the morning the hour angle is negative, in the afternoon the hour angle is positive.
-};
 
 class StreamPower
 {
@@ -57,18 +43,16 @@ public:
     Parameters params;
 	real_type xllcorner, yllcorner, nodata;
 	std::vector<int> iup, idown, jup, jdown;
-    Raster topo, slope, aspect;
+    DEM topo;
     Raster flow;
 	Raster veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
-	Raster solar_raster, shade_raster, I_D, I_R, I_P, N_Ip, E_Ip, S_Ip, W_Ip, NE_Ip, SE_Ip, SW_Ip, NW_Ip;
-	Raster Ip_D8;     // Map of incoming solar flux, 8 directions
 	Array2D<real_type> elevation;
     MFDFlowRouter mfd_flow_router;
     GridNeighbours nebs;
     HillSlopeDiffusion hillslope_diffusion;
+    RadiationModel radiation_model;
 
-	ModelTime ct;             // Current model time
-	solar_geom r;
+	ModelTime ct;             ///< Current model time
 
 	static std::vector<real_type> Vector(int nl, int nh);
 	static std::vector<int> IVector(int nl, int nh);
@@ -83,19 +67,14 @@ public:
 	~StreamPower();
 
 	std::vector<std::vector<real_type>> CreateRandomField();
-	Raster GetTopo();
 
 
 	void SetupGridNeighbors();
 	void SetTopo();
 	void SetFA();
-	void Flood(); // Barnes pit filling
+	void Flood(); ///< Barnes pit filling
 	void InitDiffusion();
 	void Avalanche(int i, int j);
-	void SlopeAspect(int i, int j);
-	void SunPosition();
-	void SolarInflux();
-	void MeltExposedIce(int i, int j);
 
 	void Init(std::string parameter_file); // using new vars
 	void Start();

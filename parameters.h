@@ -4,7 +4,7 @@
 #include <string>
 #include "global_defs.h"
 
-/// \brief Input Parameters
+/// \brief Class for loading and accessing the parameters
 class Parameters {
     private:
         real_type U;  ///< Uplift, m yr^-1
