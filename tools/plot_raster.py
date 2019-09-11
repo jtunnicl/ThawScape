@@ -51,8 +51,9 @@ def plot_file(fn, args):
     if not args.offline:
         plt.show()
 
-    # clear figure
-    plt.clf()
+    if args.offline:
+        # clear figure
+        plt.clf()
 
 
 def main():
