@@ -236,9 +236,16 @@ void StreamPower::Start()
 {
 	real_type deltah, max;
 	int i, j, t;
-	char fname[100];
-	sprintf(fname, "erosion_%d.asc", 0);
-    topo.save(fname);
+    if (params.get_save_topo()) {
+        char fname[100];
+        sprintf(fname, "erosion_%d.asc", 0);
+        topo.save(fname);
+    }
+    if (params.get_save_flow()) {
+        char fname[100];
+        sprintf(fname, "flow_%d.asc", 0);
+        flow.save(fname);
+    }
 	int tstep = 0;    // Counter for printing results to file
 	std::cout << "U: " << params.get_U() << "; K: " << params.get_K() << "; D: " << params.get_D() << std::endl;
 
@@ -378,9 +385,16 @@ void StreamPower::Start()
 		// Write to file at intervals
 		tstep += params.get_timestep();
 		if (tstep >= params.get_printinterval()) {
-			char fname[100];
-			sprintf(fname, "erosion_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
-            topo.save(fname);
+            if (params.get_save_topo()) {
+                char fname[100];
+                sprintf(fname, "erosion_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
+                topo.save(fname);
+            }
+            if (params.get_save_flow()) {
+                char fname[100];
+                sprintf(fname, "flow_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
+                flow.save(fname);
+            }
 			tstep = 0;
 		}
 	}

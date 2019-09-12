@@ -10,7 +10,7 @@ Parameters::Parameters() : U(0.01), K(0.001), D(1.5), melt(250), timestep(1), pr
         init_sed_track(2), init_veg(8), year(2010), day(145), hour(12), minute(0),
         end_year(2015), end_day(1), lattitude(0), longitude(0), stdmed(0), declination(0),
         altitude(0), azimuth(0), topo_file("topo.asc"), fa_file("FA.asc"),
-        sed_file("SedThickness.asc"), fix_random_seed(false) {}
+        sed_file("SedThickness.asc"), fix_random_seed(false), save_topo(true), save_flow(false) {}
 
 
 /// Load parameter values from a .INI file. Parameters can be omitted from the file,
@@ -30,7 +30,9 @@ Parameters::Parameters(const std::string& parameter_file) : Parameters() {
     set_melt(reader.GetReal("model", "melt", melt));    // Reciprocal melt rate, for a given radiation input
 
     set_timestep(reader.GetReal("time", "timestep", timestep));   // Time step in hours
-    set_printinterval(reader.GetInteger("time", "printinterval", printinterval)); // Output timestep, in hours
+    set_printinterval(reader.GetInteger("output", "printinterval", printinterval)); // Output timestep, in hours
+    set_save_topo(reader.GetBoolean("output", "save_topo", save_topo));
+    set_save_flow(reader.GetBoolean("output", "save_flow", save_flow));
 
 //  thresh(0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
 //  thresh_diag(thresh * sqrt2;
@@ -203,4 +205,12 @@ void Parameters::set_timestep(real_type timestep_) {
         timestep = timestep_;
         ann_timestep = timestep / 8760;
     }
+}
+
+void Parameters::set_save_topo(bool save_topo_) {
+    save_topo = save_topo_;
+}
+
+void Parameters::set_save_flow(bool save_flow_) {
+    save_flow = save_flow_;
 }
