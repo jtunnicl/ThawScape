@@ -1,8 +1,12 @@
 #include <cmath>
 #include <vector>
+#include <fstream>
+#include <iostream>
 #include "raster.h"
 #include "dem.h"
 #include "mfd_flow_router.h"
+
+#define fillincrement 0.01
 
 
 /// References to the input Rasters and vectors are stored since they are expected to be
@@ -42,18 +46,54 @@ void MFDFlowRouter::initialise() {
 }
 
 
-void MFDFlowRouter::run() {
-    // NOTE: assumes topo has been sorted already (i.e. topo.sort_data())
+void MFDFlowRouter::fillinpitsandflats(int i, int j) {
+    real_type minv = topo(i, j);
 
+    if (topo(nebs.iup(i), j) < minv) minv = topo(nebs.iup(i), j);
+    if (topo(nebs.idown(i), j) < minv) minv = topo(nebs.idown(i), j);
+    if (topo(i, nebs.jup(j)) < minv) minv = topo(i, nebs.jup(j));
+    if (topo(i, nebs.jdown(j)) < minv) minv = topo(i, nebs.jdown(j));
+    if (topo(nebs.iup(i), nebs.jup(j)) < minv) minv = topo(nebs.iup(i), nebs.jup(j));
+    if (topo(nebs.idown(i), nebs.jup(j)) < minv) minv = topo(nebs.idown(i), nebs.jup(j));
+    if (topo(nebs.idown(i), nebs.jdown(j)) < minv) minv = topo(nebs.idown(i), nebs.jdown(j));
+    if (topo(nebs.iup(i), nebs.jdown(j)) < minv) minv = topo(nebs.iup(i), nebs.jdown(j));
+
+    if ((topo(i, j) <= minv) && (i > 0) && (j > 0) && (i < size_x - 1) && (j < size_y - 1)) {
+        topo(i, j) = minv + fillincrement;
+        fillinpitsandflats(i, j);
+        fillinpitsandflats(nebs.iup(i), j);
+        fillinpitsandflats(nebs.idown(i), j);
+        fillinpitsandflats(i, nebs.jup(j));
+        fillinpitsandflats(i, nebs.jdown(j));
+        fillinpitsandflats(nebs.iup(i), nebs.jup(j));
+        fillinpitsandflats(nebs.idown(i), nebs.jup(j));
+        fillinpitsandflats(nebs.idown(i), nebs.jdown(j));
+        fillinpitsandflats(nebs.iup(i), nebs.jdown(j));
+    }
+
+}
+
+void MFDFlowRouter::run() {
     // make sure initialise was called before proceeding
     if (!initialised) {
         initialise();
     }
 
+    // pit filling
+    for(int i = 0; i < size_x; i++) {
+        for(int j = 0; j < size_y; j++) {
+            fillinpitsandflats(i, j);
+        }
+    }
+
+    // sort data after pit filling
+    topo.sort_data();
+
     // Note that deltax is not used in this computation, so the flow raster represents simply the number of contributing unit cells upstream.
     // Initialise flow to ones everywhere
-    flow.set_data(1.0);
-//    flow.set_data(1.0 * topo.get_deltax() * topo.get_deltax());
+//    flow.set_data(1.0);
+    // initialise flow with pixel area
+    flow.set_data(topo.get_deltax() * topo.get_deltax());
 
     // loop over points starting from highest elevation to lowest
     int t = size_x * size_y;

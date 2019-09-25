@@ -30,6 +30,8 @@ class MFDFlowRouter {
         
         /// \brief Do the flow routing
         void run();
+
+        void fillinpitsandflats(int i, int j);
 };
 
 #endif

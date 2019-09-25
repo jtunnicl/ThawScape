@@ -280,21 +280,14 @@ void StreamPower::Start()
         timers["Avalanche"].stop();
 
 		// Pit filling
-        timers["Flood"].start();
-		Flood();
-        timers["Flood"].stop();
-
-		// Setup grid index again with topo values
-        timers["Indexx"].start();
-        topo.sort_data();
-        timers["Indexx"].stop();
-
+//        timers["Flood"].start();
+//		Flood();
+//        timers["Flood"].stop();
 
         // flow routing
         timers["MFDFlowRoute"].start();
         mfd_flow_router.run();
         timers["MFDFlowRoute"].stop();
-
 
 		// Diffusive hillslope erosion
         timers["HillSlopeDiffusion"].start();
