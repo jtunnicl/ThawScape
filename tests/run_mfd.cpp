@@ -5,6 +5,7 @@
 #include <iomanip>
 #include "raster.h"
 #include "dem.h"
+#include "flood.h"
 #include "mfd_flow_router.h"
 #include "grid_neighbours.h"
 
@@ -55,6 +56,10 @@ int main(int argc, char** argv) {
     GridNeighbours nebs;
     nebs.setup(topo.get_size_x(), topo.get_size_y());
 
+    // flood object
+    Flood flood(topo, nebs);
+    flood.initialise(0);  // 0 = fillinpitsandflats, 1 = prioriry flood
+
     // flow routing object
     MFDFlowRouter flow_router(topo, flow, nebs);
     flow_router.initialise();
@@ -68,6 +73,9 @@ int main(int argc, char** argv) {
     // main loop
     int step = 0;
     while (step < num_steps) {
+        // run the flood algorithm
+        flood.run();
+
         // do the flow routing (TODO: can it just be run by itself with nothing else?)
         flow_router.run();
 

@@ -46,44 +46,10 @@ void MFDFlowRouter::initialise() {
 }
 
 
-void MFDFlowRouter::fillinpitsandflats(int i, int j) {
-    real_type minv = topo(i, j);
-
-    if (topo(nebs.iup(i), j) < minv) minv = topo(nebs.iup(i), j);
-    if (topo(nebs.idown(i), j) < minv) minv = topo(nebs.idown(i), j);
-    if (topo(i, nebs.jup(j)) < minv) minv = topo(i, nebs.jup(j));
-    if (topo(i, nebs.jdown(j)) < minv) minv = topo(i, nebs.jdown(j));
-    if (topo(nebs.iup(i), nebs.jup(j)) < minv) minv = topo(nebs.iup(i), nebs.jup(j));
-    if (topo(nebs.idown(i), nebs.jup(j)) < minv) minv = topo(nebs.idown(i), nebs.jup(j));
-    if (topo(nebs.idown(i), nebs.jdown(j)) < minv) minv = topo(nebs.idown(i), nebs.jdown(j));
-    if (topo(nebs.iup(i), nebs.jdown(j)) < minv) minv = topo(nebs.iup(i), nebs.jdown(j));
-
-    if ((topo(i, j) <= minv) && (i > 0) && (j > 0) && (i < size_x - 1) && (j < size_y - 1)) {
-        topo(i, j) = minv + fillincrement;
-        fillinpitsandflats(i, j);
-        fillinpitsandflats(nebs.iup(i), j);
-        fillinpitsandflats(nebs.idown(i), j);
-        fillinpitsandflats(i, nebs.jup(j));
-        fillinpitsandflats(i, nebs.jdown(j));
-        fillinpitsandflats(nebs.iup(i), nebs.jup(j));
-        fillinpitsandflats(nebs.idown(i), nebs.jup(j));
-        fillinpitsandflats(nebs.idown(i), nebs.jdown(j));
-        fillinpitsandflats(nebs.iup(i), nebs.jdown(j));
-    }
-
-}
-
 void MFDFlowRouter::run() {
     // make sure initialise was called before proceeding
     if (!initialised) {
         initialise();
-    }
-
-    // pit filling
-    for(int i = 0; i < size_x; i++) {
-        for(int j = 0; j < size_y; j++) {
-            fillinpitsandflats(i, j);
-        }
     }
 
     // sort data after pit filling

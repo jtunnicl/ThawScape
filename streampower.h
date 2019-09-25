@@ -6,7 +6,6 @@
 #include <numeric>
 #include <algorithm>
 #include "global_defs.h"
-#include "Array2D.hpp"
 #include "model_time.h"
 #include "raster.h"
 #include "mfd_flow_router.h"
@@ -16,6 +15,7 @@
 #include "dem.h"
 #include "radiation_model.h"
 #include "avalanche.h"
+#include "flood.h"
 
 #define NR_END 1
 #define FREE_ARG char*
@@ -47,12 +47,12 @@ public:
     DEM topo;
     Raster flow;
 	Raster veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
-	Array2D<real_type> elevation;
     MFDFlowRouter mfd_flow_router;
     GridNeighbours nebs;
     HillSlopeDiffusion hillslope_diffusion;
     RadiationModel radiation_model;
     Avalanche avalanche;
+    Flood flood;
 
 	ModelTime ct;             ///< Current model time
 
@@ -74,7 +74,6 @@ public:
 	void SetupGridNeighbors();
 	void SetTopo();
 	void SetFA();
-	void Flood(); ///< Barnes pit filling
 	void InitDiffusion();
 
 	void Init(std::string parameter_file); // using new vars

@@ -13,7 +13,6 @@
 #include "global_defs.h"
 #include "streampower.h"
 #include "utility.h"
-#include "priority_flood.hpp"
 #include "model_time.h"
 #include "timer.hpp"
 #include "raster.h"
@@ -114,8 +113,6 @@ void StreamPower::SetTopo()
 	ExposureAge = Raster(lattice_size_x, lattice_size_y, params.get_init_exposure_age());  // Once over 20, ice is primed for melt
 	ExposureAge_old = Raster(lattice_size_x, lattice_size_y);
 
-	elevation = Array2D<real_type>(lattice_size_x, lattice_size_y, -9999.0);
-
 	SetupGridNeighbors();
     nebs.setup(lattice_size_x, lattice_size_y);
 
@@ -132,31 +129,6 @@ void StreamPower::SetFA()
     deltax = flow.get_deltax();
     deltax2 = deltax * deltax;
     nodata = flow.get_nodata();
-}
-
-void StreamPower::Flood()
-{
-	// update elev
-	for (int i = 0; i < lattice_size_x; i++)
-	{
-		for (int j = 0; j < lattice_size_y; j++)
-		{
-			elevation(i, j) = topo(i, j);     //  Change indexing to suit flood subroutine.
-		}
-	}
-
-	// perform flooding
-	original_priority_flood(elevation);
-
-	// update topo
-	for (int i = 0; i < lattice_size_x; i++)
-	{
-		for (int j = 0; j < lattice_size_y; j++)
-		{
-			topo(i, j) = elevation(i, j);     //  Back to original indexing
-		}
-	}
-
 }
 
 void StreamPower::InitDiffusion()
@@ -190,6 +162,7 @@ void StreamPower::Init(std::string parameter_file)
     // initialise some objects all data loaded
     mfd_flow_router.initialise();
     radiation_model.initialise();
+    flood.initialise(1);
 }
 
 void StreamPower::Start()
@@ -233,9 +206,9 @@ void StreamPower::Start()
         timers["Avalanche"].stop();
 
 		// Pit filling
-//        timers["Flood"].start();
-//		Flood();
-//        timers["Flood"].stop();
+        timers["Flood"].start();
+        flood.run();
+        timers["Flood"].stop();
 
         // flow routing
         timers["MFDFlowRoute"].start();
@@ -374,7 +347,7 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
         Util::Warning("Fixing random seed - this should only be used for testing/debugging!");
         generator.seed(12345);
     }
-	std::normal_distribution<real_type> distribution(0.0f, 1.0);
+	std::normal_distribution<real_type> distribution(real_type(0.0), 1.0);
 	for (int i = 0; i <= lattice_size_x-1; i++)
 	{
 		for (int j = 0; j <= lattice_size_y-1; j++)
@@ -387,7 +360,7 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 
 StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny), mfd_flow_router(topo, flow, nebs),
         hillslope_diffusion(topo, flow, nebs, params), radiation_model(topo, Sed_Track, flow, nebs, params),
-        avalanche(topo, Sed_Track, nebs)
+        avalanche(topo, Sed_Track, nebs), flood(topo, nebs)
 {
 
 }
