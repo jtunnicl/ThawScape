@@ -126,6 +126,9 @@ void RadiationModel::melt_exposed_ice() {
     real_type deltax = topo.get_deltax();
     real_type deltax2 = deltax * deltax;
 
+    // sort by elevations
+    topo.sort_data();
+
     int t = lattice_size_x * lattice_size_y;
     while (t > 0)
     {
