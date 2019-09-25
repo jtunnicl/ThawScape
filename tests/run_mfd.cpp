@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
 
     // flood object
     Flood flood(topo, nebs);
-    flood.initialise(0);  // 0 = fillinpitsandflats, 1 = prioriry flood
+    flood.initialise(2);  // 0 = fillinpitsandflats, 1 = prioriry flood
 
     // flow routing object
     MFDFlowRouter flow_router(topo, flow, nebs);

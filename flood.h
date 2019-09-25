@@ -18,7 +18,10 @@ class Flood {
         int mode_;  ///< Selects the algorithm to use
 
         /// \brief Run Barnes' priority flood
-        void run_priority_flood();
+        void run_priority_flood_barnes();
+
+        /// \brief Run Barnes' priority_flood_epsilon
+        void run_priority_flood_epsilon();
 
         /// \brief Run Pelletier's algorithm
         void run_fillinpitsandflats();

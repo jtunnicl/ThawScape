@@ -19,7 +19,11 @@ void Flood::initialise(int mode) {
     mode_ = mode;
 
     if (mode_ == 1) {
-        std::cout << "<Flood>: using Barnes' original priority flood" << std::endl;
+        std::cout << "<Flood>: using Barnes' original_priority_flood" << std::endl;
+        elevation = Array2D<real_type>(size_x, size_y, -9999.0);
+    }
+    else if (mode == 2) {
+        std::cout << "<Flood>: using Barnes' priority_flood_epsilon" << std::endl;
         elevation = Array2D<real_type>(size_x, size_y, -9999.0);
     }
     else {
@@ -31,15 +35,15 @@ void Flood::initialise(int mode) {
 }
 
 void Flood::run() {
-    if (mode_ == 1) {
-        run_priority_flood();
+    if ((mode_ == 1) || (mode_ == 2)) {
+        run_priority_flood_barnes();
     }
     else {
         run_fillinpitsandflats();
     }
 }
 
-void Flood::run_priority_flood() {
+void Flood::run_priority_flood_barnes() {
 	// update elev
 	for (int i = 0; i < size_x; i++)
 	{
@@ -50,7 +54,12 @@ void Flood::run_priority_flood() {
 	}
 
 	// perform flooding
-	original_priority_flood(elevation);
+    if (mode_ == 1) {
+        original_priority_flood(elevation);
+    }
+    else if (mode_ == 2) {
+        priority_flood_epsilon(elevation);
+    }
 
 	// update topo
 	for (int i = 0; i < size_x; i++)
