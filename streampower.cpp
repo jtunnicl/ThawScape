@@ -22,6 +22,8 @@
 #include "parameters.h"
 #include "dem.h"
 #include "solar_geometry.h"
+#include "radiation_model.h"
+#include "avalanche.h"
 
 
 /* allocate a real_type vector with subscript range v[nl..nh] */
@@ -173,48 +175,6 @@ void StreamPower::InitDiffusion()
 	}
 }
 
-void StreamPower::Avalanche(int i, int j)
-{
-	real_type thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
-	real_type thresh_diag = thresh * sqrt2;
-
-	// Code in Init subroutine:
-	//	thresh = 0.577 * deltax;   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
-	//  thresh_diag = thresh * sqrt2;
-	// NEED TO ASSESS WHETHER PIXEL HAS SEDIMENT, BEFORE FAILURE CALCS?
-
-	real_type clifftop = 0;
-
-	if (topo(iup[i], j) - topo(i, j) > thresh) {
-		clifftop = topo(iup[i], j);    // Height of overhanging pixel
-		topo(iup[i], j) = std::max((topo(i, j) + thresh), (topo(iup[i], j) - Sed_Track(iup[i], j)));
-	}
-		//Sed_Track[iup[i]][j]
-
-		//Sed_Track[iup[i]][j] =
-
-
-
-
-
-	if (topo(idown[i], j) - topo(i, j) > thresh)
-		topo(idown[i], j) = topo(i, j) + thresh;
-	if (topo(i, jup[j]) - topo(i, j) > thresh)
-		topo(i, jup[j]) = topo(i, j) + thresh;
-	if (topo(i, jdown[j]) - topo(i, j) > thresh)
-		topo(i, jdown[j]) = topo(i, j) + thresh;
-	if (topo(iup[i], jup[j]) - topo(i, j) > (thresh_diag))
-		topo(iup[i], jup[j]) = topo(i, j) + thresh_diag;
-	if (topo(iup[i], jdown[j]) - topo(i, j) > (thresh_diag))
-		topo(iup[i], jdown[j]) = topo(i, j) + thresh_diag;
-	if (topo(idown[i], jup[j]) - topo(i, j) > (thresh_diag))
-		topo(idown[i], jup[j]) = topo(i, j) + thresh_diag;
-	if (topo(idown[i], jdown[j]) - topo(i, j) > (thresh_diag))
-		topo(idown[i], jdown[j]) = topo(i, j) + thresh_diag;
-}
-
-
-
 void StreamPower::Init(std::string parameter_file)
 {
     // load parameters
@@ -268,15 +228,9 @@ void StreamPower::Start()
 //        Sed_Track.sort_data();
         timers["Indexx"].stop();
 
-		t = 0;
 		// Landsliding, proceeding from high elev to low
         timers["Avalanche"].start();
-		while ( t < lattice_size_x * lattice_size_y )
-		{
-            topo.get_sorted_ij(t, i, j);
-			Avalanche( i , j );
-			t++;
-		}
+        avalanche.run();
         timers["Avalanche"].stop();
 
 		// Pit filling
@@ -426,7 +380,8 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 }
 
 StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny), mfd_flow_router(topo, flow, nebs),
-        hillslope_diffusion(topo, flow, nebs, params), radiation_model(topo, Sed_Track, flow, nebs, params)
+        hillslope_diffusion(topo, flow, nebs, params), radiation_model(topo, Sed_Track, flow, nebs, params),
+        avalanche(topo, Sed_Track, nebs)
 {
 
 }

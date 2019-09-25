@@ -15,6 +15,7 @@
 #include "hillslope_diffusion.h"
 #include "dem.h"
 #include "radiation_model.h"
+#include "avalanche.h"
 
 #define NR_END 1
 #define FREE_ARG char*
@@ -51,6 +52,7 @@ public:
     GridNeighbours nebs;
     HillSlopeDiffusion hillslope_diffusion;
     RadiationModel radiation_model;
+    Avalanche avalanche;
 
 	ModelTime ct;             ///< Current model time
 
@@ -74,7 +76,6 @@ public:
 	void SetFA();
 	void Flood(); ///< Barnes pit filling
 	void InitDiffusion();
-	void Avalanche(int i, int j);
 
 	void Init(std::string parameter_file); // using new vars
 	void Start();
