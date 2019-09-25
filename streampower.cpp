@@ -194,12 +194,6 @@ void StreamPower::Start()
     total_time.start();
 	while ( ct.keep_going() )
 	{
-		// Setup grid index with ranked topo values
-        timers["Indexx"].start();
-        topo.sort_data();
-//        Sed_Track.sort_data();
-        timers["Indexx"].stop();
-
 		// Landsliding, proceeding from high elev to low
         timers["Avalanche"].start();
         avalanche.run();

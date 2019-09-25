@@ -11,7 +11,7 @@ Parameters::Parameters() : U(0.01), K(0.001), D(1.5), melt(250), timestep(1), pr
         end_year(2015), end_day(1), lattitude(0), longitude(0), stdmed(0), declination(0),
         altitude(0), azimuth(0), topo_file("topo.asc"), fa_file("FA.asc"),
         sed_file("SedThickness.asc"), fix_random_seed(false), save_topo(true), save_flow(false),
-        flood_algorithm(0) {}
+        flood_algorithm(2) {}
 
 
 /// Load parameter values from a .INI file. Parameters can be omitted from the file,
@@ -221,10 +221,10 @@ void Parameters::set_save_flow(bool save_flow_) {
 
 /// 0 - fillinpitsandflats by Pelletier
 /// 1 - Barnes' original_priority_flood
-/// 2 - Barnes' priority_flood_epsilon
+/// 2 - Barnes' priority_flood_epsilon (default)
 void Parameters::set_flood_algorithm(int flood_algorithm_) {
     flood_algorithm = flood_algorithm_;
     if ((flood_algorithm < 0) || (flood_algorithm > 2)) {
-        flood_algorithm = 0;  // default to 0
+        flood_algorithm = 2;  // default to 2
     }
 }

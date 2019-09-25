@@ -2,6 +2,7 @@
 #include "priority_flood.hpp"
 #include "parameters.h"
 #include "flood.h"
+#include "utility.h"
 
 #define fillincrement 0.01
 
@@ -19,6 +20,10 @@ void Flood::initialise(Parameters& params) {
     size_y = topo.get_size_y();
     algorithm = params.get_flood_algorithm();
 
+    if (algorithm == 0) {
+        std::cout << "<Flood>: using Pelletier's fillinpitsandflats" << std::endl;
+        elevation = Array2D<real_type>();
+    }
     if (algorithm == 1) {
         std::cout << "<Flood>: using Barnes' original_priority_flood" << std::endl;
         elevation = Array2D<real_type>(size_x, size_y, -9999.0);
@@ -28,8 +33,7 @@ void Flood::initialise(Parameters& params) {
         elevation = Array2D<real_type>(size_x, size_y, -9999.0);
     }
     else {
-        std::cout << "<Flood>: using Pelletier's fillinpitsandflats" << std::endl;
-        elevation = Array2D<real_type>();
+        Util::Error("Unrecognised flood algorithm", 1);
     }
 
     initialised = true;
