@@ -4,6 +4,7 @@
 #include "global_defs.h"
 #include "dem.h"
 #include "grid_neighbours.h"
+#include "parameters.h"
 #include "Array2D.hpp"
 
 
@@ -15,13 +16,10 @@ class Flood {
         GridNeighbours& nebs;  ///< Grid neighbour indexing
         Array2D<real_type> elevation;
         bool initialised;
-        int mode_;  ///< Selects the algorithm to use
+        int algorithm;  ///< Which algorithm to use
 
-        /// \brief Run Barnes' priority flood
-        void run_priority_flood_barnes();
-
-        /// \brief Run Barnes' priority_flood_epsilon
-        void run_priority_flood_epsilon();
+        /// \brief Run one of Barnes' flood algorithms
+        void run_barnes_flood();
 
         /// \brief Run Pelletier's algorithm
         void run_fillinpitsandflats();
@@ -36,8 +34,8 @@ class Flood {
         Flood(DEM& topo_, GridNeighbours& nebs_);
 
         /// \brief Initialise the MFDFlowRouter object
-        /// \param mode 0 for Pelletier (default), 1 for Barnes
-        void initialise(int mode = 0);
+        /// \param params Parameters object
+        void initialise(Parameters& params);
         
         /// \brief Run the algorithm
         void run();

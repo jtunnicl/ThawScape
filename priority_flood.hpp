@@ -263,9 +263,9 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations)
 		closed(0, y) = true;
 		closed(elevations.viewWidth() - 1, y) = true;
 	}
-	std::cerr << "succeeded." << std::endl;
+//	std::cerr << "succeeded." << std::endl;
 
-	std::cerr << "%%Performing Priority-Flood+Epsilon..." << std::endl;
+//	std::cerr << "%%Performing Priority-Flood+Epsilon..." << std::endl;
 	// progress.start(elevations.viewWidth()*elevations.viewHeight());
 	while (open.size() > 0 || pit.size()>0)
 	{

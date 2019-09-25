@@ -36,6 +36,7 @@ class Parameters {
         bool fix_random_seed;  ///< Fix the random seed
         bool save_topo;  ///< Save the topo (elevations) raster
         bool save_flow;  ///< Save the flow accumulation raster
+        int flood_algorithm;  ///< Choose the algorithm for flood/pit-filling
 
     public:
         /// \brief Default Parameters object
@@ -271,6 +272,14 @@ class Parameters {
         /// \brief Get parameter value
         /// \returns save_flow Parameter value
         bool get_save_flow() const { return save_flow; }
+
+        /// \brief Set parameter value
+        /// \param flood_algorithm_ New parameter value
+        void set_flood_algorithm(int flood_algorithm_);
+
+        /// \brief Get parameter value
+        /// \returns flood_algorithm Parameter value
+        int get_flood_algorithm() const { return flood_algorithm; }
 };
 
 #endif

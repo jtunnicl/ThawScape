@@ -1,5 +1,6 @@
 #include <iostream>
 #include "priority_flood.hpp"
+#include "parameters.h"
 #include "flood.h"
 
 #define fillincrement 0.01
@@ -8,21 +9,21 @@
 /// managed elsewhere. One must call the inititialse function before running the flow
 /// routing.
 Flood::Flood(DEM& topo_, GridNeighbours& nebs_) :
-        topo(topo_), nebs(nebs_), initialised(false), mode_(0) {
+        topo(topo_), nebs(nebs_), initialised(false), algorithm(0) {
     size_x = topo.get_size_x();
     size_y = topo.get_size_y();
 }
 
-void Flood::initialise(int mode) {
+void Flood::initialise(Parameters& params) {
     size_x = topo.get_size_x();
     size_y = topo.get_size_y();
-    mode_ = mode;
+    algorithm = params.get_flood_algorithm();
 
-    if (mode_ == 1) {
+    if (algorithm == 1) {
         std::cout << "<Flood>: using Barnes' original_priority_flood" << std::endl;
         elevation = Array2D<real_type>(size_x, size_y, -9999.0);
     }
-    else if (mode == 2) {
+    else if (algorithm == 2) {
         std::cout << "<Flood>: using Barnes' priority_flood_epsilon" << std::endl;
         elevation = Array2D<real_type>(size_x, size_y, -9999.0);
     }
@@ -35,15 +36,15 @@ void Flood::initialise(int mode) {
 }
 
 void Flood::run() {
-    if ((mode_ == 1) || (mode_ == 2)) {
-        run_priority_flood_barnes();
+    if ((algorithm == 1) || (algorithm == 2)) {
+        run_barnes_flood();
     }
     else {
         run_fillinpitsandflats();
     }
 }
 
-void Flood::run_priority_flood_barnes() {
+void Flood::run_barnes_flood() {
 	// update elev
 	for (int i = 0; i < size_x; i++)
 	{
@@ -54,10 +55,10 @@ void Flood::run_priority_flood_barnes() {
 	}
 
 	// perform flooding
-    if (mode_ == 1) {
+    if (algorithm == 1) {
         original_priority_flood(elevation);
     }
-    else if (mode_ == 2) {
+    else if (algorithm == 2) {
         priority_flood_epsilon(elevation);
     }
 

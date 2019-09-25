@@ -162,7 +162,7 @@ void StreamPower::Init(std::string parameter_file)
     // initialise some objects all data loaded
     mfd_flow_router.initialise();
     radiation_model.initialise();
-    flood.initialise(2);
+    flood.initialise(params);
 }
 
 void StreamPower::Start()
