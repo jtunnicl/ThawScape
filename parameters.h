@@ -34,6 +34,9 @@ class Parameters {
         std::string fa_file;  ///< Input file name for the flow accumulation raster
         std::string sed_file;  ///< Input file name for the sediment layer
         bool fix_random_seed;  ///< Fix the random seed
+        bool save_topo;  ///< Save the topo (elevations) raster
+        bool save_flow;  ///< Save the flow accumulation raster
+        int flood_algorithm;  ///< Choose the algorithm for flood/pit-filling
 
     public:
         /// \brief Default Parameters object
@@ -253,6 +256,30 @@ class Parameters {
         /// \brief Get parameter value
         /// \returns fix_random_seed Parameter value
         bool get_fix_random_seed() const { return fix_random_seed; }
+
+        /// \brief Set parameter value
+        /// \param save_topo_ New parameter value
+        void set_save_topo(bool save_topo_);
+
+        /// \brief Get parameter value
+        /// \returns save_topo Parameter value
+        bool get_save_topo() const { return save_topo; }
+
+        /// \brief Set parameter value
+        /// \param save_flow_ New parameter value
+        void set_save_flow(bool save_flow_);
+
+        /// \brief Get parameter value
+        /// \returns save_flow Parameter value
+        bool get_save_flow() const { return save_flow; }
+
+        /// \brief Set parameter value
+        /// \param flood_algorithm_ New parameter value
+        void set_flood_algorithm(int flood_algorithm_);
+
+        /// \brief Get parameter value
+        /// \returns flood_algorithm Parameter value
+        int get_flood_algorithm() const { return flood_algorithm; }
 };
 
 #endif
