@@ -24,7 +24,7 @@ class Parameters {
         int minute;  ///< Initial minute
         int end_year;  ///< End year of the simulation
         int end_day;  ///< End day of the simulation (the simulation ends at the beginning of this day)
-        real_type lattitude;
+        real_type latitude;
         real_type longitude;
         real_type stdmed;  ///< Standard meridian of nearest time zone
         real_type declination;
@@ -37,6 +37,13 @@ class Parameters {
         bool save_topo;  ///< Save the topo (elevations) raster
         bool save_flow;  ///< Save the flow accumulation raster
         int flood_algorithm;  ///< Choose the algorithm for flood/pit-filling
+        bool avalanche;  ///< Enable the avalanche component
+        bool flood;  ///< Enable the flood component
+        bool flow_routing;  ///< Enable the flow routing component
+        bool diffusive_erosion;  ///< Enable the diffusive hillslope erosion component
+        bool uplift;  ///< Enable the uplift component
+        bool melt_component;  ///< Enable the melt component
+        bool channel_erosion;  ///< Enable the channel erosion component
 
     public:
         /// \brief Default Parameters object
@@ -45,241 +52,114 @@ class Parameters {
         /// \brief Create Parameters object with values loaded from file
         Parameters(const std::string& parameter_file);
 
-        /// \brief Set parameter value
-        /// \param U New parameter value
-        void set_U(real_type U_);
-
-        /// \brief Get parameter value
-        /// \returns U Parameter value
+        void set_U(real_type U_) { U = U_; }
         real_type get_U() const { return U; }
 
-        /// \brief Set parameter value
-        /// \param K New parameter value
-        void set_K(real_type K_);
-
-        /// \brief Get parameter value
-        /// \returns K Parameter value
+        void set_K(real_type K_) { K = K_; }
         real_type get_K() const { return K; }
 
-        /// \brief Set parameter value
-        /// \param D New parameter value
-        void set_D(real_type D_);
-
-        /// \brief Get parameter value
-        /// \returns D Parameter value
+        void set_D(real_type D_) { D = D_; }
         real_type get_D() const { return D; }
 
-        /// \brief Set parameter value
-        /// \param melt New parameter value
-        void set_melt(real_type melt_);
-
-        /// \brief Get parameter value
-        /// \returns melt Parameter value
+        void set_melt(real_type melt_) { melt = melt_; }
         real_type get_melt() const { return melt; }
 
-        /// \brief Set parameter value
-        /// \param timestep New parameter value
         void set_timestep(real_type timestep_);
-
-        /// \brief Get parameter value
-        /// \returns timestep Parameter value
         real_type get_timestep() const { return timestep; }
-
-        /// \brief Get parameter value
-        /// \returns ann_timestep Parameter value
         real_type get_ann_timestep() const { return ann_timestep; }
 
-        /// \brief Set parameter value
-        /// \param printinterval New parameter value
         void set_printinterval(int printinterval_);
-
-        /// \brief Get parameter value
-        /// \returns printinterval Parameter value
         int get_printinterval() const { return printinterval; }
 
-        /// \brief Set parameter value
-        /// \param thresholdarea New parameter value
-        void set_thresholdarea(real_type thresholdarea_);
-
-        /// \brief Get parameter value
-        /// \returns thresholdarea Parameter value
+        void set_thresholdarea(real_type thresholdarea_) { thresholdarea = thresholdarea_; }
         real_type get_thresholdarea() const { return thresholdarea; }
 
-        /// \brief Set parameter value
-        /// \param init_exposure_age New parameter value
-        void set_init_exposure_age(real_type init_exposure_age_);
-
-        /// \brief Get parameter value
-        /// \returns init_exposure_age Parameter value
+        void set_init_exposure_age(real_type init_exposure_age_) { init_exposure_age = init_exposure_age_; }
         real_type get_init_exposure_age() const { return init_exposure_age; }
 
-        /// \brief Set parameter value
-        /// \param init_sed_track New parameter value
-        void set_init_sed_track(real_type init_sed_track_);
-
-        /// \brief Get parameter value
-        /// \returns init_sed_track Parameter value
+        void set_init_sed_track(real_type init_sed_track_) { init_sed_track = init_sed_track_; }
         real_type get_init_sed_track() const { return init_sed_track; }
 
-        /// \brief Set parameter value
-        /// \param init_veg New parameter value
-        void set_init_veg(real_type init_veg_);
-
-        /// \brief Get parameter value
-        /// \returns init_veg Parameter value
+        void set_init_veg(real_type init_veg_) { init_veg = init_veg_; }
         real_type get_init_veg() const { return init_veg; }
 
-        /// \brief Set parameter value
-        /// \param year New parameter value
-        void set_year(int year_);
-
-        /// \brief Get parameter value
-        /// \returns year Parameter value
+        void set_year(int year_) { year = year_; }
         int get_year() const { return year; }
 
-        /// \brief Set parameter value
-        /// \param day New parameter value
         void set_day(int day_);
-
-        /// \brief Get parameter value
-        /// \returns day Parameter value
         int get_day() const { return day; }
 
-        /// \brief Set parameter value
-        /// \param hour New parameter value
         void set_hour(int hour_);
-
-        /// \brief Get parameter value
-        /// \returns hour Parameter value
         int get_hour() const { return hour; }
 
-        /// \brief Set parameter value
-        /// \param minute New parameter value
         void set_minute(int minute_);
-
-        /// \brief Get parameter value
-        /// \returns minute Parameter value
         int get_minute() const { return minute; }
 
-        /// \brief Set parameter value
-        /// \param end_year New parameter value
         void set_end_year(int end_year_);
-
-        /// \brief Get parameter value
-        /// \returns end_year Parameter value
         int get_end_year() const { return end_year; }
 
-        /// \brief Set parameter value
-        /// \param end_day New parameter value
         void set_end_day(int end_day_);
-
-        /// \brief Get parameter value
-        /// \returns end_day Parameter value
         int get_end_day() const { return end_day; }
 
-        /// \brief Set parameter value
-        /// \param lattitude New parameter value
-        void set_lattitude(real_type lattitude_);
+        void set_latitude(real_type latitude_) { latitude = latitude_; }
+        real_type get_latitude() const { return latitude; }
 
-        /// \brief Get parameter value
-        /// \returns lattitude Parameter value
-        real_type get_lattitude() const { return lattitude; }
-
-        /// \brief Set parameter value
-        /// \param longitude New parameter value
-        void set_longitude(real_type longitude_);
-
-        /// \brief Get parameter value
-        /// \returns longitude Parameter value
+        void set_longitude(real_type longitude_) { longitude = longitude_; }
         real_type get_longitude() const { return longitude; }
 
-        /// \brief Set parameter value
-        /// \param stdmed New parameter value
-        void set_stdmed(real_type stdmed_);
-
-        /// \brief Get parameter value
-        /// \returns stdmed Parameter value
+        void set_stdmed(real_type stdmed_) { stdmed = stdmed_; }
         real_type get_stdmed() const { return stdmed; }
 
-        /// \brief Set parameter value
-        /// \param declination New parameter value
-        void set_declination(real_type declination_);
-
-        /// \brief Get parameter value
-        /// \returns declination Parameter value
+        void set_declination(real_type declination_) { declination = declination_; }
         real_type get_declination() const { return declination; }
 
-        /// \brief Set parameter value
-        /// \param altitude New parameter value
-        void set_altitude(real_type altitude_);
-
-        /// \brief Get parameter value
-        /// \returns altitude Parameter value
+        void set_altitude(real_type altitude_) { altitude = altitude_; }
         real_type get_altitude() const { return altitude; }
 
-        /// \brief Set parameter value
-        /// \param azimuth New parameter value
-        void set_azimuth(real_type azimuth_);
-
-        /// \brief Get parameter value
-        /// \returns azimuth Parameter value
+        void set_azimuth(real_type azimuth_) { azimuth = azimuth_; }
         real_type get_azimuth() const { return azimuth; }
 
-        /// \brief Set parameter value
-        /// \param fa_file_ New parameter value
-        void set_fa_file(const std::string& fa_file_);
-
-        /// \brief Get parameter value
-        /// \returns fa_file Parameter value
+        void set_fa_file(const std::string& fa_file_) { fa_file = fa_file_; }
         std::string get_fa_file() const { return fa_file; }
 
-        /// \brief Set parameter value
-        /// \param topo_file_ New parameter value
-        void set_topo_file(const std::string& topo_file_);
-
-        /// \brief Get parameter value
-        /// \returns topo_file Parameter value
+        void set_topo_file(const std::string& topo_file_) { topo_file = topo_file_; }
         std::string get_topo_file() const { return topo_file; }
 
-        /// \brief Set parameter value
-        /// \param sed_file_ New parameter value
-        void set_sed_file(const std::string& sed_file_);
-
-        /// \brief Get parameter value
-        /// \returns sed_file Parameter value
+        void set_sed_file(const std::string& sed_file_) { sed_file = sed_file_; }
         std::string get_sed_file() const { return sed_file; }
 
-        /// \brief Set parameter value
-        /// \param fix_random_seed_ New parameter value
-        void set_fix_random_seed(bool fix_random_seed_);
-
-        /// \brief Get parameter value
-        /// \returns fix_random_seed Parameter value
+        void set_fix_random_seed(bool fix_random_seed_) { fix_random_seed = fix_random_seed_; }
         bool get_fix_random_seed() const { return fix_random_seed; }
 
-        /// \brief Set parameter value
-        /// \param save_topo_ New parameter value
-        void set_save_topo(bool save_topo_);
-
-        /// \brief Get parameter value
-        /// \returns save_topo Parameter value
+        void set_save_topo(bool save_topo_) { save_topo = save_topo_; }
         bool get_save_topo() const { return save_topo; }
 
-        /// \brief Set parameter value
-        /// \param save_flow_ New parameter value
-        void set_save_flow(bool save_flow_);
-
-        /// \brief Get parameter value
-        /// \returns save_flow Parameter value
+        void set_save_flow(bool save_flow_) { save_flow = save_flow_; }
         bool get_save_flow() const { return save_flow; }
 
-        /// \brief Set parameter value
-        /// \param flood_algorithm_ New parameter value
         void set_flood_algorithm(int flood_algorithm_);
-
-        /// \brief Get parameter value
-        /// \returns flood_algorithm Parameter value
         int get_flood_algorithm() const { return flood_algorithm; }
+
+        void set_avalanche(bool avalanche_) { avalanche = avalanche_; }
+        bool get_avalanche() const { return avalanche; }
+
+        void set_flood(bool flood_) { flood = flood_; }
+        bool get_flood() const { return flood; }
+
+        void set_flow_routing(bool flow_routing_) { flow_routing = flow_routing_; }
+        bool get_flow_routing() const { return flow_routing; }
+
+        void set_diffusive_erosion(bool diffusive_erosion_) { diffusive_erosion = diffusive_erosion_; }
+        bool get_diffusive_erosion() const { return diffusive_erosion; }
+
+        void set_uplift(bool uplift_) { uplift = uplift_; }
+        bool get_uplift() const { return uplift; }
+
+        void set_melt_component(bool melt_component_) { melt_component = melt_component_; }
+        bool get_melt_component() const { return melt_component; }
+
+        void set_channel_erosion(bool channel_erosion_) { channel_erosion = channel_erosion_; }
+        bool get_channel_erosion() const { return channel_erosion; }
 };
 
 #endif

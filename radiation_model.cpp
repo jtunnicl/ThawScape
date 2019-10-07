@@ -52,7 +52,7 @@ void RadiationModel::solar_influx(ModelTime& ct) {
 	// Solar position, in radians
 	real_type azm = r.get_azimuth() * degrad;            //  Anything in the 'r' object uses degrees; converted here to radians
 	real_type alt = r.get_altitude() * degrad;           //  Invert cos<>sin to obtain zenith angle. 0 is sun at zenith (flat terrain faces up); 90 sun is at the horizon (vertical terrain)
-	real_type lat = r.get_lattitude() * degrad;
+	real_type lat = r.get_latitude() * degrad;
 	real_type dec = r.get_declination() * degrad;
 	real_type sha = r.get_SHA() * degrad;
 
