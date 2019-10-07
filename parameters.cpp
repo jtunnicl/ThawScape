@@ -74,7 +74,7 @@ Parameters::Parameters(const std::string& parameter_file) : Parameters() {
     set_flow_routing(reader.GetBoolean("components", "flow_routing", flow_routing));
     set_diffusive_erosion(reader.GetBoolean("components", "diffusive_erosion", diffusive_erosion));
     set_uplift(reader.GetBoolean("components", "uplift", uplift));
-    set_melt_component(reader.GetBoolean("components", "melt_component", melt_component));
+    set_melt_component(reader.GetBoolean("components", "melt", melt_component));
     set_channel_erosion(reader.GetBoolean("components", "channel_erosion", channel_erosion));
 
     // flood algorithm
