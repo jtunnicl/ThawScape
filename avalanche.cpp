@@ -1,3 +1,4 @@
+#include "sys/cdefs.h"
 #include <algorithm>
 #include "dem.h"
 #include "raster.h"

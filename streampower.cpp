@@ -70,31 +70,6 @@ real_type StreamPower::Gasdev(std::default_random_engine& generator, std::normal
 
 }
 
-void StreamPower::SetupGridNeighbors()
-{
-	int i, j;
-
-	idown = std::vector<int>(lattice_size_x);
-	iup = std::vector<int>(lattice_size_x);
-	jup = std::vector<int>(lattice_size_y);
-	jdown = std::vector<int>(lattice_size_y);
-
-	for (i = 0; i <= lattice_size_x - 1; i++)
-	{
-		idown[i] = i - 1;
-		iup[i] = i + 1;
-	}
-	idown[0] = 0;
-	iup[lattice_size_x - 1] = lattice_size_x - 1;
-	for (j = 0; j <= lattice_size_y - 1; j++)
-	{
-		jdown[j] = j - 1;
-		jup[j] = j + 1;
-	}
-	jdown[0] = 0;
-	jup[lattice_size_y - 1] = lattice_size_y - 1;
-}
-
 void StreamPower::SetTopo()
 {
 	topo = DEM(params.get_topo_file());
@@ -113,7 +88,6 @@ void StreamPower::SetTopo()
 	ExposureAge = Raster(lattice_size_x, lattice_size_y, params.get_init_exposure_age());  // Once over 20, ice is primed for melt
 	ExposureAge_old = Raster(lattice_size_x, lattice_size_y);
 
-	SetupGridNeighbors();
     nebs.setup(lattice_size_x, lattice_size_y);
 
 	InitDiffusion();
@@ -246,6 +220,10 @@ void StreamPower::Start()
 
 		// Update solar characteristics
         if (params.get_melt_component()) {
+//            timers["Flood"].start();
+//            flood.run();
+//            timers["Flood"].stop();
+
             timers["SolarCharacteristics"].start();
             radiation_model.update_solar_characteristics(ct);
             timers["SolarCharacteristics"].stop();
