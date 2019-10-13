@@ -173,20 +173,23 @@ void StreamPower::Start()
 	{
 		// Landsliding, proceeding from high elev to low
         if (params.get_avalanche()) {
+            timers["Flood"].start();
+            flood.run(topo, nebs);
+            timers["Flood"].stop();
+
             timers["Avalanche"].start();
             avalanche.run(topo, Sed_Track, nebs);
             timers["Avalanche"].stop();
         }
 
-		// Pit filling
-        if (params.get_flood()) {
-            timers["Flood"].start();
-            flood.run(topo, nebs);
-            timers["Flood"].stop();
-        }
-
         // flow routing
         if (params.get_flow_routing()) {
+            if (params.get_flood()) {
+                timers["Flood"].start();
+                flood.run(topo, nebs);
+                timers["Flood"].stop();
+            }
+
             timers["MFDFlowRoute"].start();
             mfd_flow_router.run(topo, flow, nebs);
             timers["MFDFlowRoute"].stop();
@@ -223,9 +226,9 @@ void StreamPower::Start()
 
 		// Update solar characteristics
         if (params.get_melt_component()) {
-//            timers["Flood"].start();
-//            flood.run();
-//            timers["Flood"].stop();
+            timers["Flood"].start();
+            flood.run(topo, nebs);
+            timers["Flood"].stop();
 
             timers["SolarCharacteristics"].start();
             radiation_model.update_solar_characteristics(topo, ct);
