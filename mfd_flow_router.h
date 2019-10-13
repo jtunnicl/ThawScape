@@ -12,24 +12,21 @@ class MFDFlowRouter {
     private:
         int size_x;  ///< Number of cells in the x dimension
         int size_y;  ///< Number of cells in the y dimension
-        DEM& topo;  ///< Raster of elevations
-        Raster& flow;  ///< Flow accumulation Raster
-        GridNeighbours& nebs;  ///< Grid neighbour indexing
         Raster fa_bounds;  ///< Raster for flow coming in at the boundaries
-        bool initialised;
 
     public:
-        /// \brief Create an MFDFlowRouter object and initialise it (this interface may change)
-        /// \param topo_ The Raster of elevations
-        /// \param flow_ The flow accumulation Raster that will contain the initial flow values
-        /// \param nebs_ GridNeighbours instance for neighbour indexing
-        MFDFlowRouter(DEM& topo_, Raster& flow_, GridNeighbours& nebs_);
+        /// \brief Create an MFDFlowRouter object
+        MFDFlowRouter();
 
         /// \brief Initialise the MFDFlowRouter object
-        void initialise();
+        /// \param flow The flow accumulation Raster containing the initial (boundary) flow values
+        void initialise(Raster& flow);
         
         /// \brief Do the flow routing
-        void run();
+        /// \param topo The Raster of elevations
+        /// \param flow The flow accumulation Raster that will contain the output flow values
+        /// \param nebs GridNeighbours instance for neighbour indexing
+        void run(DEM& topo, Raster& flow, GridNeighbours& nebs);
 };
 
 #endif

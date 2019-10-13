@@ -9,11 +9,13 @@
 
 class HillSlopeDiffusion {
     private:
-        DEM& topo;  ///< The DEM
-        Raster& flow;  ///< Flow accumulation raster
-        GridNeighbours& nebs;  ///< Grid neighbour indexing
-        Parameters& params;  ///< Parameters object
-        Raster topoold;  ///< Raster containing old elevations
+        DEM topoold;  ///< DEM containing old elevations
+        int lattice_size_x;   ///< x dimension
+        int lattice_size_y;   ///< y dimension
+        real_type D;   ///< Diffusion rate
+        real_type deltax2;   ///< Pixel size squared
+        real_type ann_timestep;   ///< Time step in years
+        real_type thresholdarea;
         real_vector ax;
         real_vector ay;
         real_vector bx;
@@ -30,14 +32,18 @@ class HillSlopeDiffusion {
 
     public:
         /// \brief Create HillSlopeDiffusion object
-        /// \param topo_ Elevations Raster, stored as a reference
-        /// \param topo_ Flow accumulation Raster, stored as a reference
-        /// \param nebs_ Neighbour indexing object, stored as a reference
-        /// \param params_ Parameters object, stored as a reference
-        HillSlopeDiffusion(DEM& topo_, Raster& flow_, GridNeighbours& nebs_, Parameters& params_);
+        HillSlopeDiffusion();
+
+        /// \brief Initialise the HillSlopeDiffusion object
+        /// \param topo Flow accumulation Raster
+        /// \param params Parameters object
+        void initialise(DEM& topo, Parameters& params);
 
         /// \brief Run the HillSlopeDiffusion algorithm
-        void run();
+        /// \param topo Elevations Raster
+        /// \param flow Flow accumulation Raster
+        /// \param nebs Neighbour indexing object
+        void run(DEM& topo, Raster& flow, GridNeighbours& nebs);
 };
 
 #endif

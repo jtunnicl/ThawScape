@@ -12,13 +12,12 @@
 /// \brief RadiationModel class for carrying out melt
 class RadiationModel {
     private:
-        DEM& topo;  ///< Reference to topo DEM
-        Raster& Sed_Track;  /// Raster of sediment track depth
-        Raster& flow;  ///< Reference to flow Raster
-        GridNeighbours& nebs;  ///< Reference to grid neighbour indexing
-        Parameters& params;  ///< References to parameters object
+        int lattice_size_x;
+        int lattice_size_y;
+        real_type deltax;
+        real_type deltax2;
+        real_type melt;   ///< Melt parameter
         SolarGeometry r;  ///< Solar geometry
-        bool initialised;  ///< Whether the RadiationModel has been initialised
         Raster solar_raster;
         Raster shade_raster; 
         Raster I_D;
@@ -35,24 +34,30 @@ class RadiationModel {
         Raster Ip_D8;  ///< Map of incoming solar flux, 8 directions
 
         /// \brief Compute solar influx
-        void solar_influx(ModelTime& ct);
+        /// \param topo The DEM
+        /// \param ct ModelTime object
+        void solar_influx(DEM& topo, ModelTime& ct);
 
     public:
         /// \brief Create RadiationModel
-        /// \param topo_ The DEM
-        /// \param flow_ The flow accumulation Raster
-        /// \param nebs_ Grid neighbour indexing
-        /// \param params Parameters object
-        RadiationModel(DEM& topo_, Raster& Sed_Track_, Raster& flow, GridNeighbours& nebs_, Parameters& params);
+        RadiationModel();
 
         /// \brief Initialise the RadiationModel object
-        void initialise();
+        /// \param topo The DEM
+        /// \param params Parameters object
+        void initialise(DEM& topo, Parameters& params);
 
         /// \brief Update the solar characteristics
-        void update_solar_characteristics(ModelTime& ct);
+        /// \param topo The DEM
+        /// \param ct Current ModelTime
+        void update_solar_characteristics(DEM& topo, ModelTime& ct);
 
         /// \brief Melt exposed ice
-        void melt_exposed_ice();
+        /// \param topo The DEM
+        /// \param Sed_Track Sediment track depth Raster
+        /// \param flow The flow accumulation Raster
+        /// \param nebs Grid neighbour indexing
+        void melt_exposed_ice(DEM& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs);
 
         /// \brief Get the current solar altitude
         /// \returns altitude The current solar altitude

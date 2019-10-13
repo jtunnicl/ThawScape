@@ -6,17 +6,21 @@
 #include "solar_geometry.h"
 #include "dem.h"
 #include "model_time.h"
+#include "utility.h"
 #include "radiation_model.h"
 
 
-RadiationModel::RadiationModel(DEM& topo_, Raster& Sed_Track_, Raster& flow_, GridNeighbours& nebs_, Parameters& params_) :
-        topo(topo_), Sed_Track(Sed_Track_), flow(flow_), nebs(nebs_), params(params_), r(params_), initialised(false) {}
+RadiationModel::RadiationModel() : lattice_size_x(0), lattice_size_y(0) {}
 
 
 /// Allocates all Rasters to the correct size. This should be called before running the radiation model.
-void RadiationModel::initialise() {
-    int lattice_size_x = topo.get_size_x();
-    int lattice_size_y = topo.get_size_y();
+void RadiationModel::initialise(DEM& topo, Parameters& params) {
+    lattice_size_x = topo.get_size_x();
+    lattice_size_y = topo.get_size_y();
+    deltax = topo.get_deltax();
+    deltax2 = deltax * deltax;
+    melt = params.get_melt();
+
 	solar_raster = Raster(lattice_size_x, lattice_size_y, 0.0);
 	shade_raster = Raster(lattice_size_x, lattice_size_y);
 	I_D = Raster(lattice_size_x, lattice_size_y);
@@ -31,18 +35,19 @@ void RadiationModel::initialise() {
 	SW_Ip = Raster(lattice_size_x, lattice_size_y);
 	NW_Ip = Raster(lattice_size_x, lattice_size_y);
 
-    initialised = true;
+    r = SolarGeometry(params);
 }
 
-void RadiationModel::update_solar_characteristics(ModelTime& ct) {
+void RadiationModel::update_solar_characteristics(DEM& topo, ModelTime& ct) {
+    if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
+        Util::Error("Must initialise RadiationModel", 1);
+    }
+
     r.sun_position(ct);
-    solar_influx(ct);
+    solar_influx(topo, ct);
 }
 
-void RadiationModel::solar_influx(ModelTime& ct) {
-    int lattice_size_x = topo.get_size_x();
-    int lattice_size_y = topo.get_size_y();
-
+void RadiationModel::solar_influx(DEM& topo, ModelTime& ct) {
     // Calculate shading from surrounding terrain
 	int i, j, m;
 	real_type m1, m2, m3, m4, m5, M, asp360, d80;
@@ -120,11 +125,10 @@ void RadiationModel::solar_influx(ModelTime& ct) {
 	}
 }
 
-void RadiationModel::melt_exposed_ice() {
-    int lattice_size_x = topo.get_size_x();
-    int lattice_size_y = topo.get_size_y();
-    real_type deltax = topo.get_deltax();
-    real_type deltax2 = deltax * deltax;
+void RadiationModel::melt_exposed_ice(DEM& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
+    if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
+        Util::Error("Must initialise RadiationModel", 1);
+    }
 
     // sort by elevations
     topo.sort_data();
@@ -213,7 +217,7 @@ void RadiationModel::melt_exposed_ice() {
                     if (topo(i, j) - neighb[m] > 0) accommodation += deltax2 * (topo(i, j) - neighb[m]);   // sum up all the volume available on pixels below the central pixel
                 }
 
-                elev_drop = incoming / params.get_melt() / deltax2;
+                elev_drop = incoming / melt / deltax2;
                 if (elev_drop * deltax < accommodation)           // i.e. There is room to accommodate the failed mass in neighbouring cells
                     topo(i, j) -= elev_drop;
                 else

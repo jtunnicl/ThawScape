@@ -89,8 +89,6 @@ void StreamPower::SetTopo()
 	ExposureAge_old = Raster(lattice_size_x, lattice_size_y);
 
     nebs.setup(lattice_size_x, lattice_size_y);
-
-	InitDiffusion();
 }
 
 void StreamPower::SetFA()
@@ -110,7 +108,7 @@ void StreamPower::InitDiffusion()
 	//construct diffusional landscape for initial flow routing
 	for (int step = 1; step <= 10; step++)
 	{
-        hillslope_diffusion.run();
+        hillslope_diffusion.run(topo, flow, nebs);
 		for (int i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (int j = 1; j <= lattice_size_y - 2; j++)
@@ -133,10 +131,15 @@ void StreamPower::Init(std::string parameter_file)
 	SetFA();
 	SetTopo();
 
-    // initialise some objects all data loaded
-    mfd_flow_router.initialise();
-    radiation_model.initialise();
-    flood.initialise(params);
+    // initialise components
+    mfd_flow_router.initialise(flow);
+    radiation_model.initialise(topo, params);
+    flood.initialise(topo, params);
+    hillslope_diffusion.initialise(topo, params);
+    avalanche.initialise(topo);
+
+    // Initialise diffusion
+	InitDiffusion();
 }
 
 void StreamPower::Start()
@@ -171,28 +174,28 @@ void StreamPower::Start()
 		// Landsliding, proceeding from high elev to low
         if (params.get_avalanche()) {
             timers["Avalanche"].start();
-            avalanche.run();
+            avalanche.run(topo, Sed_Track, nebs);
             timers["Avalanche"].stop();
         }
 
 		// Pit filling
         if (params.get_flood()) {
             timers["Flood"].start();
-            flood.run();
+            flood.run(topo, nebs);
             timers["Flood"].stop();
         }
 
         // flow routing
         if (params.get_flow_routing()) {
             timers["MFDFlowRoute"].start();
-            mfd_flow_router.run();
+            mfd_flow_router.run(topo, flow, nebs);
             timers["MFDFlowRoute"].stop();
         }
 
 		// Diffusive hillslope erosion
         if (params.get_diffusive_erosion()) {
             timers["HillSlopeDiffusion"].start();
-            hillslope_diffusion.run();
+            hillslope_diffusion.run(topo, flow, nebs);
             timers["HillSlopeDiffusion"].stop();
         }
 
@@ -225,12 +228,12 @@ void StreamPower::Start()
 //            timers["Flood"].stop();
 
             timers["SolarCharacteristics"].start();
-            radiation_model.update_solar_characteristics(ct);
+            radiation_model.update_solar_characteristics(topo, ct);
             timers["SolarCharacteristics"].stop();
 
             // Carry out melt on exposed pixels
             timers["Melt"].start();
-            radiation_model.melt_exposed_ice();
+            radiation_model.melt_exposed_ice(topo, Sed_Track, flow, nebs);
             timers["Melt"].stop();
         }
 
@@ -346,9 +349,7 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 	return mat;
 }
 
-StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny), mfd_flow_router(topo, flow, nebs),
-        hillslope_diffusion(topo, flow, nebs, params), radiation_model(topo, Sed_Track, flow, nebs, params),
-        avalanche(topo, Sed_Track, nebs), flood(topo, nebs)
+StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny)
 {
 
 }
