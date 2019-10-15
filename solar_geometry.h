@@ -7,7 +7,7 @@
 
 class SolarGeometry {
     private:
-        real_type lattitude;
+        real_type latitude;
         real_type longitude;
         real_type stdmed;          ///< LSTM = (UTC - 7H * 15 deg)
         real_type declination;     ///< Declination of sun from equatorial plane
@@ -30,8 +30,8 @@ class SolarGeometry {
         /// \brief Compute the sun position
         void sun_position(const ModelTime& ct);
 
-        /// \brief Returns the lattitude
-        real_type get_lattitude() const { return lattitude; }
+        /// \brief Returns the latitude
+        real_type get_latitude() const { return latitude; }
 
         /// \brief Returns the longitude
         real_type get_longitude() const { return longitude; }

@@ -57,7 +57,7 @@ def plot_file(fn, args, data_diff):
 
     # save to file?
     if args.save:
-        savefn = fn + ".png"
+        savefn = os.path.basename(fn) + ".png"
         print("Saving plot to: {}".format(savefn))
         plt.savefig(savefn)
 

@@ -26,7 +26,7 @@ TEST_CASE("Parameters class", "[parameters]") {
     REQUIRE(p.get_hour() == 11);
     REQUIRE(p.get_end_year() == 2014);
     REQUIRE(p.get_end_day() == 1);
-    REQUIRE(p.get_lattitude() == Approx(1));
+    REQUIRE(p.get_latitude() == Approx(1));
     REQUIRE(p.get_longitude() == Approx(3.5));
     REQUIRE(p.get_stdmed() == Approx(135));
     REQUIRE(p.get_declination() == Approx(1.0));

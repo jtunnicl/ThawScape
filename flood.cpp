@@ -6,16 +6,9 @@
 
 #define fillincrement 0.01
 
-/// References to the input Rasters and vectors are stored since they are expected to be
-/// managed elsewhere. One must call the inititialse function before running the flow
-/// routing.
-Flood::Flood(DEM& topo_, GridNeighbours& nebs_) :
-        topo(topo_), nebs(nebs_), initialised(false), algorithm(0) {
-    size_x = topo.get_size_x();
-    size_y = topo.get_size_y();
-}
+Flood::Flood() : size_x(0), size_y(0), algorithm(2) {}
 
-void Flood::initialise(Parameters& params) {
+void Flood::initialise(DEM& topo, Parameters& params) {
     size_x = topo.get_size_x();
     size_y = topo.get_size_y();
     algorithm = params.get_flood_algorithm();
@@ -35,20 +28,22 @@ void Flood::initialise(Parameters& params) {
     else {
         Util::Error("Unrecognised flood algorithm", 1);
     }
-
-    initialised = true;
 }
 
-void Flood::run() {
+void Flood::run(DEM& topo, GridNeighbours& nebs) {
+    if (topo.get_size_x() != size_x || topo.get_size_y() != size_y) {
+        Util::Error("Must initialse flood object", 1);
+    }
+
     if ((algorithm == 1) || (algorithm == 2)) {
-        run_barnes_flood();
+        run_barnes_flood(topo);
     }
     else {
-        run_fillinpitsandflats();
+        run_fillinpitsandflats(topo, nebs);
     }
 }
 
-void Flood::run_barnes_flood() {
+void Flood::run_barnes_flood(DEM& topo) {
 	// update elev
 	for (int i = 0; i < size_x; i++)
 	{
@@ -76,7 +71,7 @@ void Flood::run_barnes_flood() {
 	}
 }
 
-void Flood::fillinpitsandflats(int i, int j) {
+void Flood::fillinpitsandflats(int i, int j, DEM& topo, GridNeighbours& nebs) {
     real_type minv = topo(i, j);
 
     if (topo(nebs.iup(i), j) < minv) minv = topo(nebs.iup(i), j);
@@ -90,23 +85,23 @@ void Flood::fillinpitsandflats(int i, int j) {
 
     if ((topo(i, j) <= minv) && (i > 0) && (j > 0) && (i < size_x - 1) && (j < size_y - 1)) {
         topo(i, j) = minv + fillincrement;
-        fillinpitsandflats(i, j);
-        fillinpitsandflats(nebs.iup(i), j);
-        fillinpitsandflats(nebs.idown(i), j);
-        fillinpitsandflats(i, nebs.jup(j));
-        fillinpitsandflats(i, nebs.jdown(j));
-        fillinpitsandflats(nebs.iup(i), nebs.jup(j));
-        fillinpitsandflats(nebs.idown(i), nebs.jup(j));
-        fillinpitsandflats(nebs.idown(i), nebs.jdown(j));
-        fillinpitsandflats(nebs.iup(i), nebs.jdown(j));
+        fillinpitsandflats(i, j, topo, nebs);
+        fillinpitsandflats(nebs.iup(i), j, topo, nebs);
+        fillinpitsandflats(nebs.idown(i), j, topo, nebs);
+        fillinpitsandflats(i, nebs.jup(j), topo, nebs);
+        fillinpitsandflats(i, nebs.jdown(j), topo, nebs);
+        fillinpitsandflats(nebs.iup(i), nebs.jup(j), topo, nebs);
+        fillinpitsandflats(nebs.idown(i), nebs.jup(j), topo, nebs);
+        fillinpitsandflats(nebs.idown(i), nebs.jdown(j), topo, nebs);
+        fillinpitsandflats(nebs.iup(i), nebs.jdown(j), topo, nebs);
     }
 
 }
 
-void Flood::run_fillinpitsandflats() {
+void Flood::run_fillinpitsandflats(DEM& topo, GridNeighbours& nebs) {
     for(int i = 0; i < size_x; i++) {
         for(int j = 0; j < size_y; j++) {
-            fillinpitsandflats(i, j);
+            fillinpitsandflats(i, j, topo, nebs);
         }
     }
 }

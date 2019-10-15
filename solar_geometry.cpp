@@ -3,12 +3,12 @@
 #include "solar_geometry.h"
 
 
-SolarGeometry::SolarGeometry() : lattitude(0), longitude(0), stdmed(0),
+SolarGeometry::SolarGeometry() : latitude(0), longitude(0), stdmed(0),
         declination(0), altitude(0), azimuth(0), incidence(0), SHA(0) {}
 
 
 SolarGeometry::SolarGeometry(Parameters& params) : SolarGeometry() {
-	lattitude = params.get_lattitude();
+	latitude = params.get_latitude();
 	longitude = params.get_longitude();
 	stdmed = params.get_stdmed();
 	declination = params.get_declination();
@@ -42,12 +42,12 @@ void SolarGeometry::sun_position(const ModelTime& ct) {
 	                           // Local Solar Time, correcting for distance from nearest time zone meridian
 	SHA = 15 * (LST - 12);   // Local Solar Hour  (negative before solar noon, positive after)
 
-	m = sin(lattitude * degrad) * sin(declination * degrad);
-	n = cos(lattitude * degrad) * cos(declination * degrad) * cos(SHA * degrad);
+	m = sin(latitude * degrad) * sin(declination * degrad);
+	n = cos(latitude * degrad) * cos(declination * degrad) * cos(SHA * degrad);
 	altitude = asin(m + n) / degrad;
 
-	m = sin(lattitude * degrad) * cos(declination * degrad) * cos(SHA * degrad);
-	n = cos(lattitude * degrad) * sin(declination * degrad);
+	m = sin(latitude * degrad) * cos(declination * degrad) * cos(SHA * degrad);
+	n = cos(latitude * degrad) * sin(declination * degrad);
 	azimuth = acos ( (m - n) / cos(altitude * degrad) ) / degrad - 180;   // in degrees
 
 	if (SHA > 0) azimuth = -azimuth;              // N = 0; E = -90; S = -180/+180; W = +90

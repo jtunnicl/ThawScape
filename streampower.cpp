@@ -70,31 +70,6 @@ real_type StreamPower::Gasdev(std::default_random_engine& generator, std::normal
 
 }
 
-void StreamPower::SetupGridNeighbors()
-{
-	int i, j;
-
-	idown = std::vector<int>(lattice_size_x);
-	iup = std::vector<int>(lattice_size_x);
-	jup = std::vector<int>(lattice_size_y);
-	jdown = std::vector<int>(lattice_size_y);
-
-	for (i = 0; i <= lattice_size_x - 1; i++)
-	{
-		idown[i] = i - 1;
-		iup[i] = i + 1;
-	}
-	idown[0] = 0;
-	iup[lattice_size_x - 1] = lattice_size_x - 1;
-	for (j = 0; j <= lattice_size_y - 1; j++)
-	{
-		jdown[j] = j - 1;
-		jup[j] = j + 1;
-	}
-	jdown[0] = 0;
-	jup[lattice_size_y - 1] = lattice_size_y - 1;
-}
-
 void StreamPower::SetTopo()
 {
 	topo = DEM(params.get_topo_file());
@@ -113,10 +88,7 @@ void StreamPower::SetTopo()
 	ExposureAge = Raster(lattice_size_x, lattice_size_y, params.get_init_exposure_age());  // Once over 20, ice is primed for melt
 	ExposureAge_old = Raster(lattice_size_x, lattice_size_y);
 
-	SetupGridNeighbors();
     nebs.setup(lattice_size_x, lattice_size_y);
-
-	InitDiffusion();
 }
 
 void StreamPower::SetFA()
@@ -136,7 +108,7 @@ void StreamPower::InitDiffusion()
 	//construct diffusional landscape for initial flow routing
 	for (int step = 1; step <= 10; step++)
 	{
-        hillslope_diffusion.run();
+        hillslope_diffusion.run(topo, flow, nebs);
 		for (int i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (int j = 1; j <= lattice_size_y - 2; j++)
@@ -159,10 +131,15 @@ void StreamPower::Init(std::string parameter_file)
 	SetFA();
 	SetTopo();
 
-    // initialise some objects all data loaded
-    mfd_flow_router.initialise();
-    radiation_model.initialise();
-    flood.initialise(params);
+    // initialise components
+    mfd_flow_router.initialise(flow);
+    radiation_model.initialise(topo, params);
+    flood.initialise(topo, params);
+    hillslope_diffusion.initialise(topo, params);
+    avalanche.initialise(topo);
+
+    // Initialise diffusion
+	InitDiffusion();
 }
 
 void StreamPower::Start()
@@ -195,82 +172,105 @@ void StreamPower::Start()
 	while ( ct.keep_going() )
 	{
 		// Landsliding, proceeding from high elev to low
-        timers["Avalanche"].start();
-        avalanche.run();
-        timers["Avalanche"].stop();
+        if (params.get_avalanche()) {
+            timers["Flood"].start();
+            flood.run(topo, nebs);
+            timers["Flood"].stop();
 
-		// Pit filling
-        timers["Flood"].start();
-        flood.run();
-        timers["Flood"].stop();
+            timers["Avalanche"].start();
+            avalanche.run(topo, Sed_Track, nebs);
+            timers["Avalanche"].stop();
+        }
 
         // flow routing
-        timers["MFDFlowRoute"].start();
-        mfd_flow_router.run();
-        timers["MFDFlowRoute"].stop();
+        if (params.get_flow_routing()) {
+            if (params.get_flood()) {
+                timers["Flood"].start();
+                flood.run(topo, nebs);
+                timers["Flood"].stop();
+            }
+
+            timers["MFDFlowRoute"].start();
+            mfd_flow_router.run(topo, flow, nebs);
+            timers["MFDFlowRoute"].stop();
+        }
 
 		// Diffusive hillslope erosion
-        timers["HillSlopeDiffusion"].start();
-        hillslope_diffusion.run();
-        timers["HillSlopeDiffusion"].stop();
+        if (params.get_diffusive_erosion()) {
+            timers["HillSlopeDiffusion"].start();
+            hillslope_diffusion.run(topo, flow, nebs);
+            timers["HillSlopeDiffusion"].stop();
+        }
 
 		// Uplift
-        timers["Uplift"].start();
-        real_type U = params.get_U();
-        #pragma omp parallel for
-		for (i = 1; i < lattice_size_x - 1; i++)
-		{
-			for (j = 1; j < lattice_size_y - 1; j++)
-			{
-				topo(i, j) += U * params.get_ann_timestep();
-			}
-		}
-        timers["Uplift"].stop();
+        if (params.get_uplift()) {
+            timers["Uplift"].start();
+            real_type U = params.get_U();
+            #pragma omp parallel for
+            for (i = 1; i < lattice_size_x - 1; i++)
+            {
+                for (j = 1; j < lattice_size_y - 1; j++)
+                {
+                    topo(i, j) += U * params.get_ann_timestep();
+                }
+            }
+            timers["Uplift"].stop();
+        }
 
         // Slope/Aspect
-        timers["SlopeAspect"].start();
-        topo.compute_slope_and_aspect(nebs);
-        timers["SlopeAspect"].stop();
+        if (params.get_melt_component() || params.get_channel_erosion()) {
+            timers["SlopeAspect"].start();
+            topo.compute_slope_and_aspect(nebs);
+            timers["SlopeAspect"].stop();
+        }
 
 		// Update solar characteristics
-        timers["SolarCharacteristics"].start();
-        radiation_model.update_solar_characteristics(ct);
-        timers["SolarCharacteristics"].stop();
+        if (params.get_melt_component()) {
+            timers["Flood"].start();
+            flood.run(topo, nebs);
+            timers["Flood"].stop();
 
-		// Carry out melt on exposed pixels
-        timers["Melt"].start();
-        radiation_model.melt_exposed_ice();
-        timers["Melt"].stop();
+            timers["SolarCharacteristics"].start();
+            radiation_model.update_solar_characteristics(topo, ct);
+            timers["SolarCharacteristics"].stop();
 
-		//Channel erosion
-        timers["ChannelErosion"].start();
-        real_type K = params.get_K();
-		real_type maxe = 0;
-        #pragma omp parallel for reduction(max: maxe)
-		for (i = 1; i <= lattice_size_x - 2; i++)
-		{
-			for (j = 1; j <= lattice_size_y - 2; j++)
-			{
-                real_type flow_sqrt = sqrt(flow(i, j) / 1e6);
-                real_type deltah = params.get_ann_timestep() * K * flow_sqrt * deltax * topo.slope(i, j);     // Fluvial erosion law;
-				topo(i, j) -= deltah;
-				//std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow(i, j) / 1e6 << ", slope: " << slope(i, j) << std::endl;
+            // Carry out melt on exposed pixels
+            timers["Melt"].start();
+            radiation_model.melt_exposed_ice(topo, Sed_Track, flow, nebs);
+            timers["Melt"].stop();
+        }
 
-				if ( topo(i, j) < 0 ) {
-                    topo(i, j) = 0;
+		// Channel erosion
+        real_type maxe = 0;
+        if (params.get_channel_erosion()) {
+            timers["ChannelErosion"].start();
+            real_type K = params.get_K();
+            #pragma omp parallel for reduction(max: maxe)
+            for (i = 1; i <= lattice_size_x - 2; i++)
+            {
+                for (j = 1; j <= lattice_size_y - 2; j++)
+                {
+                    real_type flow_sqrt = sqrt(flow(i, j) / 1e6);
+                    real_type deltah = params.get_ann_timestep() * K * flow_sqrt * deltax * topo.slope(i, j);     // Fluvial erosion law;
+                    topo(i, j) -= deltah;
+                    //std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow(i, j) / 1e6 << ", slope: " << slope(i, j) << std::endl;
+
+                    if ( topo(i, j) < 0 ) {
+                        topo(i, j) = 0;
+                    }
+                    if ( K * flow_sqrt * deltax > maxe ) {
+                        maxe = K * flow_sqrt * deltax;
+                    }
                 }
-				if ( K * flow_sqrt * deltax > maxe ) {
-                    maxe = K * flow_sqrt * deltax;
-                }
-			}
-		}
-        timers["ChannelErosion"].stop();
+            }
+            timers["ChannelErosion"].stop();
+        }
 
 		// Update current time
         ct.increment(params.get_timestep());
 
 /*         // Rate adjustment, based on deltax
-		if (max > 0.3*deltax / timestep)
+		if (maxe > 0.3*deltax / timestep)
 		{
 			time -= timestep;
 			timestep /= 2.0;
@@ -284,7 +284,7 @@ void StreamPower::Start()
 		}
 		else
 		{
-			if (max < 0.03*deltax / timestep)
+			if (maxe < 0.03*deltax / timestep)
 			{
 				timestep *= 1.2;
 			}
@@ -352,9 +352,7 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 	return mat;
 }
 
-StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny), mfd_flow_router(topo, flow, nebs),
-        hillslope_diffusion(topo, flow, nebs, params), radiation_model(topo, Sed_Track, flow, nebs, params),
-        avalanche(topo, Sed_Track, nebs), flood(topo, nebs)
+StreamPower::StreamPower(int nx, int ny) : lattice_size_x(nx), lattice_size_y(ny)
 {
 
 }

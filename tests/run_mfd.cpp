@@ -37,12 +37,12 @@ int main(int argc, char** argv) {
     nebs.setup(topo.get_size_x(), topo.get_size_y());
 
     // flood object
-    Flood flood(topo, nebs);
-    flood.initialise(params);
+    Flood flood;
+    flood.initialise(topo, params);
 
     // flow routing object
-    MFDFlowRouter flow_router(topo, flow, nebs);
-    flow_router.initialise();
+    MFDFlowRouter flow_router;
+    flow_router.initialise(flow);
 
     // save initial flow
     flow.save("flow0input.asc");
@@ -51,10 +51,10 @@ int main(int argc, char** argv) {
     topo.sort_data();
 
     // run the flood algorithm
-    flood.run();
+    flood.run(topo, nebs);
 
     // do the flow routing (TODO: can it just be run by itself with nothing else?)
-    flow_router.run();
+    flow_router.run(topo, flow, nebs);
 
     // save the flow
     flow.save("flow1output.asc");

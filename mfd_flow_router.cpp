@@ -4,23 +4,17 @@
 #include <iostream>
 #include "raster.h"
 #include "dem.h"
+#include "utility.h"
 #include "mfd_flow_router.h"
 
-#define fillincrement 0.01
 
-
-/// References to the input Rasters and vectors are stored since they are expected to be
-/// managed elsewhere. One must call the inititialse function before running the flow
-/// routing.
-MFDFlowRouter::MFDFlowRouter(DEM& topo_, Raster& flow_, GridNeighbours& nebs_) :
-        topo(topo_), flow(flow_), nebs(nebs_), initialised(false) {
-    size_x = topo.get_size_x();
-    size_y = topo.get_size_y();
+MFDFlowRouter::MFDFlowRouter() :
+        size_x(0), size_y(0) {
 }
 
-void MFDFlowRouter::initialise() {
-    size_x = topo.get_size_x();
-    size_y = topo.get_size_y();
+void MFDFlowRouter::initialise(Raster& flow) {
+    size_x = flow.get_size_x();
+    size_y = flow.get_size_y();
 
     // FA boundary values; zero otherwise
     int boundary_layer_pixels = 1;
@@ -41,15 +35,13 @@ void MFDFlowRouter::initialise() {
             fa_bounds(size_x - m - 1, j) = flow(size_x - m - 1, j);
         }
     }
-
-    initialised = true;
 }
 
 
-void MFDFlowRouter::run() {
+void MFDFlowRouter::run(DEM& topo, Raster& flow, GridNeighbours& nebs) {
     // make sure initialise was called before proceeding
-    if (!initialised) {
-        initialise();
+    if (topo.get_size_x() != size_x || topo.get_size_y() != size_y) {
+        Util::Error("Must initialise flow router", 1);
     }
 
     // sort data after pit filling

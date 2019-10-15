@@ -71,7 +71,6 @@ public:
 	std::vector<std::vector<real_type>> CreateRandomField();
 
 
-	void SetupGridNeighbors();
 	void SetTopo();
 	void SetFA();
 	void InitDiffusion();

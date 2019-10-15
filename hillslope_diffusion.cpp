@@ -4,35 +4,40 @@
 #include "parameters.h"
 #include "global_defs.h"
 #include "dem.h"
+#include "utility.h"
 #include "hillslope_diffusion.h"
 
-HillSlopeDiffusion::HillSlopeDiffusion(DEM& topo_, Raster& flow_, GridNeighbours& nebs_,
-        Parameters& params_) : topo(topo_), flow(flow_), nebs(nebs_), params(params_) {}
+HillSlopeDiffusion::HillSlopeDiffusion() : lattice_size_x(0), lattice_size_y(0) {}
 
 
-void HillSlopeDiffusion::run() {
-    int lattice_size_x = topo.get_size_x();
-    int lattice_size_y = topo.get_size_y();
+void HillSlopeDiffusion::initialise(DEM& topo, Parameters& params) {
+    lattice_size_x = topo.get_size_x();
+    lattice_size_y = topo.get_size_y();
 
-    // only reallocate if not correct size
-    if (ax.size() != lattice_size_x) {
-        ax = real_vector(lattice_size_x);
-        bx = real_vector(lattice_size_x);
-        cx = real_vector(lattice_size_x);
-        ux = real_vector(lattice_size_x);
-        rx = real_vector(lattice_size_x);
+    topoold = DEM(lattice_size_x, lattice_size_y);
+    ax = real_vector(lattice_size_x);
+    bx = real_vector(lattice_size_x);
+    cx = real_vector(lattice_size_x);
+    ux = real_vector(lattice_size_x);
+    rx = real_vector(lattice_size_x);
+    ay = real_vector(lattice_size_y);
+    by = real_vector(lattice_size_y);
+    cy = real_vector(lattice_size_y);
+    uy = real_vector(lattice_size_y);
+    ry = real_vector(lattice_size_y);
+
+    D = params.get_D();
+    deltax2 = topo.get_deltax() * topo.get_deltax();
+    ann_timestep = params.get_ann_timestep();
+    thresholdarea = params.get_thresholdarea();
+}
+
+
+void HillSlopeDiffusion::run(DEM& topo, Raster& flow, GridNeighbours& nebs) {
+    if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
+        Util::Error("Must initialise HillSlopeDiffusion object", 1);
     }
-    if (ay.size() != lattice_size_y) {
-        ay = real_vector(lattice_size_y);
-        by = real_vector(lattice_size_y);
-        cy = real_vector(lattice_size_y);
-        uy = real_vector(lattice_size_y);
-        ry = real_vector(lattice_size_y);
-    }
-    topoold.resize(topo.get_size_x(), topo.get_size_y());
 
-    real_type D = params.get_D();
-    real_type deltax2 = topo.get_deltax() * topo.get_deltax();
 	int count = 0;
 	while (count < 5)
 	{
@@ -45,8 +50,8 @@ void HillSlopeDiffusion::run() {
 		{
 			for (int j = 0; j < lattice_size_y; j++)
 			{
-				real_type term1 = D * params.get_ann_timestep() / (deltax2);
-				if (flow(i, j) < params.get_thresholdarea())
+				real_type term1 = D * ann_timestep / (deltax2);
+				if (flow(i, j) < thresholdarea)
 				{
 					ay[j] = -term1;
 					cy[j] = -term1;
@@ -86,8 +91,8 @@ void HillSlopeDiffusion::run() {
 		{
 			for (int i = 0; i < lattice_size_x; i++)
 			{
-				real_type term1 = D * params.get_ann_timestep() / ( deltax2 );
-				if (flow(i, j) < params.get_thresholdarea())
+				real_type term1 = D * ann_timestep / ( deltax2 );
+				if (flow(i, j) < thresholdarea)
 				{
 					ax[i] = -term1;
 					cx[i] = -term1;

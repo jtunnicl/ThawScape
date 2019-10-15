@@ -1,17 +1,15 @@
+#include "sys/cdefs.h"
 #include <algorithm>
 #include "dem.h"
 #include "raster.h"
 #include "grid_neighbours.h"
+#include "utility.h"
 #include "avalanche.h"
 
 
-Avalanche::Avalanche(DEM& topo_, Raster& sed_track_, GridNeighbours& nebs_) :
-        topo(topo_), sed_track(sed_track_), nebs(nebs_), initialised(false) {
-    size_x = topo.get_size_x();
-    size_y = topo.get_size_y();
-}
+Avalanche::Avalanche() : size_x(0), size_y(0) {}
 
-void Avalanche::initialise() {
+void Avalanche::initialise(DEM& topo) {
     size_x = topo.get_size_x();
     size_y = topo.get_size_y();
 
@@ -20,13 +18,11 @@ void Avalanche::initialise() {
 	//  thresh_diag = thresh * sqrt2;
 	thresh = 0.577 * topo.get_deltax();   // Critical height in m above neighbouring pixel, at 30 deg  (TAN(RADIANS(33deg))*deltax
 	thresh_diag = thresh * sqrt2;
-
-    initialised = true;
 }
 
-void Avalanche::run() {
-    if (!initialised) {
-        initialise();
+void Avalanche::run(DEM& topo, Raster& sed_track, GridNeighbours& nebs) {
+    if (size_x != topo.get_size_x() || size_y != topo.get_size_y()) {
+        Util::Error("Must initialise Avalanche object", 1);
     }
 
     // sort by elevation
@@ -35,8 +31,7 @@ void Avalanche::run() {
 	// NEED TO ASSESS WHETHER PIXEL HAS SEDIMENT, BEFORE FAILURE CALCS?
 
     int t = 0;
-    // Landsliding, proceeding from high elev to low
-    // TODO: actually we are proceeding from low to high here
+    // Landsliding, proceeding from low elev to high
     while (t < size_x * size_y)
     {
         int i, j;

@@ -8,10 +8,11 @@
 Parameters::Parameters() : U(0.01), K(0.001), D(1.5), melt(250), timestep(1), printinterval(1),
         ann_timestep(timestep / 8760), thresholdarea(1e35), init_exposure_age(0),
         init_sed_track(2), init_veg(8), year(2010), day(145), hour(12), minute(0),
-        end_year(2015), end_day(1), lattitude(0), longitude(0), stdmed(0), declination(0),
+        end_year(2015), end_day(1), latitude(0), longitude(0), stdmed(0), declination(0),
         altitude(0), azimuth(0), topo_file("topo.asc"), fa_file("FA.asc"),
         sed_file("SedThickness.asc"), fix_random_seed(false), save_topo(true), save_flow(false),
-        flood_algorithm(2) {}
+        flood_algorithm(2), avalanche(true), flood(true), flow_routing(true),
+        diffusive_erosion(true), uplift(true), melt_component(true), channel_erosion(true) {}
 
 
 /// Load parameter values from a .INI file. Parameters can be omitted from the file,
@@ -52,7 +53,7 @@ Parameters::Parameters(const std::string& parameter_file) : Parameters() {
 //  ct(ModelTime(year, day, hour, minute, end_year, end_day));
 //  duration(end_year - year;   // Model execution time, in years, keeping in mind melt season is 138 days
 
-    set_lattitude(reader.GetReal("solar_geom", "lattitude", lattitude)); // 67.3;
+    set_latitude(reader.GetReal("solar_geom", "latitude", latitude)); // 67.3;
     set_longitude(reader.GetReal("solar_geom", "longitude", longitude)); // 134.9;         // Dempster Coordinates
     set_stdmed(reader.GetReal("solar_geom", "stdmed", stdmed)); //9 * 15;         // Standard meridian of nearest time zone. LSTM((UTC - 9H * 15 deg) n.b. Alaska Time Meridian(135 deg W
     set_declination(reader.GetReal("solar_geom", "declination", declination));
@@ -67,28 +68,17 @@ Parameters::Parameters(const std::string& parameter_file) : Parameters() {
     // should we fix the random number seed (for testing)
     set_fix_random_seed(reader.GetBoolean("random", "fix_seed", fix_random_seed));
 
+    // components
+    set_avalanche(reader.GetBoolean("components", "avalanche", avalanche));
+    set_flood(reader.GetBoolean("components", "flood", flood));
+    set_flow_routing(reader.GetBoolean("components", "flow_routing", flow_routing));
+    set_diffusive_erosion(reader.GetBoolean("components", "diffusive_erosion", diffusive_erosion));
+    set_uplift(reader.GetBoolean("components", "uplift", uplift));
+    set_melt_component(reader.GetBoolean("components", "melt", melt_component));
+    set_channel_erosion(reader.GetBoolean("components", "channel_erosion", channel_erosion));
+
     // flood algorithm
     set_flood_algorithm(reader.GetInteger("flood", "flood_algorithm", flood_algorithm));
-}
-
-void Parameters::set_U(real_type U_) {
-    U = U_;
-}
-
-void Parameters::set_altitude(real_type altitude_) {
-    altitude = altitude_;
-}
-
-void Parameters::set_azimuth(real_type azimuth_) {
-    azimuth = azimuth_;
-}
-
-void Parameters::set_K(real_type K_) {
-    K = K_;
-}
-
-void Parameters::set_D(real_type D_) {
-    D = D_;
 }
 
 void Parameters::set_day(int day_) {
@@ -98,10 +88,6 @@ void Parameters::set_day(int day_) {
     else {
         day = day_;
     }
-}
-
-void Parameters::set_year(int year_) {
-    year = year_;
 }
 
 void Parameters::set_hour(int hour_) {
@@ -140,54 +126,6 @@ void Parameters::set_end_day(int end_day_) {
     }
 }
 
-void Parameters::set_declination(real_type declination_) {
-    declination = declination_;
-}
-
-void Parameters::set_fa_file(const std::string& fa_file_) {
-    fa_file = fa_file_;
-}
-
-void Parameters::set_sed_file(const std::string& sed_file_) {
-    sed_file = sed_file_;
-}
-
-void Parameters::set_topo_file(const std::string& topo_file_) {
-    topo_file = topo_file_;
-}
-
-void Parameters::set_fix_random_seed(bool fix_random_seed_) {
-    fix_random_seed = fix_random_seed_;
-}
-
-void Parameters::set_init_exposure_age(real_type init_exposure_age_) {
-    init_exposure_age = init_exposure_age_;
-}
-
-void Parameters::set_init_sed_track(real_type init_sed_track_) {
-    init_sed_track = init_sed_track_;
-}
-
-void Parameters::set_init_veg(real_type init_veg_) {
-    init_veg = init_veg_;
-}
-
-void Parameters::set_lattitude(real_type lattitude_) {
-    lattitude = lattitude_;
-}
-
-void Parameters::set_longitude(real_type longitude_) {
-    longitude = longitude_;
-}
-
-void Parameters::set_melt(real_type melt_) {
-    melt = melt_;
-}
-
-void Parameters::set_stdmed(real_type stdmed_) {
-    stdmed = stdmed_;
-}
-
 void Parameters::set_printinterval(int printinterval_) {
     if (printinterval < 1) {
         Util::Error("Print interval must be greater than 0", 1);
@@ -195,10 +133,6 @@ void Parameters::set_printinterval(int printinterval_) {
     else {
         printinterval = printinterval_;
     }
-}
-
-void Parameters::set_thresholdarea(real_type thresholdarea_) {
-    thresholdarea = thresholdarea_;
 }
 
 void Parameters::set_timestep(real_type timestep_) {
@@ -209,14 +143,6 @@ void Parameters::set_timestep(real_type timestep_) {
         timestep = timestep_;
         ann_timestep = timestep / 8760;
     }
-}
-
-void Parameters::set_save_topo(bool save_topo_) {
-    save_topo = save_topo_;
-}
-
-void Parameters::set_save_flow(bool save_flow_) {
-    save_flow = save_flow_;
 }
 
 /// 0 - fillinpitsandflats by Pelletier
