@@ -315,6 +315,11 @@ void StreamPower::Start()
                 sprintf(fname, "flow_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
                 flow.save(fname);
             }
+            if (params.get_melt_component() && params.get_debug_melt()) {
+                char prefix[100];
+                sprintf(prefix, "debug_%i_%i_%i", ct.get_year(), ct.get_day(), ct.get_hour());
+                radiation_model.save_rasters(prefix);
+            }
 			tstep = 0;
 		}
 	}

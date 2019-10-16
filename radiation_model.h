@@ -18,6 +18,7 @@ class RadiationModel {
         real_type deltax2;
         real_type melt;   ///< Melt parameter
         SolarGeometry r;  ///< Solar geometry
+        Raster incoming_watts;
         Raster solar_raster;
         Raster shade_raster; 
         Raster I_D;
@@ -62,6 +63,10 @@ class RadiationModel {
         /// \brief Get the current solar altitude
         /// \returns altitude The current solar altitude
         real_type get_solar_altitude() { return r.get_altitude(); }
+
+        /// \brief Save some Rasters for debugging
+        /// \param prefix Prefix for the output file names
+        void save_rasters(std::string prefix);
 };
 
 #endif
