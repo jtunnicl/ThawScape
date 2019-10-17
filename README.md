@@ -33,3 +33,5 @@ following:
 ```
 cmake .. -DDOUBLE_PRECISION=ON
 ```
+
+More developer documentation here: https://jtunnicl.github.io/ThawScape
