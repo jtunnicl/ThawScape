@@ -47,9 +47,9 @@ def plot_file(fn, args, data_diff):
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111)
     if args.logscale:
-        plt.contourf(data, cmap='seismic', locator=matplotlib.ticker.LogLocator())
+        plt.contourf(data, cmap='seismic', locator=matplotlib.ticker.LogLocator(), vmin=args.min, vmax=args.max)
     else:
-        plt.contourf(data, cmap='seismic')
+        plt.contourf(data, cmap='seismic', vmin=args.min, vmax=args.max)
     cbar = plt.colorbar()
     plt.gca().set_aspect('equal', adjustable='box')
     plt.title(fn)
@@ -80,6 +80,8 @@ def main():
     parser.add_argument('-o', '--offline', action='store_true', help="Don't display interactive plot (default is to display the interactive plot)")
     parser.add_argument('-d', '--diff', default=None, help="Plot the difference from the file specified by this option (default is not to plot differences)")
     parser.add_argument('-a', '--abs', action='store_true', help="Plot absolute values (default is not to take absolute values)")
+    parser.add_argument('-m', '--min', type=float, default=None, help="Min value to use in the colour map (default is the minimum value)")
+    parser.add_argument('-u', '--max', type=float, default=None, help="Max value to use in the colour map (default is the maximum value)")
     args = parser.parse_args()
 
     # are we plotting differences
