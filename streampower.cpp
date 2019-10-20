@@ -170,53 +170,46 @@ void StreamPower::Start()
     total_time.start();
 	while ( ct.keep_going() )
 	{
-		// Landsliding, proceeding from high elev to low
-        if (params.get_avalanche()) {
-            timers["Flood"].start();
-            flood.run(topo, nebs);
-            timers["Flood"].stop();
-
-            timers["Avalanche"].start();
-            avalanche.run(topo, Sed_Track, nebs);
-            timers["Avalanche"].stop();
-        }
+        //---------- Hydro processes ---------
 
         // flow routing
         if (params.get_flow_routing()) {
+            // Flood
             if (params.get_flood()) {
                 timers["Flood"].start();
                 flood.run(topo, nebs);
                 timers["Flood"].stop();
             }
 
+            // MFD flow router
             timers["MFDFlowRoute"].start();
             mfd_flow_router.run(topo, flow, nebs);
             timers["MFDFlowRoute"].stop();
         }
 
-		// Diffusive hillslope erosion
-        if (params.get_diffusive_erosion()) {
-            timers["HillSlopeDiffusion"].start();
-            hillslope_diffusion.run(topo, flow, nebs);
-            timers["HillSlopeDiffusion"].stop();
-        }
-
-		// Uplift
-        if (params.get_uplift()) {
-            timers["Uplift"].start();
-            uplift();
-            timers["Uplift"].stop();
-        }
-
-        // Slope/Aspect
-        if (params.get_melt_component() || params.get_channel_erosion()) {
+		// Channel erosion
+        real_type maxe = 0;
+        if (params.get_channel_erosion()) {
+            // Slope/Aspect
             timers["SlopeAspect"].start();
             topo.compute_slope_and_aspect(nebs);
             timers["SlopeAspect"].stop();
+
+            timers["ChannelErosion"].start();
+            maxe = channel_erosion();
+            timers["ChannelErosion"].stop();
         }
+
+        //---------- Radiation processes ----------
 
 		// Update solar characteristics
         if (params.get_melt_component()) {
+            // slope/aspect
+            timers["SlopeAspect"].start();
+            topo.compute_slope_and_aspect(nebs);
+            timers["SlopeAspect"].stop();
+
+            // TODO: remove once melt is moved to avalanche
             timers["Flood"].start();
             flood.run(topo, nebs);
             timers["Flood"].stop();
@@ -231,12 +224,34 @@ void StreamPower::Start()
             timers["Melt"].stop();
         }
 
-		// Channel erosion
-        real_type maxe = 0;
-        if (params.get_channel_erosion()) {
-            timers["ChannelErosion"].start();
-            maxe = channel_erosion();
-            timers["ChannelErosion"].stop();
+        //---------- Erosive processes ----------
+
+		// Landsliding
+        if (params.get_avalanche()) {
+            // TODO: should not need this once application of melt moved to avalanche??
+            timers["Flood"].start();
+            flood.run(topo, nebs);
+            timers["Flood"].stop();
+
+            timers["Avalanche"].start();
+            avalanche.run(topo, Sed_Track, nebs);
+            timers["Avalanche"].stop();
+        }
+
+		// Diffusive hillslope erosion
+        if (params.get_diffusive_erosion()) {
+            timers["HillSlopeDiffusion"].start();
+            hillslope_diffusion.run(topo, flow, nebs);
+            timers["HillSlopeDiffusion"].stop();
+        }
+
+        //---------- Finally run uplift ---------
+
+		// Uplift
+        if (params.get_uplift()) {
+            timers["Uplift"].start();
+            uplift();
+            timers["Uplift"].stop();
         }
 
 		// Update current time
