@@ -79,6 +79,8 @@ else()
         set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
         set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
         set(DOXYGEN_EXTRACT_PRIVATE YES)
+        set(DOXYGEN_GENERATE_XML YES)
+        set(DOXYGEN_EXTRACT_ALL YES)
         doxygen_add_docs(doc
             ${ThawScapeSrc} README.md
             COMMENT "Build Doxygen documentation"
