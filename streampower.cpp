@@ -144,7 +144,6 @@ void StreamPower::Init(std::string parameter_file)
 
 void StreamPower::Start()
 {
-	int i, j;
     if (params.get_save_topo()) {
         char fname[100];
         sprintf(fname, "erosion_%d.asc", 0);
@@ -205,15 +204,7 @@ void StreamPower::Start()
 		// Uplift
         if (params.get_uplift()) {
             timers["Uplift"].start();
-            real_type U = params.get_U();
-            #pragma omp parallel for
-            for (i = 1; i < lattice_size_x - 1; i++)
-            {
-                for (j = 1; j < lattice_size_y - 1; j++)
-                {
-                    topo(i, j) += U * params.get_ann_timestep();
-                }
-            }
+            uplift();
             timers["Uplift"].stop();
         }
 
@@ -244,25 +235,7 @@ void StreamPower::Start()
         real_type maxe = 0;
         if (params.get_channel_erosion()) {
             timers["ChannelErosion"].start();
-            real_type K = params.get_K();
-            #pragma omp parallel for reduction(max: maxe)
-            for (i = 1; i <= lattice_size_x - 2; i++)
-            {
-                for (j = 1; j <= lattice_size_y - 2; j++)
-                {
-                    real_type flow_sqrt = sqrt(flow(i, j) / 1e6);
-                    real_type deltah = params.get_ann_timestep() * K * flow_sqrt * deltax * topo.slope(i, j);     // Fluvial erosion law;
-                    topo(i, j) -= deltah;
-                    //std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow(i, j) / 1e6 << ", slope: " << slope(i, j) << std::endl;
-
-                    if ( topo(i, j) < 0 ) {
-                        topo(i, j) = 0;
-                    }
-                    if ( K * flow_sqrt * deltax > maxe ) {
-                        maxe = K * flow_sqrt * deltax;
-                    }
-                }
-            }
+            maxe = channel_erosion();
             timers["ChannelErosion"].stop();
         }
 
@@ -336,6 +309,43 @@ void StreamPower::Start()
         std::cout << " (" << item_time_secs / total_time_secs * 100 << " %)" << std::endl;
     }
     std::cout << std::endl;
+}
+
+void StreamPower::uplift() {
+    real_type U = params.get_U();
+    #pragma omp parallel for
+    for (int i = 1; i < lattice_size_x - 1; i++)
+    {
+        for (int j = 1; j < lattice_size_y - 1; j++)
+        {
+            topo(i, j) += U * params.get_ann_timestep();
+        }
+    }
+}
+
+real_type StreamPower::channel_erosion() {
+    real_type maxe = 0.0;
+    real_type K = params.get_K();
+    #pragma omp parallel for reduction(max: maxe)
+    for (int i = 1; i <= lattice_size_x - 2; i++)
+    {
+        for (int j = 1; j <= lattice_size_y - 2; j++)
+        {
+            real_type flow_sqrt = sqrt(flow(i, j) / 1e6);
+            real_type deltah = params.get_ann_timestep() * K * flow_sqrt * deltax * topo.slope(i, j);     // Fluvial erosion law;
+            topo(i, j) -= deltah;
+            //std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow(i, j) / 1e6 << ", slope: " << slope(i, j) << std::endl;
+
+            if ( topo(i, j) < 0 ) {
+                topo(i, j) = 0;
+            }
+            if ( K * flow_sqrt * deltax > maxe ) {
+                maxe = K * flow_sqrt * deltax;
+            }
+        }
+    }
+
+    return maxe;
 }
 
 std::vector<std::vector<real_type> > StreamPower::CreateRandomField()

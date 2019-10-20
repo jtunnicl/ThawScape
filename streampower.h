@@ -65,6 +65,9 @@ public:
 	static real_type Ran3(std::default_random_engine& generator, std::uniform_real_distribution<real_type>& distribution);
 	static real_type Gasdev(std::default_random_engine& generator, std::normal_distribution<real_type>& distribution);
 
+    real_type channel_erosion();
+    void uplift();
+
 	StreamPower(int nx, int ny);
 	~StreamPower();
 
