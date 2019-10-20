@@ -161,7 +161,7 @@ void StreamPower::Start()
     AccumulateTimer<std::chrono::milliseconds> total_time;
     std::vector<std::string> timer_names {"Avalanche", "Flood", "Indexx", "MFDFlowRoute",
         "HillSlopeDiffusion", "Uplift", "SlopeAspect", "SolarCharacteristics", "Melt",
-        "ChannelErosion"};
+        "MeltPotential", "ChannelErosion"};
     std::map<std::string, AccumulateTimer<std::chrono::milliseconds> > timers;
     for (auto timer_name : timer_names) {
         timers[timer_name] = AccumulateTimer<std::chrono::milliseconds>();
@@ -217,6 +217,11 @@ void StreamPower::Start()
             timers["SolarCharacteristics"].start();
             radiation_model.update_solar_characteristics(topo, ct);
             timers["SolarCharacteristics"].stop();
+
+            // Compute melt potential
+            timers["MeltPotential"].start();
+            radiation_model.melt_potential(topo, Sed_Track, flow, nebs);
+            timers["MeltPotential"].stop();
 
             // Carry out melt on exposed pixels
             timers["Melt"].start();

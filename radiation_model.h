@@ -53,6 +53,13 @@ class RadiationModel {
         /// \param ct Current ModelTime
         void update_solar_characteristics(DEM& topo, ModelTime& ct);
 
+        /// \brief Compute incoming watts to be applied later
+        /// \param topo The DEM
+        /// \param Sed_Track Sediment track depth Raster
+        /// \param flow The flow accumulation Raster
+        /// \param nebs Grid neighbour indexing
+        void melt_potential(DEM& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs);
+
         /// \brief Melt exposed ice
         /// \param topo The DEM
         /// \param Sed_Track Sediment track depth Raster

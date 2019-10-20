@@ -126,7 +126,7 @@ void RadiationModel::solar_influx(DEM& topo, ModelTime& ct) {
 	}
 }
 
-void RadiationModel::melt_exposed_ice(DEM& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
+void RadiationModel::melt_potential(DEM& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
     if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
         Util::Error("Must initialise RadiationModel", 1);
     }
@@ -205,7 +205,9 @@ void RadiationModel::melt_exposed_ice(DEM& topo, Raster& Sed_Track, Raster& flow
             }
         }
     }
+}
 
+void RadiationModel::melt_exposed_ice(DEM& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
     // sort by elevations
     topo.sort_data();
 
