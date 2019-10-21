@@ -3,7 +3,6 @@
 #include <fstream>
 #include <iostream>
 #include "raster.h"
-#include "dem.h"
 #include "utility.h"
 #include "mfd_flow_router.h"
 
@@ -38,7 +37,7 @@ void MFDFlowRouter::initialise(Raster& flow) {
 }
 
 
-void MFDFlowRouter::run(DEM& topo, Raster& flow, GridNeighbours& nebs) {
+void MFDFlowRouter::run(Raster& topo, Raster& flow, GridNeighbours& nebs) {
     // make sure initialise was called before proceeding
     if (topo.get_size_x() != size_x || topo.get_size_y() != size_y) {
         Util::Error("Must initialise flow router", 1);

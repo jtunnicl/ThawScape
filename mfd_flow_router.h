@@ -4,7 +4,6 @@
 #include <vector>
 #include "raster.h"
 #include "grid_neighbours.h"
-#include "dem.h"
 #include "global_defs.h"
 
 /// \brief Multiple flow direction flow routing
@@ -26,7 +25,7 @@ class MFDFlowRouter {
         /// \param topo The Raster of elevations
         /// \param flow The flow accumulation Raster that will contain the output flow values
         /// \param nebs GridNeighbours instance for neighbour indexing
-        void run(DEM& topo, Raster& flow, GridNeighbours& nebs);
+        void run(Raster& topo, Raster& flow, GridNeighbours& nebs);
 };
 
 #endif

@@ -12,7 +12,6 @@
 #include "grid_neighbours.h"
 #include "parameters.h"
 #include "hillslope_diffusion.h"
-#include "dem.h"
 #include "radiation_model.h"
 #include "avalanche.h"
 #include "flood.h"
@@ -44,7 +43,7 @@ public:
     Parameters params;
 	real_type xllcorner, yllcorner, nodata;
 	std::vector<int> iup, idown, jup, jdown;
-    DEM topo;
+    Raster topo;
     Raster flow;
 	Raster veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
     MFDFlowRouter mfd_flow_router;

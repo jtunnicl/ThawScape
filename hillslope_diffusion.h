@@ -5,11 +5,10 @@
 #include "grid_neighbours.h"
 #include "parameters.h"
 #include "global_defs.h"
-#include "dem.h"
 
 class HillSlopeDiffusion {
     private:
-        DEM topoold;  ///< DEM containing old elevations
+        Raster topoold;  ///< Raster containing old elevations
         int lattice_size_x;   ///< x dimension
         int lattice_size_y;   ///< y dimension
         real_type D;   ///< Diffusion rate
@@ -37,13 +36,13 @@ class HillSlopeDiffusion {
         /// \brief Initialise the HillSlopeDiffusion object
         /// \param topo Flow accumulation Raster
         /// \param params Parameters object
-        void initialise(DEM& topo, Parameters& params);
+        void initialise(Raster& topo, Parameters& params);
 
         /// \brief Run the HillSlopeDiffusion algorithm
         /// \param topo Elevations Raster
         /// \param flow Flow accumulation Raster
         /// \param nebs Neighbour indexing object
-        void run(DEM& topo, Raster& flow, GridNeighbours& nebs);
+        void run(Raster& topo, Raster& flow, GridNeighbours& nebs);
 };
 
 #endif

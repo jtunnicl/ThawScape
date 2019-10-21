@@ -4,7 +4,6 @@
 #include "grid_neighbours.h"
 #include "global_defs.h"
 #include "solar_geometry.h"
-#include "dem.h"
 #include "model_time.h"
 #include "utility.h"
 #include "radiation_model.h"
@@ -14,7 +13,7 @@ RadiationModel::RadiationModel() : lattice_size_x(0), lattice_size_y(0) {}
 
 
 /// Allocates all Rasters to the correct size. This should be called before running the radiation model.
-void RadiationModel::initialise(DEM& topo, Parameters& params) {
+void RadiationModel::initialise(Raster& topo, Parameters& params) {
     lattice_size_x = topo.get_size_x();
     lattice_size_y = topo.get_size_y();
     deltax = topo.get_deltax();
@@ -39,7 +38,7 @@ void RadiationModel::initialise(DEM& topo, Parameters& params) {
     r = SolarGeometry(params);
 }
 
-void RadiationModel::update_solar_characteristics(DEM& topo, ModelTime& ct) {
+void RadiationModel::update_solar_characteristics(Raster& topo, ModelTime& ct) {
     if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
         Util::Error("Must initialise RadiationModel", 1);
     }
@@ -48,7 +47,7 @@ void RadiationModel::update_solar_characteristics(DEM& topo, ModelTime& ct) {
     solar_influx(topo, ct);
 }
 
-void RadiationModel::solar_influx(DEM& topo, ModelTime& ct) {
+void RadiationModel::solar_influx(Raster& topo, ModelTime& ct) {
     // Calculate shading from surrounding terrain
 	int i, j, m;
 	real_type m1, m2, m3, m4, m5, M, asp360, d80;
@@ -126,7 +125,7 @@ void RadiationModel::solar_influx(DEM& topo, ModelTime& ct) {
 	}
 }
 
-void RadiationModel::melt_potential(DEM& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
+void RadiationModel::melt_potential(Raster& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
     if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
         Util::Error("Must initialise RadiationModel", 1);
     }
@@ -207,7 +206,7 @@ void RadiationModel::melt_potential(DEM& topo, Raster& Sed_Track, Raster& flow, 
     }
 }
 
-void RadiationModel::melt_exposed_ice(DEM& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
+void RadiationModel::melt_exposed_ice(Raster& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
     // sort by elevations
     topo.sort_data();
 

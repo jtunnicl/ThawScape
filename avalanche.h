@@ -2,7 +2,7 @@
 #define _AVALANCHE_H_
 
 #include "grid_neighbours.h"
-#include "dem.h"
+#include "raster.h"
 #include "global_defs.h"
 
 /// \brief Avalanching
@@ -19,13 +19,13 @@ class Avalanche {
 
         /// \brief Initialise the Avalanche object
         /// \param topo The Raster of elevations
-        void initialise(DEM& topo);
+        void initialise(Raster& topo);
         
         /// \brief Run the avalanche code
         /// \param topo The Raster of elevations
         /// \param sed_track The Raster of sediment track depth
         /// \param nebs GridNeighbours instance for neighbour indexing
-        void run(DEM& topo, Raster& sed_track, GridNeighbours& nebs);
+        void run(Raster& topo, Raster& sed_track, GridNeighbours& nebs);
 };
 
 #endif

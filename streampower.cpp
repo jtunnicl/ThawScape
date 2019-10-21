@@ -19,7 +19,6 @@
 #include "mfd_flow_router.h"
 #include "grid_neighbours.h"
 #include "parameters.h"
-#include "dem.h"
 #include "solar_geometry.h"
 #include "radiation_model.h"
 #include "avalanche.h"
@@ -72,7 +71,7 @@ real_type StreamPower::Gasdev(std::default_random_engine& generator, std::normal
 
 void StreamPower::SetTopo()
 {
-	topo = DEM(params.get_topo_file());
+	topo = Raster(params.get_topo_file());
     lattice_size_x = topo.get_size_x();
     lattice_size_y = topo.get_size_y();
     xllcorner = topo.get_xllcorner();

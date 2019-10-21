@@ -5,6 +5,7 @@
 #include <numeric>
 #include "global_defs.h"
 #include "utility.h"
+#include "grid_neighbours.h"
 #include "raster.h"
 
 
@@ -168,4 +169,48 @@ void Raster::set_save_precision(int prec) {
 
 void Raster::set_deltax(const real_type deltax_) {
     deltax = deltax_;
+}
+
+/// See http://desktop.arcgis.com/en/arcmap/10.3/tools/spatial-analyst-toolbox/how-slope-works.htm
+/// and http://desktop.arcgis.com/en/arcmap/10.3/tools/spatial-analyst-toolbox/how-aspect-works.htm
+void Raster::compute_slope_and_aspect(const GridNeighbours& nebs) {
+    slope_ = std::vector<real_type>(size_x * size_y);
+    aspect_ = std::vector<real_type>(size_x * size_y);
+    #pragma omp parallel for
+    for (int i = 0; i < size_x; i++) {
+        for (int j = 0; j < size_y; j++) {
+            real_type dzdx = ( ( this->operator()(nebs.iup(i), nebs.jdown(j)) +
+                        2 * this->operator()(nebs.iup(i), j) + this->operator()(nebs.iup(i), nebs.jup(j)) ) -
+                    ( this->operator()(nebs.idown(i), nebs.jdown(j)) + 2 * this->operator()(nebs.idown(i), j) +
+                      this->operator()(nebs.idown(i), nebs.jup(j)) ) ) /
+                8 / deltax;
+            real_type dzdy = ( ( this->operator()(nebs.idown(i), nebs.jup(j)) +
+                        2 * this->operator()(i, nebs.jup(j)) + this->operator()(nebs.iup(i), nebs.jup(j)) ) -
+                    ( this->operator()(nebs.idown(i), nebs.jdown(j)) + 2 * this->operator()(i, nebs.jdown(j)) +
+                      this->operator()(nebs.iup(i), nebs.jdown(j)) ) ) /
+                8 / deltax;
+            aspect_[i * size_y + j] = atan2(dzdy, dzdx);                             // n.b. Aspect in Radians
+            slope_[i * size_y + j] = sqrt(pow(dzdx, 2) + pow(dzdy, 2));              // n.b. Slope in Radians
+        }
+    }
+}
+
+/// You must call compute_slope_and_aspect before trying to access slope elements.
+/// No checking is performed.
+real_type Raster::slope(const int i, const int j) const {
+#ifdef NDEBUG
+    return slope_[i * size_y + j];
+#else
+    return slope_.at(i * size_y + j);
+#endif
+}
+
+/// You must call compute_slope_and_aspect before trying to access aspect elements
+/// No checking is performed.
+real_type Raster::aspect(const int i, const int j) const {
+#ifdef NDEBUG
+    return aspect_[i * size_y + j];
+#else
+    return aspect_.at(i * size_y + j);
+#endif
 }

@@ -8,7 +8,7 @@
 
 Flood::Flood() : size_x(0), size_y(0), algorithm(2) {}
 
-void Flood::initialise(DEM& topo, Parameters& params) {
+void Flood::initialise(Raster& topo, Parameters& params) {
     size_x = topo.get_size_x();
     size_y = topo.get_size_y();
     algorithm = params.get_flood_algorithm();
@@ -30,7 +30,7 @@ void Flood::initialise(DEM& topo, Parameters& params) {
     }
 }
 
-void Flood::run(DEM& topo, GridNeighbours& nebs) {
+void Flood::run(Raster& topo, GridNeighbours& nebs) {
     if (topo.get_size_x() != size_x || topo.get_size_y() != size_y) {
         Util::Error("Must initialse flood object", 1);
     }
@@ -43,7 +43,7 @@ void Flood::run(DEM& topo, GridNeighbours& nebs) {
     }
 }
 
-void Flood::run_barnes_flood(DEM& topo) {
+void Flood::run_barnes_flood(Raster& topo) {
 	// update elev
 	for (int i = 0; i < size_x; i++)
 	{
@@ -71,7 +71,7 @@ void Flood::run_barnes_flood(DEM& topo) {
 	}
 }
 
-void Flood::fillinpitsandflats(int i, int j, DEM& topo, GridNeighbours& nebs) {
+void Flood::fillinpitsandflats(int i, int j, Raster& topo, GridNeighbours& nebs) {
     real_type minv = topo(i, j);
 
     if (topo(nebs.iup(i), j) < minv) minv = topo(nebs.iup(i), j);
@@ -98,7 +98,7 @@ void Flood::fillinpitsandflats(int i, int j, DEM& topo, GridNeighbours& nebs) {
 
 }
 
-void Flood::run_fillinpitsandflats(DEM& topo, GridNeighbours& nebs) {
+void Flood::run_fillinpitsandflats(Raster& topo, GridNeighbours& nebs) {
     for(int i = 0; i < size_x; i++) {
         for(int j = 0; j < size_y; j++) {
             fillinpitsandflats(i, j, topo, nebs);
