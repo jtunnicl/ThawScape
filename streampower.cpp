@@ -145,12 +145,12 @@ void StreamPower::Start()
 {
     if (params.get_save_topo()) {
         char fname[100];
-        sprintf(fname, "erosion_%d.asc", 0);
+        sprintf(fname, "erosion_%04i_%03i_%02i.asc", ct.get_year(), ct.get_day(), ct.get_hour());
         topo.save(fname);
     }
     if (params.get_save_flow()) {
         char fname[100];
-        sprintf(fname, "flow_%d.asc", 0);
+        sprintf(fname, "flow_%04i_%03i_%02i.asc", ct.get_year(), ct.get_day(), ct.get_hour());
         flow.save(fname);
     }
 	int tstep = 0;    // Counter for printing results to file
@@ -299,17 +299,17 @@ void StreamPower::Start()
 		if (tstep >= params.get_printinterval()) {
             if (params.get_save_topo()) {
                 char fname[100];
-                sprintf(fname, "erosion_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
+                sprintf(fname, "erosion_%04i_%03i_%02i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
                 topo.save(fname);
             }
             if (params.get_save_flow()) {
                 char fname[100];
-                sprintf(fname, "flow_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
+                sprintf(fname, "flow_%04i_%03i_%02i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
                 flow.save(fname);
             }
             if (params.get_melt_component() && params.get_debug_melt()) {
                 char prefix[100];
-                sprintf(prefix, "debug_%i_%i_%i", ct.get_year(), ct.get_day(), ct.get_hour());
+                sprintf(prefix, "debug_%04i_%03i_%02i_%.3f", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude());
                 radiation_model.save_rasters(prefix);
             }
 			tstep = 0;
