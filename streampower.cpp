@@ -169,7 +169,36 @@ void StreamPower::Start()
     total_time.start();
 	while ( ct.keep_going() )
 	{
-        //---------- Hydro processes ---------
+        //---------- Radiation ----------
+
+		// Update solar characteristics
+        if (params.get_melt_component()) {
+            // slope/aspect
+            timers["SlopeAspect"].start();
+            topo.compute_slope_and_aspect(nebs);
+            timers["SlopeAspect"].stop();
+
+            // TODO: remove once melt is moved to avalanche
+            timers["Flood"].start();
+            flood.run(topo, nebs);
+            timers["Flood"].stop();
+
+            timers["SolarCharacteristics"].start();
+            radiation_model.update_solar_characteristics(topo, ct);
+            timers["SolarCharacteristics"].stop();
+
+            // Compute melt potential
+            timers["MeltPotential"].start();
+            radiation_model.melt_potential(topo, Sed_Track, flow, nebs);
+            timers["MeltPotential"].stop();
+
+            // Carry out melt on exposed pixels
+            timers["Melt"].start();
+            radiation_model.melt_exposed_ice(topo, Sed_Track, flow, nebs);
+            timers["Melt"].stop();
+        }
+
+        //---------- Hydro ---------
 
         // flow routing
         if (params.get_flow_routing()) {
@@ -199,36 +228,7 @@ void StreamPower::Start()
             timers["ChannelErosion"].stop();
         }
 
-        //---------- Radiation processes ----------
-
-		// Update solar characteristics
-        if (params.get_melt_component()) {
-            // slope/aspect
-            timers["SlopeAspect"].start();
-            topo.compute_slope_and_aspect(nebs);
-            timers["SlopeAspect"].stop();
-
-            // TODO: remove once melt is moved to avalanche
-            timers["Flood"].start();
-            flood.run(topo, nebs);
-            timers["Flood"].stop();
-
-            timers["SolarCharacteristics"].start();
-            radiation_model.update_solar_characteristics(topo, ct);
-            timers["SolarCharacteristics"].stop();
-
-            // Compute melt potential
-            timers["MeltPotential"].start();
-            radiation_model.melt_potential(topo, Sed_Track, flow, nebs);
-            timers["MeltPotential"].stop();
-
-            // Carry out melt on exposed pixels
-            timers["Melt"].start();
-            radiation_model.melt_exposed_ice(topo, Sed_Track, flow, nebs);
-            timers["Melt"].stop();
-        }
-
-        //---------- Erosive processes ----------
+        //---------- Erosion ----------
 
 		// Landsliding
         if (params.get_avalanche()) {
@@ -249,7 +249,7 @@ void StreamPower::Start()
             timers["HillSlopeDiffusion"].stop();
         }
 
-        //---------- Finally run uplift ---------
+        //---------- Uplift ---------
 
 		// Uplift
         if (params.get_uplift()) {
