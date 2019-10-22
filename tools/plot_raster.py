@@ -7,6 +7,7 @@ Contour plot of a raster.
 """
 import os
 import argparse
+import subprocess
 
 import numpy as np
 import matplotlib
@@ -56,6 +57,7 @@ def plot_file(fn, args, data_diff):
     plt.tight_layout()
 
     # save to file?
+    savefn = None
     if args.save:
         savefn = os.path.basename(fn) + ".png"
         print("Saving plot to: {}".format(savefn))
@@ -70,6 +72,8 @@ def plot_file(fn, args, data_diff):
         plt.clf()
         plt.close()
 
+    return savefn
+
 
 def main():
     # parse args
@@ -82,6 +86,8 @@ def main():
     parser.add_argument('-a', '--abs', action='store_true', help="Plot absolute values (default is not to take absolute values)")
     parser.add_argument('-m', '--min', type=float, default=None, help="Min value to use in the colour map (default is the minimum value)")
     parser.add_argument('-u', '--max', type=float, default=None, help="Max value to use in the colour map (default is the maximum value)")
+    parser.add_argument('-g', '--gif', action='store_true', help="Create gif from saved images (requires ImageMagick convert command line tool)")
+    parser.add_argument('-D', '--delay', type=int, default=20, help="Argument to pass to `convert -delay` (default is 20)")
     args = parser.parse_args()
 
     # are we plotting differences
@@ -96,8 +102,20 @@ def main():
         print("Plotting absolute values")
 
     # plot all files specified
+    save_filenames = []
     for fn in args.filename:
-        plot_file(fn, args, data_diff)
+        savefn = plot_file(fn, args, data_diff)
+        save_filenames.append(savefn)
+
+    # create gif animation
+    if args.gif and args.save:
+        prefix = os.path.commonprefix(save_filenames).split("_")[0]
+        if not len(prefix):
+            prefix = "output"
+        gifname = prefix + ".gif"
+        cmd = "convert -delay {} {} {}".format(args.delay, " ".join(save_filenames), gifname)
+        print("Creating animation: {}".format(gifname))
+        subprocess.check_call(cmd, shell=True)
 
 
 if __name__ == "__main__":
