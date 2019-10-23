@@ -1,5 +1,4 @@
 #include <algorithm>
-#include "dem.h"
 #include "raster.h"
 #include "grid_neighbours.h"
 #include "utility.h"
@@ -8,7 +7,7 @@
 
 Avalanche::Avalanche() : size_x(0), size_y(0) {}
 
-void Avalanche::initialise(DEM& topo) {
+void Avalanche::initialise(Raster& topo) {
     size_x = topo.get_size_x();
     size_y = topo.get_size_y();
 
@@ -19,7 +18,7 @@ void Avalanche::initialise(DEM& topo) {
 	thresh_diag = thresh * sqrt2;
 }
 
-void Avalanche::run(DEM& topo, Raster& sed_track, GridNeighbours& nebs) {
+void Avalanche::run(Raster& topo, Raster& sed_track, GridNeighbours& nebs) {
     if (size_x != topo.get_size_x() || size_y != topo.get_size_y()) {
         Util::Error("Must initialise Avalanche object", 1);
     }

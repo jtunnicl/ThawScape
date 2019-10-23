@@ -4,7 +4,6 @@
 #include "grid_neighbours.h"
 #include "global_defs.h"
 #include "solar_geometry.h"
-#include "dem.h"
 #include "model_time.h"
 #include "utility.h"
 #include "radiation_model.h"
@@ -14,7 +13,7 @@ RadiationModel::RadiationModel() : lattice_size_x(0), lattice_size_y(0) {}
 
 
 /// Allocates all Rasters to the correct size. This should be called before running the radiation model.
-void RadiationModel::initialise(DEM& topo, Parameters& params) {
+void RadiationModel::initialise(Raster& topo, Parameters& params) {
     lattice_size_x = topo.get_size_x();
     lattice_size_y = topo.get_size_y();
     deltax = topo.get_deltax();
@@ -23,6 +22,7 @@ void RadiationModel::initialise(DEM& topo, Parameters& params) {
 
 	solar_raster = Raster(lattice_size_x, lattice_size_y, 0.0);
 	shade_raster = Raster(lattice_size_x, lattice_size_y);
+    incoming_watts = Raster(lattice_size_x, lattice_size_y, 0.0);
 	I_D = Raster(lattice_size_x, lattice_size_y);
 	I_R = Raster(lattice_size_x, lattice_size_y);
 	I_P = Raster(lattice_size_x, lattice_size_y);
@@ -38,7 +38,7 @@ void RadiationModel::initialise(DEM& topo, Parameters& params) {
     r = SolarGeometry(params);
 }
 
-void RadiationModel::update_solar_characteristics(DEM& topo, ModelTime& ct) {
+void RadiationModel::update_solar_characteristics(Raster& topo, ModelTime& ct) {
     if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
         Util::Error("Must initialise RadiationModel", 1);
     }
@@ -47,7 +47,7 @@ void RadiationModel::update_solar_characteristics(DEM& topo, ModelTime& ct) {
     solar_influx(topo, ct);
 }
 
-void RadiationModel::solar_influx(DEM& topo, ModelTime& ct) {
+void RadiationModel::solar_influx(Raster& topo, ModelTime& ct) {
     // Calculate shading from surrounding terrain
 	int i, j, m;
 	real_type m1, m2, m3, m4, m5, M, asp360, d80;
@@ -125,28 +125,18 @@ void RadiationModel::solar_influx(DEM& topo, ModelTime& ct) {
 	}
 }
 
-void RadiationModel::melt_exposed_ice(DEM& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
+void RadiationModel::melt_potential(Raster& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
     if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
         Util::Error("Must initialise RadiationModel", 1);
     }
 
-    // sort by elevations
-    topo.sort_data();
-
-    int t = lattice_size_x * lattice_size_y;
-    while (t > 0)
-    {
-        t--;
-        int i, j;
-        topo.get_sorted_ij(t, i, j);
-        if ((i > 0) && (i < (lattice_size_x - 1)) && (j > 0) && (j < (lattice_size_y - 1)))  // Do not alter boundary elements
-        {
+    // first compute incoming watts at all pixels (except boundary?)
+    incoming_watts.set_data(0.0);
+    for (int i = 1; i < lattice_size_x - 1; i++) {
+        for (int j = 1; j < lattice_size_y - 1; j++) {
             real_type N, E, S, W, NE, SE, SW, NW;
             real_type incoming = 0;
-            real_type elev_drop = 0;       // Decrease in elevation at central pixel, following ice melt
-            real_type accommodation = 0;   // Volume available to fill below central pixel, in the immediate neighbourhood
             real_type lowestpixel;         // Elevation of the lowest pixel in the 9-element neighbourhood.
-            int m = 0;
 
             std::vector<real_type> neighb{ topo(nebs.idown(i), nebs.jup(j)), topo(i, nebs.jup(j)), topo(nebs.iup(i), nebs.jup(j)),    // Elevations within 9-element neighbourhood NW-N-NE-W-ctr-E-SW-S-SE
                 topo(nebs.idown(i), j), topo(i, j), topo(nebs.iup(i), j),
@@ -210,14 +200,43 @@ void RadiationModel::melt_exposed_ice(DEM& topo, Raster& Sed_Track, Raster& flow
                         incoming += NW * I_R(nebs.idown(i), nebs.jup(j));
                 }
 
+                incoming_watts(i, j) = incoming;
+            }
+        }
+    }
+}
+
+void RadiationModel::melt_exposed_ice(Raster& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
+    // sort by elevations
+    topo.sort_data();
+
+    // now we apply incoming to pixels ordered low to high (TODO: move to avalanche routine)
+    int t = 0;
+    while (t < lattice_size_x * lattice_size_y)
+    {
+        int i, j;
+        topo.get_sorted_ij(t, i, j);
+        t++;
+        if ((i > 0) && (i < (lattice_size_x - 1)) && (j > 0) && (j < (lattice_size_y - 1)))  // Do not alter boundary elements
+        {
+            if (incoming_watts(i, j) != 0) {
+                real_type elev_drop = 0;       // Decrease in elevation at central pixel, following ice melt
+                real_type accommodation = 0;   // Volume available to fill below central pixel, in the immediate neighbourhood
+
+                // Elevations within 9-element neighbourhood NW-N-NE-W-ctr-E-SW-S-SE
+                std::vector<real_type> neighb{ topo(nebs.idown(i), nebs.jup(j)), topo(i, nebs.jup(j)), topo(nebs.iup(i), nebs.jup(j)),
+                        topo(nebs.idown(i), j), topo(i, j), topo(nebs.iup(i), j),
+                        topo(nebs.idown(i), nebs.jdown(j)), topo(i, nebs.jdown(j)), topo(nebs.iup(i), nebs.jdown(j)) };
+                real_type lowestpixel = *min_element(neighb.begin(), neighb.end());
+
                 // Ice mass lost, based on ablation at each face
                 // incoming watts / meltrate / pixel area
 
-                for (m = 0; m < 8; m++) {
+                for (int m = 0; m < 8; m++) {
                     if (topo(i, j) - neighb[m] > 0) accommodation += deltax2 * (topo(i, j) - neighb[m]);   // sum up all the volume available on pixels below the central pixel
                 }
 
-                elev_drop = incoming / melt / deltax2;
+                elev_drop = incoming_watts(i, j) / melt / deltax2;
                 if (elev_drop * deltax < accommodation)           // i.e. There is room to accommodate the failed mass in neighbouring cells
                     topo(i, j) -= elev_drop;
                 else
@@ -228,4 +247,10 @@ void RadiationModel::melt_exposed_ice(DEM& topo, Raster& Sed_Track, Raster& flow
             }
         }
     }
+}
+
+void RadiationModel::save_rasters(std::string prefix) {
+    shade_raster.save(prefix + "_shade_raster.asc");
+    I_P.save(prefix + "_I_P.asc");
+    incoming_watts.save(prefix + "_incoming.asc");
 }

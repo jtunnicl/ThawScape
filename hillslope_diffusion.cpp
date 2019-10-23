@@ -3,18 +3,17 @@
 #include "grid_neighbours.h"
 #include "parameters.h"
 #include "global_defs.h"
-#include "dem.h"
 #include "utility.h"
 #include "hillslope_diffusion.h"
 
 HillSlopeDiffusion::HillSlopeDiffusion() : lattice_size_x(0), lattice_size_y(0) {}
 
 
-void HillSlopeDiffusion::initialise(DEM& topo, Parameters& params) {
+void HillSlopeDiffusion::initialise(Raster& topo, Parameters& params) {
     lattice_size_x = topo.get_size_x();
     lattice_size_y = topo.get_size_y();
 
-    topoold = DEM(lattice_size_x, lattice_size_y);
+    topoold = Raster(lattice_size_x, lattice_size_y);
     ax = real_vector(lattice_size_x);
     bx = real_vector(lattice_size_x);
     cx = real_vector(lattice_size_x);
@@ -33,7 +32,7 @@ void HillSlopeDiffusion::initialise(DEM& topo, Parameters& params) {
 }
 
 
-void HillSlopeDiffusion::run(DEM& topo, Raster& flow, GridNeighbours& nebs) {
+void HillSlopeDiffusion::run(Raster& topo, Raster& flow, GridNeighbours& nebs) {
     if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
         Util::Error("Must initialise HillSlopeDiffusion object", 1);
     }

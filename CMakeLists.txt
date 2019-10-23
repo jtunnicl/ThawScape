@@ -17,7 +17,7 @@ if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
 endif()
 
 # option to use double precision (default is single)
-option(DOUBLE_PRECISION "Use double precision" OFF)
+option(DOUBLE_PRECISION "Use double precision" ON)
 if (DOUBLE_PRECISION)
     add_definitions(-DDOUBLE_PRECISION)
     message(STATUS "Double precision build")
@@ -79,6 +79,8 @@ else()
         set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
         set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
         set(DOXYGEN_EXTRACT_PRIVATE YES)
+        set(DOXYGEN_GENERATE_XML YES)
+        set(DOXYGEN_EXTRACT_ALL YES)
         doxygen_add_docs(doc
             ${ThawScapeSrc} README.md
             COMMENT "Build Doxygen documentation"

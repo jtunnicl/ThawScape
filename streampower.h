@@ -12,7 +12,6 @@
 #include "grid_neighbours.h"
 #include "parameters.h"
 #include "hillslope_diffusion.h"
-#include "dem.h"
 #include "radiation_model.h"
 #include "avalanche.h"
 #include "flood.h"
@@ -44,7 +43,7 @@ public:
     Parameters params;
 	real_type xllcorner, yllcorner, nodata;
 	std::vector<int> iup, idown, jup, jdown;
-    DEM topo;
+    Raster topo;
     Raster flow;
 	Raster veg, veg_old, Sed_Track, ExposureAge, ExposureAge_old;
     MFDFlowRouter mfd_flow_router;
@@ -64,6 +63,9 @@ public:
     bool fix_random_seed;
 	static real_type Ran3(std::default_random_engine& generator, std::uniform_real_distribution<real_type>& distribution);
 	static real_type Gasdev(std::default_random_engine& generator, std::normal_distribution<real_type>& distribution);
+
+    real_type channel_erosion();
+    void uplift();
 
 	StreamPower(int nx, int ny);
 	~StreamPower();

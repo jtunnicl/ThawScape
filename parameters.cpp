@@ -12,7 +12,8 @@ Parameters::Parameters() : U(0.01), K(0.001), D(1.5), melt(250), timestep(1), pr
         altitude(0), azimuth(0), topo_file("topo.asc"), fa_file("FA.asc"),
         sed_file("SedThickness.asc"), fix_random_seed(false), save_topo(true), save_flow(false),
         flood_algorithm(2), avalanche(true), flood(true), flow_routing(true),
-        diffusive_erosion(true), uplift(true), melt_component(true), channel_erosion(true) {}
+        diffusive_erosion(true), uplift(true), melt_component(true), channel_erosion(true),
+        debug_melt(false) {}
 
 
 /// Load parameter values from a .INI file. Parameters can be omitted from the file,
@@ -79,6 +80,9 @@ Parameters::Parameters(const std::string& parameter_file) : Parameters() {
 
     // flood algorithm
     set_flood_algorithm(reader.GetInteger("flood", "flood_algorithm", flood_algorithm));
+
+    // melt algorithm
+    set_debug_melt(reader.GetBoolean("melt", "debug_melt", debug_melt));
 }
 
 void Parameters::set_day(int day_) {

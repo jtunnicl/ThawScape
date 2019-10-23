@@ -44,6 +44,7 @@ class Parameters {
         bool uplift;  ///< Enable the uplift component
         bool melt_component;  ///< Enable the melt component
         bool channel_erosion;  ///< Enable the channel erosion component
+        bool debug_melt;   ///< Enable debugging for the melt component
 
     public:
         /// \brief Default Parameters object
@@ -160,6 +161,9 @@ class Parameters {
 
         void set_channel_erosion(bool channel_erosion_) { channel_erosion = channel_erosion_; }
         bool get_channel_erosion() const { return channel_erosion; }
+
+        void set_debug_melt(bool debug_melt_) { debug_melt = debug_melt_; }
+        bool get_debug_melt() const { return debug_melt; }
 };
 
 #endif

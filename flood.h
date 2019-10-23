@@ -2,7 +2,7 @@
 #define _FLOOD_H_
 
 #include "global_defs.h"
-#include "dem.h"
+#include "raster.h"
 #include "grid_neighbours.h"
 #include "parameters.h"
 #include "Array2D.hpp"
@@ -16,27 +16,27 @@ class Flood {
         int algorithm;  ///< Which algorithm to use
 
         /// \brief Run one of Barnes' flood algorithms
-        void run_barnes_flood(DEM& topo);
+        void run_barnes_flood(Raster& topo);
 
         /// \brief Run Pelletier's algorithm
-        void run_fillinpitsandflats(DEM& topo, GridNeighbours& nebs);
+        void run_fillinpitsandflats(Raster& topo, GridNeighbours& nebs);
 
         /// \brief Do Pelletier's pit filling
-        void fillinpitsandflats(int i, int j, DEM& topo, GridNeighbours& nebs);
+        void fillinpitsandflats(int i, int j, Raster& topo, GridNeighbours& nebs);
 
     public:
         /// \brief Create a Flood object
         Flood();
 
-        /// \brief Initialise the MFDFlowRouter object
+        /// \brief Initialise the Flood object
         /// \param topo The Raster of elevations
         /// \param params Parameters object
-        void initialise(DEM& topo, Parameters& params);
+        void initialise(Raster& topo, Parameters& params);
         
         /// \brief Run the algorithm
         /// \param topo The Raster of elevations
         /// \param nebs GridNeighbours instance for neighbour indexing
-        void run(DEM& topo, GridNeighbours& nebs);
+        void run(Raster& topo, GridNeighbours& nebs);
 };
 
 #endif

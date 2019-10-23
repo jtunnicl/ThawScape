@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include "grid_neighbours.h"
 #include "global_defs.h"
 
 
@@ -12,6 +13,8 @@ class Raster {
         int size_x;  ///< x dimension of the raster
         int size_y;  ///< y dimension of the raster
         std::vector<real_type> data;  ///< Underlying data of the raster
+        std::vector<real_type> slope_;  ///< The slope at each point in the Raster
+        std::vector<real_type> aspect_;  ///< The aspect of each pixel in the Raster
         real_type xllcorner;  ///< x coordinate of lower left corner
         real_type yllcorner;  ///< y coordinate of lower left corner
         real_type deltax;  ///< Grid resolution
@@ -109,6 +112,21 @@ class Raster {
         /// \brief Set the cell size
         /// \param deltax_ The new value for the cell size
         void set_deltax(const real_type deltax_);
+
+        /// \brief Compute the slope and aspect of the DEM
+        void compute_slope_and_aspect(const GridNeighbours& nebs);
+
+        /// \brief Get the slope at a point in the DEM
+        /// \param i x index of the pixel to return the slope at
+        /// \param j y index of the pixel to return the slope at
+        /// \returns slope the slope at the given pixel
+        real_type slope(const int i, const int j) const;
+
+        /// \brief Get the aspect at a point in the DEM
+        /// \param i x index of the pixel to return the aspect at
+        /// \param j y index of the pixel to return the aspect at
+        /// \returns aspect the aspect at the given pixel
+        real_type aspect(const int i, const int j) const;
 };
 
 #endif

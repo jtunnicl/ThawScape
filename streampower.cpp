@@ -19,7 +19,6 @@
 #include "mfd_flow_router.h"
 #include "grid_neighbours.h"
 #include "parameters.h"
-#include "dem.h"
 #include "solar_geometry.h"
 #include "radiation_model.h"
 #include "avalanche.h"
@@ -72,7 +71,7 @@ real_type StreamPower::Gasdev(std::default_random_engine& generator, std::normal
 
 void StreamPower::SetTopo()
 {
-	topo = DEM(params.get_topo_file());
+	topo = Raster(params.get_topo_file());
     lattice_size_x = topo.get_size_x();
     lattice_size_y = topo.get_size_y();
     xllcorner = topo.get_xllcorner();
@@ -144,15 +143,14 @@ void StreamPower::Init(std::string parameter_file)
 
 void StreamPower::Start()
 {
-	int i, j;
     if (params.get_save_topo()) {
         char fname[100];
-        sprintf(fname, "erosion_%d.asc", 0);
+        sprintf(fname, "erosion_%04i_%03i_%02i.asc", ct.get_year(), ct.get_day(), ct.get_hour());
         topo.save(fname);
     }
     if (params.get_save_flow()) {
         char fname[100];
-        sprintf(fname, "flow_%d.asc", 0);
+        sprintf(fname, "flow_%04i_%03i_%02i.asc", ct.get_year(), ct.get_day(), ct.get_hour());
         flow.save(fname);
     }
 	int tstep = 0;    // Counter for printing results to file
@@ -162,7 +160,7 @@ void StreamPower::Start()
     AccumulateTimer<std::chrono::milliseconds> total_time;
     std::vector<std::string> timer_names {"Avalanche", "Flood", "Indexx", "MFDFlowRoute",
         "HillSlopeDiffusion", "Uplift", "SlopeAspect", "SolarCharacteristics", "Melt",
-        "ChannelErosion"};
+        "MeltPotential", "ChannelErosion"};
     std::map<std::string, AccumulateTimer<std::chrono::milliseconds> > timers;
     for (auto timer_name : timer_names) {
         timers[timer_name] = AccumulateTimer<std::chrono::milliseconds>();
@@ -171,8 +169,70 @@ void StreamPower::Start()
     total_time.start();
 	while ( ct.keep_going() )
 	{
-		// Landsliding, proceeding from high elev to low
+        //---------- Radiation ----------
+
+		// Update solar characteristics
+        if (params.get_melt_component()) {
+            // slope/aspect
+            timers["SlopeAspect"].start();
+            topo.compute_slope_and_aspect(nebs);
+            timers["SlopeAspect"].stop();
+
+            // TODO: remove once melt is moved to avalanche
+            timers["Flood"].start();
+            flood.run(topo, nebs);
+            timers["Flood"].stop();
+
+            timers["SolarCharacteristics"].start();
+            radiation_model.update_solar_characteristics(topo, ct);
+            timers["SolarCharacteristics"].stop();
+
+            // Compute melt potential
+            timers["MeltPotential"].start();
+            radiation_model.melt_potential(topo, Sed_Track, flow, nebs);
+            timers["MeltPotential"].stop();
+
+            // Carry out melt on exposed pixels
+            timers["Melt"].start();
+            radiation_model.melt_exposed_ice(topo, Sed_Track, flow, nebs);
+            timers["Melt"].stop();
+        }
+
+        //---------- Hydro ---------
+
+        // flow routing
+        if (params.get_flow_routing()) {
+            // Flood
+            if (params.get_flood()) {
+                timers["Flood"].start();
+                flood.run(topo, nebs);
+                timers["Flood"].stop();
+            }
+
+            // MFD flow router
+            timers["MFDFlowRoute"].start();
+            mfd_flow_router.run(topo, flow, nebs);
+            timers["MFDFlowRoute"].stop();
+        }
+
+		// Channel erosion
+        real_type maxe = 0;
+        if (params.get_channel_erosion()) {
+            // Slope/Aspect
+            timers["SlopeAspect"].start();
+            topo.compute_slope_and_aspect(nebs);
+            timers["SlopeAspect"].stop();
+
+            timers["ChannelErosion"].start();
+            maxe = channel_erosion();
+            timers["ChannelErosion"].stop();
+        }
+
+        //---------- Erosion ----------
+
+		// Landsliding
         if (params.get_avalanche()) {
+            // TODO: should not need this once application of melt moved to avalanche??
             timers["Flood"].start();
             flood.run(topo, nebs);
             timers["Flood"].stop();
@@ -182,19 +242,6 @@ void StreamPower::Start()
             timers["Avalanche"].stop();
         }
 
-        // flow routing
-        if (params.get_flow_routing()) {
-            if (params.get_flood()) {
-                timers["Flood"].start();
-                flood.run(topo, nebs);
-                timers["Flood"].stop();
-            }
-
-            timers["MFDFlowRoute"].start();
-            mfd_flow_router.run(topo, flow, nebs);
-            timers["MFDFlowRoute"].stop();
-        }
-
 		// Diffusive hillslope erosion
         if (params.get_diffusive_erosion()) {
             timers["HillSlopeDiffusion"].start();
@@ -202,68 +249,13 @@ void StreamPower::Start()
             timers["HillSlopeDiffusion"].stop();
         }
 
+        //---------- Uplift ---------
+
 		// Uplift
         if (params.get_uplift()) {
             timers["Uplift"].start();
-            real_type U = params.get_U();
-            #pragma omp parallel for
-            for (i = 1; i < lattice_size_x - 1; i++)
-            {
-                for (j = 1; j < lattice_size_y - 1; j++)
-                {
-                    topo(i, j) += U * params.get_ann_timestep();
-                }
-            }
+            uplift();
             timers["Uplift"].stop();
-        }
-
-        // Slope/Aspect
-        if (params.get_melt_component() || params.get_channel_erosion()) {
-            timers["SlopeAspect"].start();
-            topo.compute_slope_and_aspect(nebs);
-            timers["SlopeAspect"].stop();
-        }
-
-		// Update solar characteristics
-        if (params.get_melt_component()) {
-            timers["Flood"].start();
-            flood.run(topo, nebs);
-            timers["Flood"].stop();
-
-            timers["SolarCharacteristics"].start();
-            radiation_model.update_solar_characteristics(topo, ct);
-            timers["SolarCharacteristics"].stop();
-
-            // Carry out melt on exposed pixels
-            timers["Melt"].start();
-            radiation_model.melt_exposed_ice(topo, Sed_Track, flow, nebs);
-            timers["Melt"].stop();
-        }
-
-		// Channel erosion
-        real_type maxe = 0;
-        if (params.get_channel_erosion()) {
-            timers["ChannelErosion"].start();
-            real_type K = params.get_K();
-            #pragma omp parallel for reduction(max: maxe)
-            for (i = 1; i <= lattice_size_x - 2; i++)
-            {
-                for (j = 1; j <= lattice_size_y - 2; j++)
-                {
-                    real_type flow_sqrt = sqrt(flow(i, j) / 1e6);
-                    real_type deltah = params.get_ann_timestep() * K * flow_sqrt * deltax * topo.slope(i, j);     // Fluvial erosion law;
-                    topo(i, j) -= deltah;
-                    //std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow(i, j) / 1e6 << ", slope: " << slope(i, j) << std::endl;
-
-                    if ( topo(i, j) < 0 ) {
-                        topo(i, j) = 0;
-                    }
-                    if ( K * flow_sqrt * deltax > maxe ) {
-                        maxe = K * flow_sqrt * deltax;
-                    }
-                }
-            }
-            timers["ChannelErosion"].stop();
         }
 
 		// Update current time
@@ -307,13 +299,18 @@ void StreamPower::Start()
 		if (tstep >= params.get_printinterval()) {
             if (params.get_save_topo()) {
                 char fname[100];
-                sprintf(fname, "erosion_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
+                sprintf(fname, "erosion_%04i_%03i_%02i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
                 topo.save(fname);
             }
             if (params.get_save_flow()) {
                 char fname[100];
-                sprintf(fname, "flow_%i_%i_%i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
+                sprintf(fname, "flow_%04i_%03i_%02i_%.3f.asc", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude() );
                 flow.save(fname);
+            }
+            if (params.get_melt_component() && params.get_debug_melt()) {
+                char prefix[100];
+                sprintf(prefix, "debug_%04i_%03i_%02i_%.3f", ct.get_year(), ct.get_day(), ct.get_hour(), radiation_model.get_solar_altitude());
+                radiation_model.save_rasters(prefix);
             }
 			tstep = 0;
 		}
@@ -331,6 +328,43 @@ void StreamPower::Start()
         std::cout << " (" << item_time_secs / total_time_secs * 100 << " %)" << std::endl;
     }
     std::cout << std::endl;
+}
+
+void StreamPower::uplift() {
+    real_type U = params.get_U();
+    #pragma omp parallel for
+    for (int i = 1; i < lattice_size_x - 1; i++)
+    {
+        for (int j = 1; j < lattice_size_y - 1; j++)
+        {
+            topo(i, j) += U * params.get_ann_timestep();
+        }
+    }
+}
+
+real_type StreamPower::channel_erosion() {
+    real_type maxe = 0.0;
+    real_type K = params.get_K();
+    #pragma omp parallel for reduction(max: maxe)
+    for (int i = 1; i <= lattice_size_x - 2; i++)
+    {
+        for (int j = 1; j <= lattice_size_y - 2; j++)
+        {
+            real_type flow_sqrt = sqrt(flow(i, j) / 1e6);
+            real_type deltah = params.get_ann_timestep() * K * flow_sqrt * deltax * topo.slope(i, j);     // Fluvial erosion law;
+            topo(i, j) -= deltah;
+            //std::cout << "ann_ts: " << ann_timestep << ", K: " << K << ", flow: " << flow(i, j) / 1e6 << ", slope: " << slope(i, j) << std::endl;
+
+            if ( topo(i, j) < 0 ) {
+                topo(i, j) = 0;
+            }
+            if ( K * flow_sqrt * deltax > maxe ) {
+                maxe = K * flow_sqrt * deltax;
+            }
+        }
+    }
+
+    return maxe;
 }
 
 std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
