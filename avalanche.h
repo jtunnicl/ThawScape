@@ -10,6 +10,8 @@ class Avalanche {
     private:
         int size_x;  ///< Number of cells in the x dimension
         int size_y;  ///< Number of cells in the y dimension
+		real_type deltax;
+		real_type deltax2;
         real_type thresh;  ///< Critical height in m above neighbouring pixel
         real_type thresh_diag;  ///< Critical height in m above neighbouring pixel along a diagonal
 
@@ -20,12 +22,12 @@ class Avalanche {
         /// \brief Initialise the Avalanche object
         /// \param topo The Raster of elevations
         void initialise(Raster& topo);
-        
+
         /// \brief Run the avalanche code
         /// \param topo The Raster of elevations
         /// \param sed_track The Raster of sediment track depth
         /// \param nebs GridNeighbours instance for neighbour indexing
-        void run(Raster& topo, Raster& sed_track, GridNeighbours& nebs);
+		void run(Raster & topo, Raster & sed_track, Raster & incoming_watts, real_type melt, GridNeighbours & nebs);
 };
 
 #endif

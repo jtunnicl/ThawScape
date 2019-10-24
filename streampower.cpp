@@ -193,9 +193,9 @@ void StreamPower::Start()
             timers["MeltPotential"].stop();
 
             // Carry out melt on exposed pixels
-            timers["Melt"].start();
-            radiation_model.melt_exposed_ice(topo, Sed_Track, flow, nebs);
-            timers["Melt"].stop();
+            //timers["Melt"].start();
+            //radiation_model.melt_exposed_ice(topo, Sed_Track, flow, nebs);
+            //timers["Melt"].stop();
         }
 
         //---------- Hydro ---------
@@ -238,7 +238,7 @@ void StreamPower::Start()
             timers["Flood"].stop();
 
             timers["Avalanche"].start();
-            avalanche.run(topo, Sed_Track, nebs);
+            avalanche.run(topo, Sed_Track, radiation_model.incoming_watts, params.get_melt(), nebs);
             timers["Avalanche"].stop();
         }
 

@@ -17,7 +17,6 @@ class RadiationModel {
         real_type deltax2;
         real_type melt;   ///< Melt parameter
         SolarGeometry r;  ///< Solar geometry
-        Raster incoming_watts;
         Raster solar_raster;
         Raster shade_raster; 
         Raster I_D;
@@ -58,6 +57,8 @@ class RadiationModel {
         /// \param flow The flow accumulation Raster
         /// \param nebs Grid neighbour indexing
         void melt_potential(Raster& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs);
+
+		Raster incoming_watts;
 
         /// \brief Melt exposed ice
         /// \param topo The elevations Raster
