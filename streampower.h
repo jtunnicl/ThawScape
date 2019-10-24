@@ -55,11 +55,6 @@ public:
 
 	ModelTime ct;             ///< Current model time
 
-	static std::vector<real_type> Vector(int nl, int nh);
-	static std::vector<int> IVector(int nl, int nh);
-	static std::vector<std::vector<real_type>> Matrix(int nrl, int nrh, int ncl, int nch);			
-	static std::vector<std::vector<int>> IMatrix(int nrl, int nrh, int ncl, int nch);	
-
     bool fix_random_seed;
 	static real_type Ran3(std::default_random_engine& generator, std::uniform_real_distribution<real_type>& distribution);
 	static real_type Gasdev(std::default_random_engine& generator, std::normal_distribution<real_type>& distribution);
@@ -70,8 +65,7 @@ public:
 	StreamPower(int nx, int ny);
 	~StreamPower();
 
-	std::vector<std::vector<real_type>> CreateRandomField();
-
+	Raster CreateRandomField();
 
 	void SetTopo();
 	void SetFA();

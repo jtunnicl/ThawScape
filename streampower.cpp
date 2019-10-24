@@ -24,35 +24,6 @@
 #include "avalanche.h"
 
 
-/* allocate a real_type vector with subscript range v[nl..nh] */
-std::vector<real_type> StreamPower::Vector(int nl, int nh)
-{
-	int size = nh - nl + 1 + NR_END;
-	return std::vector<real_type>(size);
-}
-
-/* allocate an integer vector with subscript range v[nl..nh] */
-std::vector<int> StreamPower::IVector(int nl, int nh)
-{
-	int size = nh - nl + 1 + NR_END;
-	return std::vector<int>(size);
-}
-
-
-std::vector<std::vector<int>> StreamPower::IMatrix(int nrl, int nrh, int ncl, int nch)
-{
-	int rsize = nrh - nrl + 1 + NR_END;
-	int csize = nch - ncl + 1 + NR_END;
-	return std::vector<std::vector<int>>(rsize, std::vector<int>(csize));
-}
-
-std::vector<std::vector<real_type>> StreamPower::Matrix(int nrl, int nrh, int ncl, int nch)
-{
-	int rsize = nrh - nrl + 1 + NR_END;
-	int csize = nch - ncl + 1 + NR_END;
-	return std::vector<std::vector<real_type>>(rsize, std::vector<real_type>(csize));
-}
-
 real_type StreamPower::Ran3(std::default_random_engine& generator, std::uniform_real_distribution<real_type>& distribution)
 {
 	return distribution(generator);
@@ -171,18 +142,14 @@ void StreamPower::Start()
 	{
         //---------- Radiation ----------
 
-		// Update solar characteristics
+        // computing melt potential
         if (params.get_melt_component()) {
-            // slope/aspect
+            // slope/aspect required for melt potential calculations
             timers["SlopeAspect"].start();
             topo.compute_slope_and_aspect(nebs);
             timers["SlopeAspect"].stop();
 
-            // TODO: remove once melt is moved to avalanche
-            timers["Flood"].start();
-            flood.run(topo, nebs);
-            timers["Flood"].stop();
-
+            // Update solar characteristics
             timers["SolarCharacteristics"].start();
             radiation_model.update_solar_characteristics(topo, ct);
             timers["SolarCharacteristics"].stop();
@@ -191,18 +158,13 @@ void StreamPower::Start()
             timers["MeltPotential"].start();
             radiation_model.melt_potential(topo, Sed_Track, flow, nebs);
             timers["MeltPotential"].stop();
-
-            // Carry out melt on exposed pixels
-            //timers["Melt"].start();
-            //radiation_model.melt_exposed_ice(topo, Sed_Track, flow, nebs);
-            //timers["Melt"].stop();
         }
 
         //---------- Hydro ---------
 
         // flow routing
         if (params.get_flow_routing()) {
-            // Flood
+            // Flood - pit filling required for flow router
             if (params.get_flood()) {
                 timers["Flood"].start();
                 flood.run(topo, nebs);
@@ -218,11 +180,12 @@ void StreamPower::Start()
 		// Channel erosion
         real_type maxe = 0;
         if (params.get_channel_erosion()) {
-            // Slope/Aspect
+            // Slope/Aspect required for channel erosion
             timers["SlopeAspect"].start();
             topo.compute_slope_and_aspect(nebs);
             timers["SlopeAspect"].stop();
 
+            // Channel erosion
             timers["ChannelErosion"].start();
             maxe = channel_erosion();
             timers["ChannelErosion"].stop();
@@ -232,11 +195,12 @@ void StreamPower::Start()
 
 		// Landsliding
         if (params.get_avalanche()) {
-            // TODO: should not need this once application of melt moved to avalanche??
+            // Flood - remove pits and flats required for avalanching
             timers["Flood"].start();
             flood.run(topo, nebs);
             timers["Flood"].stop();
 
+            // apply melt potential and avalanche
             timers["Avalanche"].start();
             avalanche.run(topo, Sed_Track, radiation_model.incoming_watts, params.get_melt(), nebs);
             timers["Avalanche"].stop();
@@ -367,9 +331,9 @@ real_type StreamPower::channel_erosion() {
     return maxe;
 }
 
-std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
+Raster StreamPower::CreateRandomField()
 {
-	std::vector<std::vector<real_type>> mat = std::vector<std::vector<real_type>>(lattice_size_x, std::vector<real_type>(lattice_size_y));
+    Raster mat(lattice_size_x, lattice_size_y);
 	std::default_random_engine generator;
     if (params.get_fix_random_seed()) {
         Util::Warning("Fixing random seed - this should only be used for testing/debugging!");
@@ -380,7 +344,7 @@ std::vector<std::vector<real_type> > StreamPower::CreateRandomField()
 	{
 		for (int j = 0; j <= lattice_size_y-1; j++)
 		{
-			mat[i][j] = 0.5 * Gasdev(generator, distribution);
+			mat(i, j) = 0.5 * Gasdev(generator, distribution);
 		}
 	}
 	return mat;

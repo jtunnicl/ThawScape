@@ -18,7 +18,6 @@ void RadiationModel::initialise(Raster& topo, Parameters& params) {
     lattice_size_y = topo.get_size_y();
     deltax = topo.get_deltax();
     deltax2 = deltax * deltax;
-    melt = params.get_melt();
 
 	solar_raster = Raster(lattice_size_x, lattice_size_y, 0.0);
 	shade_raster = Raster(lattice_size_x, lattice_size_y);
@@ -200,50 +199,8 @@ void RadiationModel::melt_potential(Raster& topo, Raster& Sed_Track, Raster& flo
                         incoming += NW * I_R(nebs.idown(i), nebs.jup(j));
                 }
 
+                // save incoming_watts to be applied during avalanche
                 incoming_watts(i, j) = incoming;
-            }
-        }
-    }
-}
-
-void RadiationModel::melt_exposed_ice(Raster& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
-    // sort by elevations
-    topo.sort_data();
-
-    // now we apply incoming to pixels ordered low to high (TODO: move to avalanche routine)
-    int t = 0;
-    while (t < lattice_size_x * lattice_size_y)
-    {
-        int i, j;
-        topo.get_sorted_ij(t, i, j);
-        t++;
-        if ((i > 0) && (i < (lattice_size_x - 1)) && (j > 0) && (j < (lattice_size_y - 1)))  // Do not alter boundary elements
-        {
-            if (incoming_watts(i, j) != 0) {
-                real_type elev_drop = 0;       // Decrease in elevation at central pixel, following ice melt
-                real_type accommodation = 0;   // Volume available to fill below central pixel, in the immediate neighbourhood
-
-                // Elevations within 9-element neighbourhood NW-N-NE-W-ctr-E-SW-S-SE
-                std::vector<real_type> neighb{ topo(nebs.idown(i), nebs.jup(j)), topo(i, nebs.jup(j)), topo(nebs.iup(i), nebs.jup(j)),
-                        topo(nebs.idown(i), j), topo(i, j), topo(nebs.iup(i), j),
-                        topo(nebs.idown(i), nebs.jdown(j)), topo(i, nebs.jdown(j)), topo(nebs.iup(i), nebs.jdown(j)) };
-                real_type lowestpixel = *min_element(neighb.begin(), neighb.end());
-
-                // Ice mass lost, based on ablation at each face
-                // incoming watts / meltrate / pixel area
-
-                for (int m = 0; m < 8; m++) {
-                    if (topo(i, j) - neighb[m] > 0) accommodation += deltax2 * (topo(i, j) - neighb[m]);   // sum up all the volume available on pixels below the central pixel
-                }
-
-                elev_drop = incoming_watts(i, j) / melt / deltax2;
-                if (elev_drop * deltax < accommodation)           // i.e. There is room to accommodate the failed mass in neighbouring cells
-                    topo(i, j) -= elev_drop;
-                else
-                    topo(i, j) = lowestpixel;
-
-
-                // Water lost in melt flows downstream (add to 'flow' raster)
             }
         }
     }
