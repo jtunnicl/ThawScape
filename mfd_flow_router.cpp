@@ -43,9 +43,6 @@ void MFDFlowRouter::run(Raster& topo, Raster& flow, GridNeighbours& nebs) {
         Util::Error("Must initialise flow router", 1);
     }
 
-    // sort data after pit filling
-    topo.sort_data();
-
     // Note that deltax is not used in this computation, so the flow raster represents simply the number of contributing unit cells upstream.
     // Initialise flow to ones everywhere
 //    flow.set_data(1.0);

@@ -26,9 +26,6 @@ void Avalanche::run(Raster& topo, Raster& sed_track, Raster& incoming_watts, rea
         Util::Error("Must initialise Avalanche object", 1);
     }
 
-    // sort by elevation
-    topo.sort_data();
-
 	// NEED TO ASSESS WHETHER PIXEL HAS SEDIMENT, BEFORE FAILURE CALCS?
 
     int t = 0;

@@ -165,11 +165,14 @@ void StreamPower::Start()
         // flow routing
         if (params.get_flow_routing()) {
             // Flood - pit filling required for flow router
-            if (params.get_flood()) {
-                timers["Flood"].start();
-                flood.run(topo, nebs);
-                timers["Flood"].stop();
-            }
+            timers["Flood"].start();
+            flood.run(topo, nebs);
+            timers["Flood"].stop();
+
+            // sort data before flow routing
+            timers["Indexx"].start();
+            topo.sort_data();
+            timers["Indexx"].stop();
 
             // MFD flow router
             timers["MFDFlowRoute"].start();
@@ -199,6 +202,11 @@ void StreamPower::Start()
             timers["Flood"].start();
             flood.run(topo, nebs);
             timers["Flood"].stop();
+
+            // sort data before avalanching
+            timers["Indexx"].start();
+            topo.sort_data();
+            timers["Indexx"].stop();
 
             // apply melt potential and avalanche
             timers["Avalanche"].start();
