@@ -8,7 +8,7 @@
 #include "parameters.h"
 #include "model_time.h"
 
-/// \brief RadiationModel class for carrying out melt
+/// \brief RadiationModel class for carrying out calculations associated with melt
 class RadiationModel {
     private:
         int lattice_size_x;
@@ -45,7 +45,7 @@ class RadiationModel {
         /// \param params Parameters object
         void initialise(Raster& topo, Parameters& params);
 
-        /// \brief Update the solar characteristics
+        /// \brief Update solar characteristics
         /// \param topo The elevations Raster
         /// \param ct Current ModelTime
         void update_solar_characteristics(Raster& topo, ModelTime& ct);
@@ -58,13 +58,6 @@ class RadiationModel {
         void melt_potential(Raster& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs);
 
 		Raster incoming_watts;  ///< Incoming watts Raster is computed here and applied in Avalanche
-
-        /// \brief Melt exposed ice
-        /// \param topo The elevations Raster
-        /// \param Sed_Track Sediment track depth Raster
-        /// \param flow The flow accumulation Raster
-        /// \param nebs Grid neighbour indexing
-        void melt_exposed_ice(Raster& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs);
 
         /// \brief Get the current solar altitude
         /// \returns altitude The current solar altitude

@@ -21,6 +21,11 @@ void Avalanche::initialise(Raster& topo) {
 	thresh_diag = thresh * sqrt2;
 }
 
+/// This routine runs through the points in the topo Raster from low to high elevations. It is assumed
+/// that pit filling and Raster::sort_data() have been called on the topo Raster prior to calling this
+/// routine.
+///
+/// As we proceed from low to high pixels, the melt potential is applied first, followed by avalanching.
 void Avalanche::run(Raster& topo, Raster& sed_track, Raster& incoming_watts, real_type melt, GridNeighbours& nebs) {
     if (size_x != topo.get_size_x() || size_y != topo.get_size_y()) {
         Util::Error("Must initialise Avalanche object", 1);

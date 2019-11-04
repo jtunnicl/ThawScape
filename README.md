@@ -20,18 +20,61 @@ make                        # build the code
 ctest                       # run the tests
 ```
 
-After the build has completed there should be a `ThawScape` executable in the
+After the build has completed there should be a *ThawScape* executable in the
 build directory.
 
 The `ThawScape.ini` input file must be present in the directory you run the
 executable from.
 
-The default is to build a single precision version of ThawScape. If you would
-like to use double precision then replace the `cmake ..` command above with the
-following:
+The default is to build a double precision version of ThawScape. If you would
+like to use single precision then add the option `-DDOUBLE_PRECISION=OFF`.
 
-```
-cmake .. -DDOUBLE_PRECISION=ON
-```
+## Code layout
+
+The code is driven from *main.cpp*, which creates a `StreamPower` object (from
+*streampower.cpp*):
+
+- Inputs are loaded and components initialised during `StreamPower::Init()`
+  - Parameters are loaded from the input file, *ThawScape.ini* (`Parameters()` from
+    *parameters.cpp*)
+  - DEM / `topo` Raster is loaded (`StreamPower::SetTopo()` from *streampower.cpp*)
+  - Flow accumulation / `flow` Raster is loaded (`StreamPower::SetFA()` from
+    *streampower.cpp*)
+  - Most components need to be initialised with some combination of the DEM and
+    flow `Raster`s and `Parameters` object before they can be used
+  - Diffusion is initialised (`StreamPower::InitDiffusion()` from *streampower.cpp*)
+- The main simulation loop occurs during `StreamPower::Start()`
+
+The components are mainly split into their own files/classes as discussed below:
+
+- Radiation model (`RadiationModel` from *radiation_model.cpp*)
+  1. Compute slope and aspect of the DEM, required for radiation model calculations
+     (`Raster::compute_slope_and_aspect()` from *raster.cpp*)
+  2. Update solar characteristics (`RadiationModel::update_solar_characteristics()`
+     from *radiation_model.cpp*)
+     1. Update sun position (`SolarGeometry::sun_position()` from *solar_geometry.cpp*)
+     2. Compute solar influx (`RadiationModel::solar_influx` from *radiation_model.cpp*)
+  3. Compute melt potential (`RadiationModel::melt_potential()` from *radiation_model.cpp*)
+     - **Note**: application of the melt potential occurs later during avalanching
+- Hydro processes
+  1. Flood / fill in pits and flats in the DEM, required before sorting points by elevation
+     (`Flood::run()` from *flood.cpp*)
+  2. Sort points in the elevation model by height, required as flow routing must proceed
+     from high to low (`Raster::sort_data()` from *raster.cpp*)
+  3. Calculate flow routing / flow accumulation (`MFDFlowRouter::run()` from
+     *mfd_flow_router.cpp*)
+  4. Compute slope and aspect of the DEM, required for channel erosion
+     (`Raster::compute_slope_and_aspect()` from *raster.cpp*)
+  5. Compute channel erosion based on flow accumulation (`StreamPower::channel_erosion()` 
+     from *streampower.cpp*)
+- Erosion
+  1. Flood / fill in pits and flats in the DEM, required before sorting points by elevation
+     (`Flood::run()` from *flood.cpp*)
+  2. Sort points in the elevation model by height, required as avalanching must proceed
+     from low to high (`Raster::sort_data()` from *Raster.cpp*)
+  3. Landsliding / avalanching (`Avalanche::run()` from *avalanche.cpp*)
+     - **Note**: The melt potential, computed earlier, is applied during this routine
+  4. Diffusive hill slope erosion (`HillslopeDiffusion::run()` from *hillslope_diffusion.cpp*)
+- Apply uplift (`StreamPower::uplift()` from *streampower.cpp*)
 
 More developer documentation here: https://jtunnicl.github.io/ThawScape

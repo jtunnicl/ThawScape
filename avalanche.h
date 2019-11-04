@@ -26,6 +26,8 @@ class Avalanche {
         /// \brief Run the avalanche code
         /// \param topo The Raster of elevations
         /// \param sed_track The Raster of sediment track depth
+        /// \param incoming_watts The Raster of incoming watts computed in RadiationModel::melt_potential()
+        /// \param melt The reciprocal melt rate parameter
         /// \param nebs GridNeighbours instance for neighbour indexing
 		void run(Raster & topo, Raster & sed_track, Raster & incoming_watts, real_type melt, GridNeighbours & nebs);
 };

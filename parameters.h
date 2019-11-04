@@ -5,6 +5,27 @@
 #include "global_defs.h"
 
 /// \brief Class for loading and accessing the parameters
+///
+/// Each parameter has its own private variable defined within this class and public "getter" and "setter"
+/// methods that can be used to access the variable. Usually the setter is only used while reading
+/// parameters from file and then the getter is used wherever the parameter is required in the code.
+///
+/// In order to add a new parameter one should:
+///   -# add a new private variable for the parameter, for example `real_type my_new_param`
+///   -# add a public method for setting the parameter, including any checks that the parameter is "sane",
+///      for example `void Parameters::set_my_new_param(real_type my_new_param_) { my_new_param = my_new_param_; }`
+///   -# add a public method for getting the parameter, for example
+///      `real_type Parameters::get_my_new_param() const { return my_new_param; }`
+///   -# add the new parameter with default value to the initialiser list in `Parameters::Parameters()` from
+///      parameters.cpp
+///   -# add a line to `Parameters::Parameters(const std::string& parameter_file)` to load the new parameter
+///      from the input file, for example `set_my_new_param(reader.GetReal("example", "my_new_param", my_new_param));`
+///      (assuming the new parameter is in the "example" section in the input file)
+///   -# add the parameter into your input file (ThawScape.ini), for example
+///      \code
+///      [example]
+///      my_new_param = 1.0
+///      \endcode
 class Parameters {
     private:
         real_type U;  ///< Uplift, m yr^-1
@@ -44,7 +65,7 @@ class Parameters {
         bool uplift;  ///< Enable the uplift component
         bool melt_component;  ///< Enable the melt component
         bool channel_erosion;  ///< Enable the channel erosion component
-        bool debug_melt;   ///< Enable debugging for the melt component
+        bool debug_melt;   ///< Write out additional Rasters for debugging the RadiationModel
 
     public:
         /// \brief Default Parameters object

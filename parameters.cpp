@@ -4,7 +4,7 @@
 #include "utility.h"
 #include "parameters.h"
 
-// set the default values here
+/// Set the default parameter values here
 Parameters::Parameters() : U(0.01), K(0.001), D(1.5), melt(250), timestep(1), printinterval(1),
         ann_timestep(timestep / 8760), thresholdarea(1e35), init_exposure_age(0),
         init_sed_track(2), init_veg(8), year(2010), day(145), hour(12), minute(0),

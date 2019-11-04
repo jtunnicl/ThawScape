@@ -11,6 +11,9 @@ MFDFlowRouter::MFDFlowRouter() :
         size_x(0), size_y(0) {
 }
 
+/// Boundary values are taken from the input flow Raster and are applied
+/// during MFDFlowRouter::run() to simulate incoming flow from the outside
+/// the DEM boundaries.
 void MFDFlowRouter::initialise(Raster& flow) {
     size_x = flow.get_size_x();
     size_y = flow.get_size_y();
@@ -37,6 +40,10 @@ void MFDFlowRouter::initialise(Raster& flow) {
 }
 
 
+/// The flow Raster gets initialised with the pixel area everywhere and then
+/// the flow accumulation is calculated by proceeding from high to low
+/// elevations. This routine assumes that pit filling and Raster::sort_data()
+/// were called on the topo Raster prior to calling this routine.
 void MFDFlowRouter::run(Raster& topo, Raster& flow, GridNeighbours& nebs) {
     // make sure initialise was called before proceeding
     if (topo.get_size_x() != size_x || topo.get_size_y() != size_y) {

@@ -37,6 +37,7 @@ void RadiationModel::initialise(Raster& topo, Parameters& params) {
     r = SolarGeometry(params);
 }
 
+/// This routine first updates the sun position and then computes the solar influx.
 void RadiationModel::update_solar_characteristics(Raster& topo, ModelTime& ct) {
     if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
         Util::Error("Must initialise RadiationModel", 1);
@@ -127,6 +128,8 @@ void RadiationModel::solar_influx(Raster& topo, ModelTime& ct) {
 	}
 }
 
+/// This is a simple loop over all points in the DEM, i.e. there is no ordering from low to high
+/// elevations.
 void RadiationModel::melt_potential(Raster& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
     if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
         Util::Error("Must initialise RadiationModel", 1);
