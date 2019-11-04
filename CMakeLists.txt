@@ -45,6 +45,15 @@ if (ENABLE_PROFILING)
     endif()
 endif()
 
+# OpenMP
+option(BUILD_OPENMP "Build with OpenMP support" OFF)
+if (BUILD_OPENMP)
+    find_package(OpenMP)
+    if (NOT OpenMP_CXX_FOUND)
+        message(WARNING "Could not find OpenMP")
+    endif()
+endif()
+
 # list of source files
 file(GLOB cpp_src ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 file(GLOB h_src ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
@@ -54,6 +63,9 @@ set(ThawScapeSrc ${cpp_src} ${h_src} ${hpp_src})
 # add the library
 add_library(ThawScapeLib ${ThawScapeSrc})
 target_include_directories(ThawScapeLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+if (OpenMP_CXX_FOUND)
+    target_link_libraries(ThawScapeLib OpenMP::OpenMP_CXX)
+endif()
 
 # add executable
 add_executable(ThawScape main.cpp)

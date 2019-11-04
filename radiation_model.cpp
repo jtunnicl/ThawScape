@@ -18,7 +18,6 @@ void RadiationModel::initialise(Raster& topo, Parameters& params) {
     lattice_size_y = topo.get_size_y();
     deltax = topo.get_deltax();
     deltax2 = deltax * deltax;
-    melt = params.get_melt();
 
 	solar_raster = Raster(lattice_size_x, lattice_size_y, 0.0);
 	shade_raster = Raster(lattice_size_x, lattice_size_y);
@@ -38,6 +37,7 @@ void RadiationModel::initialise(Raster& topo, Parameters& params) {
     r = SolarGeometry(params);
 }
 
+/// This routine first updates the sun position and then computes the solar influx.
 void RadiationModel::update_solar_characteristics(Raster& topo, ModelTime& ct) {
     if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
         Util::Error("Must initialise RadiationModel", 1);
@@ -49,10 +49,9 @@ void RadiationModel::update_solar_characteristics(Raster& topo, ModelTime& ct) {
 
 void RadiationModel::solar_influx(Raster& topo, ModelTime& ct) {
     // Calculate shading from surrounding terrain
-	int i, j, m;
-	real_type m1, m2, m3, m4, m5, M, asp360, d80;
-	real_type cos_i, I_o, tau_b;
-	std::vector<real_type> cos_i80, asp_4;
+    real_type d80, I_o, M;
+    real_type tau_b;
+	std::vector<real_type> asp_4;
 
 	// Solar position, in radians
 	real_type azm = r.get_azimuth() * degrad;            //  Anything in the 'r' object uses degrees; converted here to radians
@@ -61,7 +60,6 @@ void RadiationModel::solar_influx(Raster& topo, ModelTime& ct) {
 	real_type dec = r.get_declination() * degrad;
 	real_type sha = r.get_SHA() * degrad;
 
-	cos_i80 = std::vector<real_type>(8);
 	d80 = (80 * degrad);
 	asp_4 = { 0, 90, 180, 270, 45, 135, 225, 315 };
 
@@ -70,10 +68,15 @@ void RadiationModel::solar_influx(Raster& topo, ModelTime& ct) {
 	tau_b = 0.56 * (exp(-0.65 * M) + exp(-0.095 * M));                               // Atmospheric transmittance for beam radiation
 
     // Solar: Direct and Diffuse
-	for (i = 2; i <= lattice_size_x - 1; i++)
+    #pragma omp parallel for
+	for (int i = 2; i <= lattice_size_x - 1; i++)
 	{
-		for (j = 2; j <= lattice_size_y - 1; j++)
+		for (int j = 2; j <= lattice_size_y - 1; j++)
 		{
+            std::vector<real_type> cos_i80 = std::vector<real_type>(8);
+            real_type m1, m2, m3, m4, m5, asp360;
+            real_type cos_i;
+
 			shade_raster(i, j) = ((sin(alt) * cos(topo.slope(i, j))) + (cos(alt) * sin(topo.slope(i, j)) * cos(azm - topo.aspect(i, j))));
 			if (shade_raster(i, j) < 0) shade_raster(i, j) = 0;
 
@@ -106,7 +109,7 @@ void RadiationModel::solar_influx(Raster& topo, ModelTime& ct) {
 			m3 = cos(lat) * cos(d80);
 			m5 = cos(dec) * sin(d80) * sin(sha);
 
-			for (m = 0; m < 8; m++)
+			for (int m = 0; m < 8; m++)
 			{
 				m2 = cos(lat) * sin(d80) * cos(asp_4[m] * degrad);
 				m4 = sin(lat) * cos(d80) * cos(asp_4[m] * degrad);
@@ -125,6 +128,8 @@ void RadiationModel::solar_influx(Raster& topo, ModelTime& ct) {
 	}
 }
 
+/// This is a simple loop over all points in the DEM, i.e. there is no ordering from low to high
+/// elevations.
 void RadiationModel::melt_potential(Raster& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
     if (lattice_size_x != topo.get_size_x() || lattice_size_y != topo.get_size_y()) {
         Util::Error("Must initialise RadiationModel", 1);
@@ -132,6 +137,7 @@ void RadiationModel::melt_potential(Raster& topo, Raster& Sed_Track, Raster& flo
 
     // first compute incoming watts at all pixels (except boundary?)
     incoming_watts.set_data(0.0);
+    #pragma omp parallel for
     for (int i = 1; i < lattice_size_x - 1; i++) {
         for (int j = 1; j < lattice_size_y - 1; j++) {
             real_type N, E, S, W, NE, SE, SW, NW;
@@ -200,50 +206,8 @@ void RadiationModel::melt_potential(Raster& topo, Raster& Sed_Track, Raster& flo
                         incoming += NW * I_R(nebs.idown(i), nebs.jup(j));
                 }
 
+                // save incoming_watts to be applied during avalanche
                 incoming_watts(i, j) = incoming;
-            }
-        }
-    }
-}
-
-void RadiationModel::melt_exposed_ice(Raster& topo, Raster& Sed_Track, Raster& flow, GridNeighbours& nebs) {
-    // sort by elevations
-    topo.sort_data();
-
-    // now we apply incoming to pixels ordered low to high (TODO: move to avalanche routine)
-    int t = 0;
-    while (t < lattice_size_x * lattice_size_y)
-    {
-        int i, j;
-        topo.get_sorted_ij(t, i, j);
-        t++;
-        if ((i > 0) && (i < (lattice_size_x - 1)) && (j > 0) && (j < (lattice_size_y - 1)))  // Do not alter boundary elements
-        {
-            if (incoming_watts(i, j) != 0) {
-                real_type elev_drop = 0;       // Decrease in elevation at central pixel, following ice melt
-                real_type accommodation = 0;   // Volume available to fill below central pixel, in the immediate neighbourhood
-
-                // Elevations within 9-element neighbourhood NW-N-NE-W-ctr-E-SW-S-SE
-                std::vector<real_type> neighb{ topo(nebs.idown(i), nebs.jup(j)), topo(i, nebs.jup(j)), topo(nebs.iup(i), nebs.jup(j)),
-                        topo(nebs.idown(i), j), topo(i, j), topo(nebs.iup(i), j),
-                        topo(nebs.idown(i), nebs.jdown(j)), topo(i, nebs.jdown(j)), topo(nebs.iup(i), nebs.jdown(j)) };
-                real_type lowestpixel = *min_element(neighb.begin(), neighb.end());
-
-                // Ice mass lost, based on ablation at each face
-                // incoming watts / meltrate / pixel area
-
-                for (int m = 0; m < 8; m++) {
-                    if (topo(i, j) - neighb[m] > 0) accommodation += deltax2 * (topo(i, j) - neighb[m]);   // sum up all the volume available on pixels below the central pixel
-                }
-
-                elev_drop = incoming_watts(i, j) / melt / deltax2;
-                if (elev_drop * deltax < accommodation)           // i.e. There is room to accommodate the failed mass in neighbouring cells
-                    topo(i, j) -= elev_drop;
-                else
-                    topo(i, j) = lowestpixel;
-
-
-                // Water lost in melt flows downstream (add to 'flow' raster)
             }
         }
     }
