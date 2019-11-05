@@ -45,6 +45,7 @@ void Flood::run(Raster& topo, GridNeighbours& nebs) {
 
 void Flood::run_barnes_flood(Raster& topo) {
 	// update elev
+    #pragma omp parallel for
 	for (int i = 0; i < size_x; i++)
 	{
 		for (int j = 0; j < size_y; j++)
@@ -62,6 +63,7 @@ void Flood::run_barnes_flood(Raster& topo) {
     }
 
 	// update topo
+    #pragma omp parallel for
 	for (int i = 0; i < size_x; i++)
 	{
 		for (int j = 0; j < size_y; j++)

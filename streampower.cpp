@@ -79,6 +79,7 @@ void StreamPower::InitDiffusion()
 	for (int step = 1; step <= 10; step++)
 	{
         hillslope_diffusion.run(topo, flow, nebs);
+        #pragma omp parallel for
 		for (int i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (int j = 1; j <= lattice_size_y - 2; j++)
