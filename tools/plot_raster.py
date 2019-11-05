@@ -90,6 +90,9 @@ def main():
     parser.add_argument('-D', '--delay', type=int, default=20, help="Argument to pass to `convert -delay` (default is 20)")
     args = parser.parse_args()
 
+    if args.offline:
+        matplotlib.use('Agg')
+
     # are we plotting differences
     if args.diff is not None:
         print("Plotting differences of Rasters relative to '{}''".format(args.diff))
