@@ -130,8 +130,8 @@ void StreamPower::Start()
 
     // set up some timers
     AccumulateTimer<std::chrono::milliseconds> total_time;
-    std::vector<std::string> timer_names {"Avalanche", "Flood", "Indexx", "MFDFlowRoute",
-        "HillSlopeDiffusion", "Uplift", "SlopeAspect", "SolarCharacteristics", "Melt",
+    std::vector<std::string> timer_names {"Avalanche", "Flood", "Sort", "MFDFlowRoute",
+        "HillSlopeDiffusion", "Uplift", "SlopeAspect", "SolarCharacteristics",
         "MeltPotential", "ChannelErosion"};
     std::map<std::string, AccumulateTimer<std::chrono::milliseconds> > timers;
     for (auto timer_name : timer_names) {
@@ -171,9 +171,9 @@ void StreamPower::Start()
             timers["Flood"].stop();
 
             // sort data before flow routing
-            timers["Indexx"].start();
+            timers["Sort"].start();
             topo.sort_data();
-            timers["Indexx"].stop();
+            timers["Sort"].stop();
 
             // MFD flow router
             timers["MFDFlowRoute"].start();
@@ -205,9 +205,9 @@ void StreamPower::Start()
             timers["Flood"].stop();
 
             // sort data before avalanching
-            timers["Indexx"].start();
+            timers["Sort"].start();
             topo.sort_data();
-            timers["Indexx"].stop();
+            timers["Sort"].stop();
 
             // apply melt potential and avalanche
             timers["Avalanche"].start();
