@@ -95,7 +95,7 @@ def main():
 
     # are we plotting differences
     if args.diff is not None:
-        print("Plotting differences of Rasters relative to '{}''".format(args.diff))
+        print("Plotting differences of Rasters relative to '{}'".format(args.diff))
         data_diff = load_raster(args.diff)
     else:
         data_diff = None
