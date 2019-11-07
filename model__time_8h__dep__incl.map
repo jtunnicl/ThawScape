@@ -1,0 +1,10 @@
+<map id="model_time.h" name="model_time.h">
+<area shape="rect" id="node2" href="$streampower_8h.html" title="streampower.h" alt="" coords="5,229,123,256"/>
+<area shape="rect" id="node4" href="$streampower_8cpp.html" title="streampower.cpp" alt="" coords="225,304,357,331"/>
+<area shape="rect" id="node5" href="$solar__geometry_8h.html" title="solar_geometry.h" alt="" coords="315,80,447,107"/>
+<area shape="rect" id="node6" href="$radiation__model_8h.html" title="radiation_model.h" alt="" coords="102,155,239,181"/>
+<area shape="rect" id="node7" href="$radiation__model_8cpp.html" title="radiation_model.cpp" alt="" coords="197,229,349,256"/>
+<area shape="rect" id="node8" href="$solar__geometry_8cpp.html" title="solar_geometry.cpp" alt="" coords="417,155,564,181"/>
+<area shape="rect" id="node9" href="$model__time_8cpp.html" title="model_time.cpp" alt="" coords="639,80,764,107"/>
+<area shape="rect" id="node3" href="$main_8cpp.html" title="main.cpp" alt="" coords="23,304,105,331"/>
+</map>

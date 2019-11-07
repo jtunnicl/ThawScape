@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classgrid__cell.html" title="Stores the (x,y) coordinates of a grid cell. " alt="" coords="5,5,80,32"/>
+<area shape="rect" id="node2" href="$classgrid__cellz.html" title="grid_cellz\&lt; elev_t \&gt;" alt="" coords="128,5,277,32"/>
+<area shape="rect" id="node3" href="$classgrid__cellzk.html" title="grid_cellzk\&lt; elev_t \&gt;" alt="" coords="325,5,481,32"/>
+</map>

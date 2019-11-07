@@ -1,0 +1,4 @@
+<map id="RadiationModel" name="RadiationModel">
+<area shape="rect" id="node2" href="$classRaster.html" title="Class for storing a Raster array including methods for loading, saving and sorting. " alt="" coords="154,124,217,151"/>
+<area shape="rect" id="node5" href="$classSolarGeometry.html" title="SolarGeometry" alt="" coords="257,124,375,151"/>
+</map>
