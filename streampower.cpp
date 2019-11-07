@@ -79,6 +79,7 @@ void StreamPower::InitDiffusion()
 	for (int step = 1; step <= 10; step++)
 	{
         hillslope_diffusion.run(topo, flow, nebs);
+        #pragma omp parallel for
 		for (int i = 1; i <= lattice_size_x - 2; i++)
 		{
 			for (int j = 1; j <= lattice_size_y - 2; j++)
@@ -129,8 +130,8 @@ void StreamPower::Start()
 
     // set up some timers
     AccumulateTimer<std::chrono::milliseconds> total_time;
-    std::vector<std::string> timer_names {"Avalanche", "Flood", "Indexx", "MFDFlowRoute",
-        "HillSlopeDiffusion", "Uplift", "SlopeAspect", "SolarCharacteristics", "Melt",
+    std::vector<std::string> timer_names {"Avalanche", "Flood", "Sort", "MFDFlowRoute",
+        "HillSlopeDiffusion", "Uplift", "SlopeAspect", "SolarCharacteristics",
         "MeltPotential", "ChannelErosion"};
     std::map<std::string, AccumulateTimer<std::chrono::milliseconds> > timers;
     for (auto timer_name : timer_names) {
@@ -170,9 +171,9 @@ void StreamPower::Start()
             timers["Flood"].stop();
 
             // sort data before flow routing
-            timers["Indexx"].start();
+            timers["Sort"].start();
             topo.sort_data();
-            timers["Indexx"].stop();
+            timers["Sort"].stop();
 
             // MFD flow router
             timers["MFDFlowRoute"].start();
@@ -204,9 +205,9 @@ void StreamPower::Start()
             timers["Flood"].stop();
 
             // sort data before avalanching
-            timers["Indexx"].start();
+            timers["Sort"].start();
             topo.sort_data();
-            timers["Indexx"].stop();
+            timers["Sort"].stop();
 
             // apply melt potential and avalanche
             timers["Avalanche"].start();

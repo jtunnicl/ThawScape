@@ -47,6 +47,7 @@ void HillSlopeDiffusion::run(Raster& topo, Raster& flow, GridNeighbours& nebs) {
 				topoold(i, j) = topo(i, j);
 		for (int i = 0; i < lattice_size_x; i++)
 		{
+            #pragma omp parallel for
 			for (int j = 0; j < lattice_size_y; j++)
 			{
 				real_type term1 = D * ann_timestep / (deltax2);
@@ -88,6 +89,7 @@ void HillSlopeDiffusion::run(Raster& topo, Raster& flow, GridNeighbours& nebs) {
 				topoold(i, j) = topo(i, j);
 		for (int j = 0; j < lattice_size_y; j++)
 		{
+            #pragma omp parallel for
 			for (int i = 0; i < lattice_size_x; i++)
 			{
 				real_type term1 = D * ann_timestep / ( deltax2 );

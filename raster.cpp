@@ -45,6 +45,22 @@ real_type& Raster::operator()(int i, int j) {
 #endif
 }
 
+const real_type& Raster::operator[](int n) const {
+#ifdef NDEBUG
+    return data[n];
+#else
+    return data.at(n);
+#endif
+}
+
+real_type& Raster::operator[](int n) {
+#ifdef NDEBUG
+    return data[n];
+#else
+    return data.at(n);
+#endif
+}
+
 // destructively resize the data
 void Raster::resize(int size_x_, int size_y_) {
     if (size_x_ != size_x || size_y_ != size_y) {

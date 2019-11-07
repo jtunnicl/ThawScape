@@ -51,6 +51,14 @@ class Raster {
         /// \param j Second index of data element to access
         real_type& operator()(int i, int j);
 
+        /// \brief Access the underlying data in flattened array using [] notation
+        /// \param n Index in flattened data array to access
+        const real_type& operator[](int n) const;
+
+        /// \brief Access the underlying data in flattened array using [] notation
+        /// \param n Index in flattened data array to access
+        real_type& operator[](int n);
+
         /// \brief Destructively resize the raster
         /// \param size_x_ New x dimension
         /// \param size_y_ New y dimension
